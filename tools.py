@@ -3,6 +3,7 @@ import cv2 as cv2
 import pyscreeze
 import time
 
+# Connects to the device through ADB using PPADB, the device name is currently staticly set
 def connect_device():
     adb = Client(host='127.0.0.1',port=5037)
     global device
@@ -13,14 +14,18 @@ def connect_device():
     else:
         print('Device connected!')
 
+# Takes a screenshot and saves it locally
 def take_screenshot(device):
     image = device.screencap()
     with open('screen.png', 'wb') as f:
         f.write(image)
 
+# Wait command, default 1 second
 def wait(seconds=1):
     time.sleep(seconds)
 
+# Returns True if the image is found, False if not
+# Confidence value can be reduced for images with animations
 def isVisible(image, confidence=0.9):
     take_screenshot(device)
     screenshot = cv2.imread('screen.png')
@@ -32,10 +37,12 @@ def isVisible(image, confidence=0.9):
     else:
         return False
 
+# Clicks on the given XY coordinates
 def clickXY(x,y, seconds=2):
     device.shell('input tap ' + str(x) + ' ' + str(y))
     wait(seconds)
 
+# If the given image is found, it will click on the center of it, if not returns "No image found"
 def click(image, confidence=0.9, seconds=2):
     take_screenshot(device)
     screenshot = cv2.imread('screen.png', 0)
@@ -52,12 +59,14 @@ def click(image, confidence=0.9, seconds=2):
     else:
         print('Image not found!')
 
+# Checks the pixel at the XY coordinates, returns B,G,R value dependent on c variable
 def pixelCheck(x,y,c):
     take_screenshot(device)
     screenshot = cv2.imread('screen.png')
     print(screenshot[y, x , c])
     return screenshot[y, x , c]
 
+# Used to confirm which game screen we're currently sitting in, and change to if it we're not.
 def confirmLocation(location, change=True):
     detected = ''
 
