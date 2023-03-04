@@ -32,7 +32,7 @@ def collectCompanionPoints():
 
 def collectFastRewards(count):
     counter = 0
-    if (pixelCheck(980, 1620, 2) < 140):  # We check if the pixel where the notification sits has a red value of higher than 240
+    if (pixelCheck(980, 1620, 2) > 240):  # We check if the pixel where the notification sits has a red value of higher than 240
         print('Collecting Fast Rewards ' + str(count) + ' times')
         clickXY(950, 1660)
         while counter < count:
