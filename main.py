@@ -1,6 +1,7 @@
 from activities import *
 
 ## Automation Functions
+# Uncomment as needed, screenshot is for debugging/collecting buttons
 
 connect_device()
 # collectAFKRewards()
@@ -16,39 +17,10 @@ connect_device()
 collectQuests()
 # take_screenshot(tools.device)
 
-
+# todo
 # switchCharacter
-# "1"
 # openMenu
 # checkDailyQuestStatus
-
-# collectFountainofTime
-
+# collectFountainOfTime
 # storePurchases
-# "main"
 # attemptCardGame
-# "bob" "3"
-# ## CAMPAIGN TAB ##
-# switchTab
-# "Campaign"
-# lootAfkChest
-# collectQuestChests
-# collectMerchantDeals
-# "1"
-# else
-# ## CAMPAIGN TAB ##
-# switchTab
-# "Campaign"
-# collectFriendsAndMercenaries
-# "merc"
-# collectMail
-# ## DARK FOREST TAB ##
-# switchTab
-# "Dark Forest"
-# # legendsTournament
-# collectBounties
-# ## RANHORN TAB ##
-# switchTab
-# "Ranhorn"
-# guildHunts
-# fi
