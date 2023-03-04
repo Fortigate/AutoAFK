@@ -48,20 +48,25 @@ def collectFastRewards(count):
         print('Fast Rewards already done')
 
 def attemptCampaign():
-    click('buttons/begin', seconds=3)
+    confirmLocation('campaign')
+    click('buttons/begin', seconds=2)
     if (isVisible('buttons/begin', 0.7)): # If we see second Begin it's a multi so we take a different route
-        click('buttons/begin', 0.7, seconds=3)
-        click('buttons/beginbattle', seconds=3)
+        click('buttons/begin', 0.7, seconds=2)
+        click('buttons/beginbattle', seconds=2)
         click('buttons/pause')
         click('buttons/exitbattle')
     else: # else it's a single
         click('buttons/battle', seconds=3)
-        click('buttons/pause')
+        click('buttons/pause', 0.8)
         click('buttons/exitbattle')
     if (isVisible('buttons/back')):
         click('buttons/back')
         wait()
-    print('Campaign attempted')
+    if verifyLocation('campaign'):
+        print('Campaign attempted')
+    else:
+        print('Something went wrong, attempted to return to campaign screen')
+        returnToCampaign()
 
 def handleBounties():
     confirmLocation('darkforest')
@@ -96,7 +101,7 @@ def handleArenaOfHeroes(count):
             clickXY(550, 1800) # Clear loot popup
         clickXY(550, 1800)
         counter = counter+1
-        print(counter)
+        print('Battle #' + str(counter) + ' complete!')
     click('buttons/exitmenu')
     click('buttons/back')
     click('buttons/back')
@@ -104,35 +109,40 @@ def handleArenaOfHeroes(count):
 
 def handleKingsTower():
     confirmLocation('darkforest')
-    clickXY(500, 870)
+    clickXY(500, 870, seconds=3)
     clickXY(555, 585)
     click('buttons/challenge_plain', 0.6) # lower confidence for animated button
-    click('buttons/beginbattle')
-    click('buttons/pause')
+    click('buttons/beginbattle', 0.8, seconds=3)
+    click('buttons/pause', 0.8)
     click('buttons/exitbattle')
     click('buttons/back')
     click('buttons/back')
     click('buttons/back')
-    print('Tower done')
+    if verifyLocation('darkforest'):
+        print('Tower attempted')
+    else:
+        print('Something went wrong, attempted to return to campaign screen')
+        returnToCampaign()
 
 def collectInnGifts():
     clicks = 0
     x_axis = 250
 
     confirmLocation('ranhorn')
+    wait()
     clickXY(800,290)
     while clicks < 10:
-        clickXY(x_axis, 1300)
+        clickXY(x_axis, 1300, seconds=0.5)
         x_axis = x_axis + 50
         clicks = clicks + 2
-        clickXY(550, 1400) # Clear loot
+        clickXY(550, 1400, seconds=0.5) # Clear loot
     click('buttons/back')
     print('Inn Gifts collected.')
 
 def handleGuildHunts():
     confirmLocation('ranhorn')
     clickXY(380, 360)
-    wait(5)
+    wait(6)
     clickXY(550, 1800) # Clear chests
     clickXY(290, 860)
     # Wrizz check
@@ -152,8 +162,8 @@ def handleGuildHunts():
         clickXY(550, 1800)
     else:
         print('Soren quick battle not found')
-    click('buttons/back', seconds=2)
-    click('buttons/back')
+    clickXY(70, 1810)
+    clickXY(70, 1810)
     print('guildhunts checked')
 
 def collectQuests():
