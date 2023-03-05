@@ -5,6 +5,11 @@ def collectAFKRewards():
     if (isVisible('buttons/begin')):
         clickXY(550, 1550)
     click('buttons/collect')
+    clickXY(550, 1800, seconds=2) # Click campaign in case we level up
+    if (isVisible('buttons/begin')):
+        clickXY(550, 1550)
+    click('buttons/collect')
+    clickXY(550, 1800) # Click campaign in case we level up
     print('AFK Rewards collected')
 
 def collectMail():
@@ -32,15 +37,15 @@ def collectCompanionPoints():
 
 def collectFastRewards(count):
     counter = 0
-    if (pixelCheck(980, 1620, 2) > 240):  # We check if the pixel where the notification sits has a red value of higher than 240
+    if (pixelCheck(980, 1620, 2) > 220):  # We check if the pixel where the notification sits has a red value of higher than 240
         print('Collecting Fast Rewards ' + str(count) + ' times')
         clickXY(950, 1660)
         while counter < count:
             # click('buttons/use')
-            # clickXY(710, 1260)
+            clickXY(710, 1260)
             wait(2)
-            # clickXY(550, 1800)
-            print(counter)
+            clickXY(550, 1800)
+            # print(counter)
             counter = counter+1
         click('buttons/close')
         print('Fast Rewards Done')
@@ -151,6 +156,7 @@ def handleGuildHunts():
         clickXY(725, 1300)
         wait()
         clickXY(550, 1800)
+        clickXY(550, 1800)
     else:
         print('Wrizz quick battle not found')
     # Soren Check
@@ -159,6 +165,7 @@ def handleGuildHunts():
         click('buttons/quickbattle')
         clickXY(725, 1300)
         wait()
+        clickXY(550, 1800)
         clickXY(550, 1800)
     else:
         print('Soren quick battle not found')
@@ -170,15 +177,15 @@ def collectQuests():
     clickXY(960, 250)
     clickXY(400, 1650) # Dailies
     if isVisible('labels/questcomplete'):
-        clickXY(930, 680)
+        clickXY(930, 680, seconds=4)
     while isVisible('buttons/fullquestchest'):
-        click('buttons/fullquestchest', seconds=2)
+        click('buttons/fullquestchest', seconds=3)
         clickXY(400, 1650)
     clickXY(600, 1650) # Weeklies
-    if isVisible('labels/questcomplete'):
+    if isVisible('labels/questcomplete', seconds=4):
         clickXY(930, 680)
     while isVisible('buttons/fullquestchest'):
-        click('buttons/fullquestchest', seconds=2)
+        click('buttons/fullquestchest', seconds=3)
         clickXY(400, 1650)
     click('buttons/back')
     print('Quests done')

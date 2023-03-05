@@ -2,7 +2,7 @@ from ppadb.client import Client
 import cv2 as cv2
 import pyscreeze
 import time
-adb_device = 'localhost:5555'
+adb_device = 'emulator-5574'
 
 # Connects to the device through ADB using PPADB, the device name is currently staticly set
 def connect_device():
@@ -67,7 +67,7 @@ def click(image, confidence=0.9, seconds=1):
 def pixelCheck(x,y,c,seconds=1):
     take_screenshot(device)
     screenshot = cv2.imread('screen.png')
-    # print(screenshot[y, x , c])
+    print(screenshot[y, x , c])
     wait(seconds)
     return screenshot[y, x , c]
 
