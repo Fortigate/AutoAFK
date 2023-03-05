@@ -1,2 +1,4 @@
-./screen.bin
-./screen.png
+/screen.bin
+/screen.png
+/adb.exe
+/AdbWinApi.dll
