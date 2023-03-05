@@ -5,7 +5,7 @@ def collectAFKRewards():
     if (isVisible('buttons/begin')):
         clickXY(550, 1550)
     click('buttons/collect')
-    clickXY(550, 1800, seconds=2) # Click campaign in case we level up
+    clickXY(550, 1800, seconds=4) # Click campaign in case we level up
     if (isVisible('buttons/begin')):
         clickXY(550, 1550)
     click('buttons/collect')
