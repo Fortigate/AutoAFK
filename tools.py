@@ -2,13 +2,19 @@ from ppadb.client import Client
 import cv2 as cv2
 import pyscreeze
 import time
+from subprocess import *
+import os
 adb_device = 'emulator-5574'
 
 # Connects to the device through ADB using PPADB, the device name is currently staticly set
 def connect_device():
+    adbpath = (os.path.dirname(__file__) + '\\adb.exe') # Locate adb.exe in working directory
+    adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
+    adb_device_str = str(adb_devices[26:39]) # trim the string to extract the first device
+    adb_device = adb_device_str[2:15] # trim again because it's a byte object and has extra characters
     global device
     adb = Client(host='127.0.0.1',port=5037)
-    device = adb.device(adb_device)
+    device = adb.device(adb_device) # connect to the device we extracted above
     if device == None:
         print('No device found!')
         exit(1)
