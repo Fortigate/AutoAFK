@@ -20,7 +20,4 @@ The current version will run the absolute minimum in order to complete the daili
 * collectQuests
 
 # How do I run it?
-* Launch Bluestacks with ADB enabled
-* Launch and connect ADB
-* Edit the line "device = adb.device("localhost:5575")" in `tools.py` to the name of your connected device in ADB
-* Run `main.py`
+Download the release and run AutoAFK.exe.
