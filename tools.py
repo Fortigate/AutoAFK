@@ -4,9 +4,11 @@ import pyscreeze
 import time
 from subprocess import *
 import socket
+import sys
 import os
 
 cwd = (os.path.dirname(__file__) + '\\')
+os.system('color') # So colourful text works
 
 def configureADB():
     global adb_device
@@ -22,7 +24,7 @@ def configureADB():
         adb_device = adb_device_str[2:16] # Extra letter needed if we manually connect
         # print(adb_device)
     if adb_device_str[2:10] != 'emulator' and adb_device_str[2:11] != 'localhost':
-        print('No devices found, attempting to find it automatically..')
+        printWarning('No devices found, attempting to find it automatically..')
         Popen([adbpath, 'connect', '127.0.0.1:' + str(portScan())], stdout=PIPE).communicate()[0]
         # Popen([adbpath, 'connect', '127.0.0.1:5575'], stdout=PIPE).communicate()[0] #faster testing
         adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0]  # Run 'adb.exe devices' and pipe output to string
@@ -36,7 +38,7 @@ def portScan():
     start = time.time()
     adbport = ''
 
-    print('Starting port scan (between 5555-5587), this can take up to 30 seconds..')
+    printWarning('Starting port scan (between 5555-5587), this can take up to 30 seconds..')
 
     # Port scanner function
     def port_scan(port):
@@ -50,11 +52,14 @@ def portScan():
     for port in range(5555,5588):
         if port % 2 != 0: # ADB will only use odd port numbers in this range
             if port_scan(port):
-                print('ADB Device Found at: ' + str(port))
+                printGreen('ADB Device Found at port ' + str(port) + ' in ' + str(round((time.time() - start))) + ' seconds!')
                 adbport = port
                 break
 
-    print('Found in: ' + str(round((time.time() - start))) + ' seconds!')
+    if adbport == '':
+        printError('No device found! Exiting..')
+        exit(1)
+
     return adbport
 
 # Connects to the device through ADB using PPADB, the device name is currently staticly set
@@ -64,12 +69,12 @@ def connect_device():
     adb = Client(host='127.0.0.1',port=5037)
     device = adb.device(adb_device) # connect to the device we extracted above
     if device == None:
-        print('No device found, often due to ADB errors. Please try manually connecting your client.')
+        printError('No device found, often due to ADB errors. Please try manually connecting your client.')
         print('Debug lines:')
         print(adb_devices)
         exit(1)
     else:
-        print('Device ' + adb_device + ' successfully connected!')
+        printGreen('Device ' + adb_device + ' successfully connected!')
 
 # Takes a screenshot and saves it locally
 def take_screenshot(device):
@@ -105,7 +110,7 @@ def clickXY(x,y, seconds=1):
 # Seconds is time to wait after clicking the image
 # Retry will try and find the image x number of times, useful for animated or covered buttons, or to make sure the button is not skipped
 # Suppress will disable warnings, sometimes we don't need to know if a button isn't found
-def click(image, confidence=0.9, seconds=1, retry=1, supress=False):
+def click(image, confidence=0.9, seconds=1, retry=1, suppress=False):
     counter = 0
     take_screenshot(device)
     screenshot = cv2.imread(cwd + 'screen.png', 0)
@@ -124,7 +129,7 @@ def click(image, confidence=0.9, seconds=1, retry=1, supress=False):
                 device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
                 wait(seconds)
                 return
-            if supress is not True:
+            if suppress is not True:
                 printWarning('Retrying ' + image + ' search: ' + str(counter+1) + '/' + str(retry))
             counter = counter + 1
             wait(1)
@@ -135,7 +140,7 @@ def click(image, confidence=0.9, seconds=1, retry=1, supress=False):
         device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
         wait(seconds)
     else:
-        if supress is not True:
+        if suppress is not True:
             printWarning('Image:' + image + ' not found!')
         wait(seconds)
 
@@ -191,14 +196,22 @@ def recover():
         printError('Recovery failed, exiting')
         exit(0)
 
-def printBlue(text):
-    print(f'\033[96m' + text + '\033[0m')
-
-def printGreen(text):
-    print(f'\033[92m' + text + '\033[0m')
-
-def printWarning(text):
-    print(f'\033[93m' + text + '\033[0m')
+COLOR = {
+    "CYAN": "\033[96m",
+    "GREEN": "\033[92m",
+    "YELLOW": "\033[93m",
+    "RED": "\033[91m",
+    "RESET": "\033[0m",
+}
 
 def printError(text):
-    print(f'\033[91m' + text + '\033[0m')
+    print(COLOR['RED'], text, COLOR['RESET'])
+
+def printGreen(text):
+    print(COLOR['GREEN'], text, COLOR['RESET'])
+
+def printWarning(text):
+    print(COLOR['YELLOW'], text, COLOR['RESET'])
+
+def printBlue(text):
+    print(COLOR['CYAN'], text, COLOR['RESET'])

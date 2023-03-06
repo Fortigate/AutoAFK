@@ -93,14 +93,14 @@ def handleBounties(dispatch=False):
     clickXY(600, 1320)
     if (isVisible('labels/bountyboard')):
         clickXY(650, 1700) # Solo tab
-        click('buttons/collect_all', seconds=2, supress=True)
+        click('buttons/collect_all', seconds=2, suppress=True)
         if dispatch is True:
-            click('buttons/dispatch', supress=True)
-            click('buttons/confirm', supress=True)
+            click('buttons/dispatch', suppress=True)
+            click('buttons/confirm', suppress=True)
         clickXY(950,1700) # Team tab
-        click('buttons/collect_all', seconds=2, supress=True)
-        click('buttons/dispatch', supress=True)
-        click('buttons/confirm', supress=True)
+        click('buttons/collect_all', seconds=2, suppress=True)
+        click('buttons/dispatch', suppress=True)
+        click('buttons/confirm', suppress=True)
         click('buttons/back')
         printGreen('    Bounties attempted successfully')
     else:
@@ -120,7 +120,7 @@ def handleArenaOfHeroes(count):
             clickXY(820, 1225)
             click('buttons/battle', 0.6, retry=3) # lower confidence as it's an animated button
             wait(2)
-            click('buttons/skip', retry=5, supress=True) # Retries as ulting heros can cover the button
+            click('buttons/skip', retry=5, suppress=True) # Retries as ulting heros can cover the button
             if (isVisible('labels/defeat')):
                 printError('    Battle #' + str(counter+1) + ' Defeat!')
             else:
@@ -142,7 +142,7 @@ def handleKingsTower():
     clickXY(500, 870, seconds=3) # Long pause for animation
     if isVisible('labels/kingstower'):
         clickXY(555, 585)
-        click('buttons/challenge_plain', 0.7, retry=5, supress=True) # lower confidence and retries for animated button
+        click('buttons/challenge_plain', 0.7, retry=5, suppress=True) # lower confidence and retries for animated button
         click('buttons/beginbattle', 0.8, seconds=3, retry=5)
         click('buttons/pause', 0.8, retry=5)
         click('buttons/exitbattle')
@@ -217,13 +217,13 @@ def collectQuests():
         if isVisible('labels/questcomplete'):
             printGreen('    Daily Quest(s) found, collecting..')
             clickXY(930, 680, seconds=4) # Click top quest
-            click('buttons/fullquestchest', seconds=3, retry=3, supress=True)
+            click('buttons/fullquestchest', seconds=3, retry=3, suppress=True)
             clickXY(400, 1650)
         clickXY(600, 1650) # Weeklies
         if isVisible('labels/questcomplete'):
             printGreen('    Weekly Quest(s) found, collecting..')
             clickXY(930, 680, seconds=4) # Click top quest
-            click('buttons/fullquestchest', seconds=3, retry=3, supress=True)
+            click('buttons/fullquestchest', seconds=3, retry=3, suppress=True)
             clickXY(400, 1650)
         click('buttons/back')
         printGreen('    Quests collected')
