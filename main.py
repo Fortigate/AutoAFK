@@ -1,4 +1,5 @@
 from activities import *
+import tools
 
 ## Automation Functions
 # Uncomment as needed, screenshot is for debugging/collecting buttons
@@ -10,11 +11,13 @@ collectCompanionPoints()
 collectFastRewards(5)
 attemptCampaign()
 handleBounties()
-handleArenaOfHeroes(3)
+handleArenaOfHeroes(10)
 handleKingsTower()
 collectInnGifts()
 handleGuildHunts()
 collectQuests()
+
+#testing
 # take_screenshot(tools.device)
 
 # todo

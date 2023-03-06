@@ -3,21 +3,64 @@ import cv2 as cv2
 import pyscreeze
 import time
 from subprocess import *
+import socket
 import os
 
 cwd = (os.path.dirname(__file__) + '\\')
 
-# Connects to the device through ADB using PPADB, the device name is currently staticly set
-def connect_device():
+def configureADB():
+    global adb_device
+    global adb_devices
     adbpath = (os.path.dirname(__file__) + '\\adb.exe') # Locate adb.exe in working directory
+    Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the server
+    wait(2)
     adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
     adb_device_str = str(adb_devices[26:40]) # trim the string to extract the first device
     adb_device = adb_device_str[2:15] # trim again because it's a byte object and has extra characters
-    print(adb_device)
+    # print(adb_device)
     if adb_device_str[2:11] == 'localhost':
         adb_device = adb_device_str[2:16] # Extra letter needed if we manually connect
-        print(adb_device)
+        # print(adb_device)
+    if adb_device_str[2:10] != 'emulator' and adb_device_str[2:11] != 'localhost':
+        print('No devices found, attempting to find it automatically..')
+        Popen([adbpath, 'connect', '127.0.0.1:' + str(portScan())], stdout=PIPE).communicate()[0]
+        # Popen([adbpath, 'connect', '127.0.0.1:5575'], stdout=PIPE).communicate()[0] #faster testing
+        adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0]  # Run 'adb.exe devices' and pipe output to string
+        adb_device_str = str(adb_devices[26:40])  # trim the string to extract the first device
+        adb_device = adb_device_str[2:16]
+
+# If we don't find a device we use this to scan the odd ports between 5555 and 5587 which ADB uses, then try and conenct
+# This is a very slow implementation, we can multithread it to speed it up
+def portScan():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    start = time.time()
+    adbport = ''
+
+    print('Starting port scan (between 5555-5587), this can take up to 30 seconds..')
+
+    # Port scanner function
+    def port_scan(port):
+        try:
+            s.connect(('127.0.0.1', port))
+            return True
+        except:
+            pass
+
+    # Scan ports
+    for port in range(5555,5588):
+        if port % 2 != 0: # ADB will only use odd port numbers in this range
+            if port_scan(port):
+                print('ADB Device Found at: ' + str(port))
+                adbport = port
+                break
+
+    print('Found in: ' + str(round((time.time() - start))) + ' seconds!')
+    return adbport
+
+# Connects to the device through ADB using PPADB, the device name is currently staticly set
+def connect_device():
     global device
+    configureADB()
     adb = Client(host='127.0.0.1',port=5037)
     device = adb.device(adb_device) # connect to the device we extracted above
     if device == None:
@@ -26,7 +69,7 @@ def connect_device():
         print(adb_devices)
         exit(1)
     else:
-        print('Device connected!')
+        print('Device ' + adb_device + ' successfully connected!')
 
 # Takes a screenshot and saves it locally
 def take_screenshot(device):
@@ -58,13 +101,29 @@ def clickXY(x,y, seconds=1):
     wait(seconds)
 
 # If the given image is found, it will click on the center of it, if not returns "No image found"
-def click(image, confidence=0.9, seconds=1):
+def click(image, confidence=0.9, seconds=1, retry=1):
+    counter = 0
     take_screenshot(device)
     screenshot = cv2.imread(cwd + 'screen.png', 0)
     search = cv2.imread(cwd + 'img\\' + image + '.png', 0)
     res = pyscreeze.locate(search, screenshot, grayscale=False, confidence=confidence)
 
-    if res != None:
+    if res == None and retry != 1:
+        while counter < retry:
+            take_screenshot(device)
+            screenshot = cv2.imread(cwd + 'screen.png', 0)
+            res = pyscreeze.locate(search, screenshot, grayscale=False, confidence=confidence)
+            if res != None:
+                x, y, w, h = res
+                x_center = round(x + w / 2)
+                y_center = round(y + h / 2)
+                device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
+                wait(seconds)
+                return
+            printWarning('Retrying ' + image + ' search: ' + str(counter+1) + '/' + str(retry))
+            counter = counter + 1
+            wait(1)
+    elif res != None:
         x, y, w, h = res
         x_center = round(x + w/2)
         y_center = round(y + h/2)
@@ -73,14 +132,14 @@ def click(image, confidence=0.9, seconds=1):
         # print('Image:' + image + ' clicked!')
         wait(seconds)
     else:
-        print('Image:' + image + ' not found!')
+        printWarning('Image:' + image + ' not found!')
         wait(seconds)
 
 # Checks the pixel at the XY coordinates, returns B,G,R value dependent on c variable
 def pixelCheck(x,y,c,seconds=1):
     take_screenshot(device)
     screenshot = cv2.imread('screen.png')
-    print(screenshot[y, x , c])
+    # print(screenshot[y, x , c])
     wait(seconds)
     return screenshot[y, x , c]
 
@@ -117,8 +176,25 @@ def verifyLocation(location):
     if detected != location:
         return False
 
-def returnToCampaign():
+def recover():
     clickXY(70, 1810)
     clickXY(70, 1810)
     clickXY(70, 1810)
     confirmLocation('campaign')
+    if verifyLocation('campaign'):
+        printWarning('Recovered succesfully, continuing script')
+    else:
+        printError('Recovery failed, exiting')
+        exit(0)
+
+def printBlue(text):
+    print(f'\033[96m' + text + '\033[0m')
+
+def printGreen(text):
+    print(f'\033[92m' + text + '\033[0m')
+
+def printWarning(text):
+    print(f'\033[93m' + text + '\033[0m')
+
+def printError(text):
+    print(f'\033[91m' + text + '\033[0m')
