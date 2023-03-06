@@ -93,15 +93,14 @@ def handleBounties(dispatch=False):
     clickXY(600, 1320)
     if (isVisible('labels/bountyboard')):
         clickXY(650, 1700) # Solo tab
-        click('buttons/collect_all')
+        click('buttons/collect_all', seconds=2, supress=True)
         if dispatch is True:
-            click('buttons/dispatch')
-            click('buttons/confirm')
+            click('buttons/dispatch', supress=True)
+            click('buttons/confirm', supress=True)
         clickXY(950,1700) # Team tab
-        click('buttons/collect_all')
-        if dispatch is True:
-            click('buttons/dispatch')
-            click('buttons/confirm')
+        click('buttons/collect_all', seconds=2, supress=True)
+        click('buttons/dispatch', supress=True)
+        click('buttons/confirm', supress=True)
         click('buttons/back')
         printGreen('    Bounties attempted successfully')
     else:
@@ -121,13 +120,13 @@ def handleArenaOfHeroes(count):
             clickXY(820, 1225)
             click('buttons/battle', 0.6, retry=3) # lower confidence as it's an animated button
             wait(2)
-            click('buttons/skip', retry=5) # Retries as ulting heros can cover the button
+            click('buttons/skip', retry=5, supress=True) # Retries as ulting heros can cover the button
             if (isVisible('labels/defeat')):
-                printError('  Battle #' + str(counter+1) + ' Defeat!')
+                printError('    Battle #' + str(counter+1) + ' Defeat!')
             else:
-                printGreen('  Battle #' + str(counter+1) + ' Victory!')
-                clickXY(550, 1800) # Clear loot popup
-            clickXY(550, 1800)
+                printGreen('    Battle #' + str(counter+1) + ' Victory!')
+                clickXY(650, 1200) # Clear loot popup
+            clickXY(650, 1200)
             counter = counter+1
         click('buttons/exitmenu')
         click('buttons/back')
@@ -143,8 +142,8 @@ def handleKingsTower():
     clickXY(500, 870, seconds=3) # Long pause for animation
     if isVisible('labels/kingstower'):
         clickXY(555, 585)
-        click('buttons/challenge_plain', 0.7, retry=5) # lower confidence and retries for animated button
-        click('buttons/battle', 0.8, seconds=3, retry=5)
+        click('buttons/challenge_plain', 0.7, retry=5, supress=True) # lower confidence and retries for animated button
+        click('buttons/beginbattle', 0.8, seconds=3, retry=5)
         click('buttons/pause', 0.8, retry=5)
         click('buttons/exitbattle')
         click('buttons/back')
@@ -191,7 +190,7 @@ def handleGuildHunts():
             clickXY(550, 500)
             clickXY(550, 1800)
         else:
-            printWarning('   Wrizz quick battle not found')
+            printWarning('    Wrizz quick battle not found')
         # Soren Check
         clickXY(970, 890)
         if (isVisible('buttons/quickbattle')):
@@ -202,7 +201,7 @@ def handleGuildHunts():
             clickXY(550, 500)
             clickXY(550, 1800)
         else:
-            printWarning('   Soren quick battle not found')
+            printWarning('    Soren quick battle not found')
         clickXY(70, 1810)
         clickXY(70, 1810)
         printGreen('    Guild Hunts checked successfully')
@@ -216,13 +215,15 @@ def collectQuests():
     if isVisible('labels/quests'):
         clickXY(400, 1650) # Dailies
         if isVisible('labels/questcomplete'):
+            printGreen('    Daily Quest(s) found, collecting..')
             clickXY(930, 680, seconds=4) # Click top quest
-            click('buttons/fullquestchest', seconds=3, retry=5)
+            click('buttons/fullquestchest', seconds=3, retry=3, supress=True)
             clickXY(400, 1650)
         clickXY(600, 1650) # Weeklies
         if isVisible('labels/questcomplete'):
+            printGreen('    Weekly Quest(s) found, collecting..')
             clickXY(930, 680, seconds=4) # Click top quest
-            click('buttons/fullquestchest', seconds=3, retry=5)
+            click('buttons/fullquestchest', seconds=3, retry=3, supress=True)
             clickXY(400, 1650)
         click('buttons/back')
         printGreen('    Quests collected')

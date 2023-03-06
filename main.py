@@ -11,16 +11,16 @@ collectCompanionPoints()
 collectFastRewards(5)
 attemptCampaign()
 handleBounties()
-handleArenaOfHeroes(10)
+handleArenaOfHeroes(5)
 handleKingsTower()
 collectInnGifts()
 handleGuildHunts()
 collectQuests()
 
-#testing
 # take_screenshot(tools.device)
 
 # todo
+# Launch Game
 # switchCharacter
 # openMenu
 # checkDailyQuestStatus

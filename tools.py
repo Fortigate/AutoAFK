@@ -101,7 +101,11 @@ def clickXY(x,y, seconds=1):
     wait(seconds)
 
 # If the given image is found, it will click on the center of it, if not returns "No image found"
-def click(image, confidence=0.9, seconds=1, retry=1):
+# Confidence is how sure we are we have the right image, for animated icons we can lower the value
+# Seconds is time to wait after clicking the image
+# Retry will try and find the image x number of times, useful for animated or covered buttons, or to make sure the button is not skipped
+# Suppress will disable warnings, sometimes we don't need to know if a button isn't found
+def click(image, confidence=0.9, seconds=1, retry=1, supress=False):
     counter = 0
     take_screenshot(device)
     screenshot = cv2.imread(cwd + 'screen.png', 0)
@@ -120,19 +124,19 @@ def click(image, confidence=0.9, seconds=1, retry=1):
                 device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
                 wait(seconds)
                 return
-            printWarning('Retrying ' + image + ' search: ' + str(counter+1) + '/' + str(retry))
+            if supress is not True:
+                printWarning('Retrying ' + image + ' search: ' + str(counter+1) + '/' + str(retry))
             counter = counter + 1
             wait(1)
     elif res != None:
         x, y, w, h = res
         x_center = round(x + w/2)
         y_center = round(y + h/2)
-        # print(x_center, y_center)
         device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
-        # print('Image:' + image + ' clicked!')
         wait(seconds)
     else:
-        printWarning('Image:' + image + ' not found!')
+        if supress is not True:
+            printWarning('Image:' + image + ' not found!')
         wait(seconds)
 
 # Checks the pixel at the XY coordinates, returns B,G,R value dependent on c variable
