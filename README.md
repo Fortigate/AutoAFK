@@ -1,6 +1,8 @@
 # AutoAFK
 A Python based tool to automate Bluestacks games via ADB using Python and OpenCV. The bot supports image recognition with fuzzy matching, as well as pixel recognition to automate actions. While the bot is designed for AFK Arena the core logic will work for anything rendered in Bluestacks.
 
+Issues/Comments/Suggestions? [Join the Discord server!](https://discord.gg/pfU7UB5A)
+
 # What is it?
 AutoAFK is a proof of concept platform to automate tasks in AFK Arena. All actions are done through ADB which 
 means the window does not need to be in focus and you can continue to use your computer as normal while it runs.
