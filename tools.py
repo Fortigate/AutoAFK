@@ -2,19 +2,51 @@ from ppadb.client import Client
 import cv2 as cv2
 import pyscreeze
 import time
+import subprocess
 from subprocess import *
 import socket
-import sys
 import os
 
 cwd = (os.path.dirname(__file__) + '\\')
 os.system('color') # So colourful text works
 
+def afkRunningCheck():
+    game = str(device.shell('ps | grep -E com.lilithgame.hgame.gp | awk \'{print$9}\'')).splitlines()
+    if not game:
+        printError('AFK Arena is not running, launching..')
+        device.shell('monkey -p com.lilithgame.hgame.gp 1')
+
+def waitUntilGameActive():
+    printWarning('Waiting for game to load')
+    counter = 0
+    while counter < 2:
+        click('buttons/campaign_unselected', 0.5, suppress=True)
+        click('buttons/exitmenu', 0.5, suppress=True)
+        if isVisible('buttons/campaign_selected', 0.5):
+            counter += 1
+    printGreen('Game Loaded!')
+
+def resolutionCheck(device):
+    resolution = device.shell('wm size').split(' ')
+    dpi = device.shell('wm density').split(' ')
+    if not str(resolution[2]).strip() == '1920x1080' or str(resolution[2]).strip() == '1080x1920':
+        printError('Unsupported Resolution! (' + str(resolution[2]).strip() + '). Please change your Bluestacks resolution to 1080x1920')
+        exit(1)
+    if str(dpi[2]).strip() != '240':
+        printError('Unsupported DPI! (' + str(dpi[2]).strip() + '). Please change your Bluestacks DPI to 240')
+        exit(1)
+
+def processExists(process_name):
+    call = 'TASKLIST', '/FI', 'imagename eq %s' % process_name
+    output = subprocess.check_output(call).decode()
+    last_line = output.strip().split('\r\n')[-1]
+    return last_line.lower().startswith(process_name.lower())
+
 def configureADB():
     global adb_device
     global adb_devices
     adbpath = (os.path.dirname(__file__) + '\\adb.exe') # Locate adb.exe in working directory
-    Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the server
+    null = Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the server
     wait(2)
     adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
     adb_device_str = str(adb_devices[26:40]) # trim the string to extract the first device
@@ -24,9 +56,9 @@ def configureADB():
         adb_device = adb_device_str[2:16] # Extra letter needed if we manually connect
         # print(adb_device)
     if adb_device_str[2:10] != 'emulator' and adb_device_str[2:11] != 'localhost':
-        printWarning('No devices found, attempting to find it automatically..')
+        printWarning('No ADB devices found, attempting to find it automatically. This can take up to 30 seconds..')
         Popen([adbpath, 'connect', '127.0.0.1:' + str(portScan())], stdout=PIPE).communicate()[0]
-        # Popen([adbpath, 'connect', '127.0.0.1:5575'], stdout=PIPE).communicate()[0] #faster testing
+        # Popen([adbpath, 'connect', '127.0.0.1:5575'], stdout=PIPE).communicate()[0] #faster for testing
         adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0]  # Run 'adb.exe devices' and pipe output to string
         adb_device_str = str(adb_devices[26:40])  # trim the string to extract the first device
         adb_device = adb_device_str[2:16]
@@ -37,8 +69,6 @@ def portScan():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     start = time.time()
     adbport = ''
-
-    printWarning('Starting port scan (between 5555-5587), this can take up to 30 seconds..')
 
     # Port scanner function
     def port_scan(port):
@@ -52,7 +82,7 @@ def portScan():
     for port in range(5555,5588):
         if port % 2 != 0: # ADB will only use odd port numbers in this range
             if port_scan(port):
-                printGreen('ADB Device Found at port ' + str(port) + ' in ' + str(round((time.time() - start))) + ' seconds!')
+                printWarning('ADB Device Found at port ' + str(port) + ' in ' + str(round((time.time() - start))) + ' seconds!')
                 adbport = port
                 break
 
@@ -64,17 +94,26 @@ def portScan():
 
 # Connects to the device through ADB using PPADB, the device name is currently staticly set
 def connect_device():
+    if processExists('Bluestacks.exe'):
+        printGreen('Bluestacks found! Trying to connect via ADB..')
+    else:
+        printError('Bluestacks not found, please make sure it\'s running before launching')
+        exit(1)
     global device
     configureADB()
     adb = Client(host='127.0.0.1',port=5037)
     device = adb.device(adb_device) # connect to the device we extracted above
     if device == None:
-        printError('No device found, often due to ADB errors. Please try manually connecting your client.')
+        printError('No ADB device found, often due to ADB errors. Please try manually connecting your client.')
         print('Debug lines:')
         print(adb_devices)
         exit(1)
     else:
         printGreen('Device ' + adb_device + ' successfully connected!')
+        resolutionCheck(device)
+        afkRunningCheck()
+        waitUntilGameActive()
+        print('')
 
 # Takes a screenshot and saves it locally
 def take_screenshot(device):

@@ -19,8 +19,9 @@ collectQuests()
 
 # take_screenshot(tools.device)
 
-# todo
-# Launch Game
+# todolist
+# Launch Game function + Verify start location
+# Clear Merchant gifts & !'s
 # switchCharacter
 # openMenu
 # checkDailyQuestStatus

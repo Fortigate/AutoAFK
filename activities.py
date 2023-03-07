@@ -11,9 +11,10 @@ def collectAFKRewards():
             clickXY(550, 1550)
         click('buttons/collect')
         clickXY(550, 1800) # Click campaign in case we level up
+        printGreen('    AFK Rewards collected!')
     else:
         printError('AFK Rewards chests not found!')
-    printGreen('    AFK Rewards collected!')
+        recover()
 
 def collectMail():
     printBlue('Attempting mail collection')
@@ -188,6 +189,7 @@ def handleGuildHunts():
             clickXY(725, 1300)
             wait()
             clickXY(550, 500)
+            clickXY(550, 500,seconds=2)
             clickXY(550, 1800)
         else:
             printWarning('    Wrizz quick battle not found')
@@ -199,6 +201,7 @@ def handleGuildHunts():
             clickXY(725, 1300)
             wait()
             clickXY(550, 500)
+            clickXY(550, 500,seconds=2)
             clickXY(550, 1800)
         else:
             printWarning('    Soren quick battle not found')
