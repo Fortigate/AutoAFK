@@ -1,4 +1,5 @@
 from ppadb.client import Client
+from main import printGreen, printError, printWarning, printBlue
 import cv2 as cv2
 import pyscreeze
 import time
@@ -7,25 +8,41 @@ from subprocess import *
 import socket
 import os
 
+import main
+
 cwd = (os.path.dirname(__file__) + '\\')
 os.system('color') # So colourful text works
 
+# Expands the left and right button menus
+def expandMenus():
+    while isVisible('buttons/downarrow', 0.8):
+        click('buttons/downarrow', 0.8, retry=3)
+
+# Checks if AFK Arena process is running, if not we launch it
 def afkRunningCheck():
     game = str(device.shell('ps | grep -E com.lilithgame.hgame.gp | awk \'{print$9}\'')).splitlines()
     if not game:
         printError('AFK Arena is not running, launching..')
         device.shell('monkey -p com.lilithgame.hgame.gp 1')
 
+# Confirms that the game has loaded by checking for the campaign_selected button. Also presses exitmenu.png to clear any new hero popups
+# May also require a ClickXY over Campaign to clear Time Limited Deals that appear
 def waitUntilGameActive():
     printWarning('Waiting for game to load')
-    counter = 0
-    while counter < 2:
-        click('buttons/campaign_unselected', 0.5, suppress=True)
-        click('buttons/exitmenu', 0.5, suppress=True)
+    loadingcounter = 0
+    timeoutcounter = 0
+    while loadingcounter < 1:
+        click('buttons/campaign_unselected', seconds=0.5, suppress=True)
+        click('buttons/exitmenu', seconds=0.5, suppress=True)
+        timeoutcounter += 1
         if isVisible('buttons/campaign_selected', 0.5):
-            counter += 1
+            loadingcounter += 1
+        if timeoutcounter > 10:
+            printError('Timed out while loading!')
+            exit(1)
     printGreen('Game Loaded!')
 
+# Checks we are running 1920x1080 (or 1080x1920 if we're in landscape mode) and 240 DPI, exits if not.
 def resolutionCheck(device):
     resolution = device.shell('wm size').split(' ')
     dpi = device.shell('wm density').split(' ')
@@ -36,12 +53,16 @@ def resolutionCheck(device):
         printError('Unsupported DPI! (' + str(dpi[2]).strip() + '). Please change your Bluestacks DPI to 240')
         exit(1)
 
+# Checks Windows running processes for Bluestacks.exe
 def processExists(process_name):
     call = 'TASKLIST', '/FI', 'imagename eq %s' % process_name
     output = subprocess.check_output(call).decode()
     last_line = output.strip().split('\r\n')[-1]
     return last_line.lower().startswith(process_name.lower())
 
+# This function manages the ADB connection
+# First it restarts ADB then checks for `emulator-xxxx` devices, if empty we check for `localhost:xxxx` devices
+# If neither are found we use portScan() to find the active port and connect using that
 def configureADB():
     global adb_device
     global adb_devices
@@ -63,8 +84,9 @@ def configureADB():
         adb_device_str = str(adb_devices[26:40])  # trim the string to extract the first device
         adb_device = adb_device_str[2:16]
 
-# If we don't find a device we use this to scan the odd ports between 5555 and 5587 which ADB uses, then try and conenct
-# This is a very slow implementation, we can multithread it to speed it up
+# If we don't find a device we use this to scan the odd ports between 5555 and 5587 to find the ADB port
+# This is a very slow implementation (1 second per port, up to 30 seconds for port 5587). We can multithread it to speed it up
+# If no port is found we have exhausted all options to find the ADB device so will exit
 def portScan():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     start = time.time()
@@ -92,7 +114,8 @@ def portScan():
 
     return adbport
 
-# Connects to the device through ADB using PPADB, the device name is currently staticly set
+# Connects to the found ADB device using PPADB, allowing us to send commands via Python
+# On success we go through our startup checks to make sure we are starting from the same point each time, and can recognise the template images
 def connect_device():
     if processExists('Bluestacks.exe'):
         printGreen('Bluestacks found! Trying to connect via ADB..')
@@ -109,10 +132,12 @@ def connect_device():
         print(adb_devices)
         exit(1)
     else:
+
         printGreen('Device ' + adb_device + ' successfully connected!')
         resolutionCheck(device)
         afkRunningCheck()
         waitUntilGameActive()
+        expandMenus()
         print('')
 
 # Takes a screenshot and saves it locally
@@ -124,6 +149,11 @@ def take_screenshot(device):
 # Wait command, default 1 second
 def wait(seconds=1):
     time.sleep(seconds)
+
+def swipe(x1, y1, x2, y2, duration=100, seconds=1):
+    device.shell('input swipe ' + str(x1) + ' ' + str(y1) + ' ' + str(x2) + ' ' + str(y2) + ' ' + str(duration))
+    wait(seconds)
+
 
 # Returns True if the image is found, False if not
 # Confidence value can be reduced for images with animations
@@ -192,6 +222,7 @@ def pixelCheck(x,y,c,seconds=1):
     return screenshot[y, x , c]
 
 # Used to confirm which game screen we're currently sitting in, and change to if we're not.
+# Very slow function, we should handle this more smarterly
 def confirmLocation(location, change=True):
     detected = ''
 
@@ -208,6 +239,7 @@ def confirmLocation(location, change=True):
     if detected != location and change is True:
         click('buttons/' + location + '_unselected')
 
+# Returns True if `location` is found
 def verifyLocation(location):
     detected = ''
 
@@ -224,6 +256,8 @@ def verifyLocation(location):
     if detected != location:
         return False
 
+# Last ditch effort to keep clicking the back button to return to a known location
+# Should be updated to handle battle screen and screens without a back button
 def recover():
     clickXY(70, 1810)
     clickXY(70, 1810)
@@ -235,6 +269,7 @@ def recover():
         printError('Recovery failed, exiting')
         exit(0)
 
+# Array for storing text colours
 COLOR = {
     "CYAN": "\033[96m",
     "GREEN": "\033[92m",
@@ -242,15 +277,3 @@ COLOR = {
     "RED": "\033[91m",
     "RESET": "\033[0m",
 }
-
-def printError(text):
-    print(COLOR['RED'], text, COLOR['RESET'])
-
-def printGreen(text):
-    print(COLOR['GREEN'], text, COLOR['RESET'])
-
-def printWarning(text):
-    print(COLOR['YELLOW'], text, COLOR['RESET'])
-
-def printBlue(text):
-    print(COLOR['CYAN'], text, COLOR['RESET'])

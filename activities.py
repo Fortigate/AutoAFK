@@ -1,4 +1,8 @@
 from tools import *
+from main import printGreen, printError, printWarning, printBlue
+import datetime
+
+d = datetime.datetime.now()
 
 def collectAFKRewards():
     printBlue('Attempting AFK Reward collection 2x')
@@ -174,6 +178,39 @@ def collectInnGifts():
         printError('    Inn not found, attempting to recover')
         recover()
 
+def shopPurchases(shoprefreshes):
+    counter = 0
+    confirmLocation('ranhorn')
+    clickXY(300, 1725, seconds=5)
+    while counter <= shoprefreshes:
+        swipe(550, 1500, 550, 1200, 500)
+        # Buy TG
+        clickXY(650, 800)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+        # Buy Shards
+        clickXY(200, 800)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+        # Buy dust
+        click('buttons/shop/dust', suppress=True)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+        # Buy POE
+        click('buttons/shop/poe', suppress=True)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+        # Check for superstones
+        click('buttons/shop/superstone', 0.95, suppress=True)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+        clickXY(1000, 300)
+        click('buttons/confirm', suppress=True)
+        counter =+ 1
+        wait(3)
+
+
+
 def handleGuildHunts():
     printBlue('Attempting to run Guild Hunts')
     confirmLocation('ranhorn')
@@ -190,7 +227,6 @@ def handleGuildHunts():
             wait()
             clickXY(550, 500)
             clickXY(550, 500,seconds=2)
-            clickXY(550, 1800)
         else:
             printWarning('    Wrizz quick battle not found')
         # Soren Check
@@ -202,7 +238,6 @@ def handleGuildHunts():
             wait()
             clickXY(550, 500)
             clickXY(550, 500,seconds=2)
-            clickXY(550, 1800)
         else:
             printWarning('    Soren quick battle not found')
         clickXY(70, 1810)
@@ -233,3 +268,56 @@ def collectQuests():
     else:
         printError('    Quests screen not found, attempting to recover')
         recover()
+
+def clearMerchant():
+    clickXY(120, 300, seconds=5)
+    swipe(1000, 1825, 100, 1825, 500)
+    swipe(1000, 1825, 100, 1825, 500)
+    # Nobles
+    clickXY(675, 1825)
+    # Regal
+    clickXY(450, 1600)
+    clickXY(860, 520, seconds=2)
+    clickXY(860, 520)
+    # Twisted
+    clickXY(600, 1600)
+    clickXY(860, 520, seconds=2)
+    clickXY(860, 520)
+    # Champion
+    clickXY(750, 1600)
+    clickXY(860, 520, seconds=2)
+    clickXY(860, 520)
+    # Monthly Cards
+    clickXY(400, 1825)
+    # Monthly
+    clickXY(300, 1000, seconds=2)
+    clickXY(560, 430)
+    # Deluxe Monthly
+    clickXY(850, 1000, seconds=2)
+    clickXY(560, 430)
+    # Daily Deals
+    swipe(200, 1825, 450, 1825, 500, seconds=2)
+    clickXY(400, 1825)
+    # Special Deal
+    clickXY(150, 1675)
+    click('buttons/dailydeals')
+    clickXY(150, 1625)
+    # Daily Deal
+    clickXY(400, 1675)
+    swipe(550, 1500, 550, 1200, 500, seconds=2)
+    click('buttons/dailydeals')
+    clickXY(400, 1675)
+    # Biweeklies
+    if d.isoweekday() == 7:
+        swipe(300, 1300, 200, 1100, 1000)
+        clickXY(450, 1625)
+    # Yuexi
+    if d.isoweekday() == 1:
+        clickXY(200, 1825)
+        clickXY(240, 880)
+        clickXY(150, 1625)
+    # Clear Rhapsody bundles
+    clickXY(620, 1600)
+    clickXY(980, 200)
+    clickXY(70, 1810)
+    clickXY(70, 1810)
