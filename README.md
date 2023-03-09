@@ -3,13 +3,14 @@ AutoAFK is a proof of concept Python based tool to automate Bluestacks games via
 
 While the bot is designed for AFK Arena the core logic will work for anything rendered in Bluestacks.
 
-![image](https://user-images.githubusercontent.com/46250387/223230372-74c0bb63-8d1e-4235-bc7b-b55185879c92.png)
+![image](https://user-images.githubusercontent.com/46250387/224131542-d555461c-3869-498c-a134-82b31cb8b0e6.png)
 
 
 Issues/Comments/Suggestions? [Join the Discord server!](https://discord.gg/pfU7UB5A)
 
 # What does it do?
-The current Beta version will run the absolute minimum in order to complete the dailies quests:
+The current Beta version will run the minimum in order to complete the dailies quests:
+* Launch Game
 * Collect AFK rewards twice
 * Collect mail if there is a notification !
 * Send/Recieve companion points if there is a notification !
@@ -21,15 +22,14 @@ The current Beta version will run the absolute minimum in order to complete the 
 * Collect daily gifts from the inn
 * Auto battle available Guild Hunts
 * Collect available daily and weekly quest chests
+* Clear Merchant menu free gifts & !'s
+* Make daily store purchases
 
 # Road map
 The following features will be added soon(tm)
-* Launch Game function
-* Clear Merchant menu free gifts & !'s
 * switch servers for alts
 * check Daily Quest Status to see if we need to run all tasks
 * collect Fountain Of Time
-* Make daily store purchases
 * Run Fight of Fates / Battle of Blood
 * Docmentation on how to full automate luanching, loading and running the script for running accounts with no oversight
 * Discord notification on success/failure
