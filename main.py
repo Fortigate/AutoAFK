@@ -1,8 +1,7 @@
 from activities import *
 import customtkinter
-import tkinter
 import threading
-import sys, signal, ctypes
+import sys
 
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green

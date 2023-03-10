@@ -130,8 +130,8 @@ def handleArenaOfHeroes(count):
                 printError('    Battle #' + str(counter+1) + ' Defeat!')
             else:
                 printGreen('    Battle #' + str(counter+1) + ' Victory!')
-                clickXY(650, 1200) # Clear loot popup
-            clickXY(650, 1200)
+                clickXY(600, 550) # Clear loot popup
+            clickXY(600, 550)
             counter = counter+1
         click('buttons/exitmenu')
         click('buttons/back')
@@ -147,8 +147,10 @@ def handleKingsTower():
     clickXY(500, 870, seconds=3) # Long pause for animation
     if isVisible('labels/kingstower'):
         clickXY(555, 585)
-        click('buttons/challenge_plain', 0.7, retry=5, suppress=True) # lower confidence and retries for animated button
-        click('buttons/beginbattle', 0.8, seconds=3, retry=5)
+        click('buttons/challenge_plain', 0.7, retry=5, suppress=True, seconds=3) # lower confidence and retries for animated button
+        # For reasons sometimes this button is 'beginbattle' and sometimes it is 'begin', so we use clickXY
+        clickXY(700, 1850)
+        # click('buttons/beginbattle', 0.8, seconds=3, retry=5)
         click('buttons/pause', 0.8, retry=5)
         click('buttons/exitbattle')
         click('buttons/back')
@@ -179,10 +181,12 @@ def collectInnGifts():
         recover()
 
 def shopPurchases(shoprefreshes):
+    printBlue('Attempting store purchases (Refreshes: ' + str(shoprefreshes) + ')')
     counter = 0
     confirmLocation('ranhorn')
     clickXY(300, 1725, seconds=5)
-    while counter <= shoprefreshes:
+    if isVisible('labels/store'):
+        # First purchases
         swipe(550, 1500, 550, 1200, 500)
         # Buy TG
         clickXY(650, 800)
@@ -203,11 +207,35 @@ def shopPurchases(shoprefreshes):
         # Check for superstones
         click('buttons/shop/superstone', 0.95, suppress=True)
         click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-        clickXY(1000, 300)
-        click('buttons/confirm', suppress=True)
-        counter =+ 1
-        wait(3)
+        # refresh purchases
+        while counter < shoprefreshes:
+            clickXY(1000, 300)
+            click('buttons/confirm', suppress=True)
+            print('    Refreshed store ' + str(counter+1) + ' times.')
+            swipe(550, 1500, 550, 1200, 500)
+            # Buy Shards
+            clickXY(200, 800)
+            click('buttons/shop/purchase', suppress=True)
+            clickXY(550, 1220)
+            # Buy dust
+            click('buttons/shop/dust', suppress=True)
+            click('buttons/shop/purchase', suppress=True)
+            clickXY(550, 1220)
+            # Buy POE
+            click('buttons/shop/poe', suppress=True)
+            click('buttons/shop/purchase', suppress=True)
+            clickXY(550, 1220)
+            # Check for superstones
+            click('buttons/shop/superstone', 0.95, suppress=True)
+            click('buttons/shop/purchase', suppress=True)
+            clickXY(550, 1220)
+            counter += 1
+            wait(5)
+        click('buttons/back')
+        printGreen('Store purchases attempted.')
+    else:
+        printError('Store not found, attempting to recover')
+        recover()
 
 
 
@@ -270,9 +298,11 @@ def collectQuests():
         recover()
 
 def clearMerchant():
+    printBlue('Attempting to collect merchant deals')
     clickXY(120, 300, seconds=5)
     swipe(1000, 1825, 100, 1825, 500)
     swipe(1000, 1825, 100, 1825, 500)
+    print('    Collecting Nobles')
     # Nobles
     clickXY(675, 1825)
     # Regal
@@ -288,14 +318,16 @@ def clearMerchant():
     clickXY(860, 520, seconds=2)
     clickXY(860, 520)
     # Monthly Cards
+    print('    Collecting Monthly Cards')
     clickXY(400, 1825)
     # Monthly
-    clickXY(300, 1000, seconds=2)
+    clickXY(300, 1000, seconds=3)
     clickXY(560, 430)
     # Deluxe Monthly
-    clickXY(850, 1000, seconds=2)
+    clickXY(850, 1000, seconds=3)
     clickXY(560, 430)
     # Daily Deals
+    print('    Collecting Daily Deals')
     swipe(200, 1825, 450, 1825, 500, seconds=2)
     clickXY(400, 1825)
     # Special Deal
@@ -304,20 +336,26 @@ def clearMerchant():
     clickXY(150, 1625)
     # Daily Deal
     clickXY(400, 1675)
-    swipe(550, 1500, 550, 1200, 500, seconds=2)
+    swipe(550, 1400, 550, 1200, 500, seconds=3)
     click('buttons/dailydeals')
     clickXY(400, 1675)
     # Biweeklies
     if d.isoweekday() == 7:
-        swipe(300, 1300, 200, 1100, 1000)
-        clickXY(450, 1625)
+        clickXY(550, 1625)
+        swipe(300, 1400, 200, 1200, 500, second=3)
+        clickXY(200, 1200)
+        clickXY(550, 1625)
     # Yuexi
     if d.isoweekday() == 1:
+        print('    Collecting Yuexi')
         clickXY(200, 1825)
         clickXY(240, 880)
         clickXY(150, 1625)
     # Clear Rhapsody bundles
+    print('    Clearing Rhapsody notification')
+    clickXY(200, 1825)
     clickXY(620, 1600)
     clickXY(980, 200)
     clickXY(70, 1810)
     clickXY(70, 1810)
+    printBlue('Merchant deals collected')

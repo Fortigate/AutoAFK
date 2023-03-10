@@ -8,8 +8,6 @@ from subprocess import *
 import socket
 import os
 
-import main
-
 cwd = (os.path.dirname(__file__) + '\\')
 os.system('color') # So colourful text works
 
