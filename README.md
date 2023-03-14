@@ -1,10 +1,9 @@
 # AutoAFK
-AutoAFK is a proof of concept Python based tool to automate Bluestacks games via ADB using Python and OpenCV. The bot supports image recognition with fuzzy matching, as well as pixel recognition to automate actions. All actions are done through ADB which means the window does not need to be in focus and you can continue to use your computer as normal while it runs.
+AutoAFK is a tool to automate Bluestacks games via ADB using Python, Pyscreeze and OpenCV. The bot supports image recognition with fuzzy matching, as well as single pixel recognition to automate actions. All actions are done through ADB which means the window does not need to be in focus and you can continue to use your computer as normal while it runs.
 
 While the bot is designed for AFK Arena the core logic will work for anything rendered in Bluestacks.
 
-![image](https://user-images.githubusercontent.com/46250387/224131542-d555461c-3869-498c-a134-82b31cb8b0e6.png)
-
+![image](https://user-images.githubusercontent.com/46250387/225129104-8e6de194-f4c9-4fe7-ada5-c2251b827c54.png)
 
 Issues/Comments/Suggestions? [Join the Discord server!](https://discord.gg/pfU7UB5A)
 
@@ -25,17 +24,23 @@ The current Beta version will run the minimum in order to complete the dailies q
 * Clear Merchant menu free gifts & !'s
 * Make daily store purchases
 
-# Road map
-The following features will be added soon(tm)
-* switch servers for alts
-* check Daily Quest Status to see if we need to run all tasks
-* collect Fountain Of Time
-* Run Fight of Fates / Battle of Blood
-* Docmentation on how to full automate luanching, loading and running the script for running accounts with no oversight
-* Discord notification on success/failure
 
 # How do I run it?
-Make sure that your Bluestacks is running in 1920x1080 and 240DPI with ADB enabled in settings, then download the latest release and run AutoAFK.exe.
+Configure your Bluestacks client so that:
+* ADB is enabled
+* Resolution is 1920x1080
+* DPI is 240
+
+Then download the latest [release](https://github.com/Fortigate/AutoAFK/releases), unzip and run AutoAFK.exe.
+
+# Road map
+The following features will be added soon(tm)
+* Automatically Run Lab
+* Push Temporal Rift
+* Discord notification on success/failure
+* Run Fight of Fates / Battle of Blood
+* Purchase selected Dimensional Gear
+* Docmentation on how to full automate luanching, loading and running the script for managing accounts with no oversight
 
 # I'm having an issue
-Note that the bot is currently in Beta and stability is still being worked into the functions. If you are receiving ADB errors you may need to manually connect your device using `./adb.exe connect localhost:xxxx` where xxxx is the port listed in Bluestacks ADB settings. If you still having issues create an issue here or ask on the Discord server.
+Note that the bot is currently in Beta and stability is still being worked into the functions. If you having issues please create an issue here or ask on the Discord server.
