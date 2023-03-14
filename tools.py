@@ -1,10 +1,9 @@
 from ppadb.client import Client
-from main import printGreen, printError, printWarning, printBlue
-import cv2 as cv2
-import pyscreeze
+from AutoAFK import printGreen, printError, printWarning, printBlue
+from pyscreeze import locate, locateAll
+from subprocess import check_output, Popen, PIPE
+import cv2
 import time
-import subprocess
-from subprocess import *
 import socket
 import os
 
@@ -30,6 +29,9 @@ def waitUntilGameActive():
     loadingcounter = 0
     timeoutcounter = 0
     while loadingcounter < 1:
+        if isVisible('buttons/back'):
+            click('buttons/back')
+        clickXY(550, 1850)
         click('buttons/campaign_unselected', seconds=0.5, suppress=True)
         click('buttons/exitmenu', seconds=0.5, suppress=True)
         timeoutcounter += 1
@@ -54,7 +56,7 @@ def resolutionCheck(device):
 # Checks Windows running processes for Bluestacks.exe
 def processExists(process_name):
     call = 'TASKLIST', '/FI', 'imagename eq %s' % process_name
-    output = subprocess.check_output(call).decode()
+    output = check_output(call).decode()
     last_line = output.strip().split('\r\n')[-1]
     return last_line.lower().startswith(process_name.lower())
 
@@ -115,11 +117,11 @@ def portScan():
 # Connects to the found ADB device using PPADB, allowing us to send commands via Python
 # On success we go through our startup checks to make sure we are starting from the same point each time, and can recognise the template images
 def connect_device():
-    if processExists('Bluestacks.exe'):
+    if processExists('HD-Player.exe'):
         printGreen('Bluestacks found! Trying to connect via ADB..')
     else:
-        printError('Bluestacks not found, please make sure it\'s running before launching')
-        exit(1)
+        printWarning('Bluestacks not found, please make sure it\'s running before launching')
+        print('Trying to continue..')
     global device
     configureADB()
     adb = Client(host='127.0.0.1',port=5037)
@@ -141,7 +143,7 @@ def connect_device():
 # Takes a screenshot and saves it locally
 def take_screenshot(device):
     image = device.screencap()
-    with open('screen.png', 'wb') as f:
+    with open('screen.bin', 'wb') as f:
         f.write(image)
 
 # Wait command, default 1 second
@@ -157,9 +159,9 @@ def swipe(x1, y1, x2, y2, duration=100, seconds=1):
 # Confidence value can be reduced for images with animations
 def isVisible(image, confidence=0.9, seconds=1):
     take_screenshot(device)
-    screenshot = cv2.imread(cwd + 'screen.png')
+    screenshot = cv2.imread(cwd + 'screen.bin')
     search = cv2.imread(cwd + 'img\\' + image + '.png')
-    res = pyscreeze.locate(search, screenshot, grayscale=False, confidence=confidence)
+    res = locate(search, screenshot, grayscale=False, confidence=confidence)
     wait(seconds)
 
     if res != None:
@@ -180,15 +182,15 @@ def clickXY(x,y, seconds=1):
 def click(image, confidence=0.9, seconds=1, retry=1, suppress=False):
     counter = 0
     take_screenshot(device)
-    screenshot = cv2.imread(cwd + 'screen.png', 0)
+    screenshot = cv2.imread(cwd + 'screen.bin', 0)
     search = cv2.imread(cwd + 'img\\' + image + '.png', 0)
-    res = pyscreeze.locate(search, screenshot, grayscale=False, confidence=confidence)
+    res = locate(search, screenshot, grayscale=False, confidence=confidence)
 
     if res == None and retry != 1:
         while counter < retry:
             take_screenshot(device)
-            screenshot = cv2.imread(cwd + 'screen.png', 0)
-            res = pyscreeze.locate(search, screenshot, grayscale=False, confidence=confidence)
+            screenshot = cv2.imread(cwd + 'screen.bin', 0)
+            res = locate(search, screenshot, grayscale=False, confidence=confidence)
             if res != None:
                 x, y, w, h = res
                 x_center = round(x + w / 2)
@@ -214,7 +216,7 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False):
 # Checks the pixel at the XY coordinates, returns B,G,R value dependent on c variable
 def pixelCheck(x,y,c,seconds=1):
     take_screenshot(device)
-    screenshot = cv2.imread('screen.png')
+    screenshot = cv2.imread('screen.bin')
     # print(screenshot[y, x , c])
     wait(seconds)
     return screenshot[y, x , c]

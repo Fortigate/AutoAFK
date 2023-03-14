@@ -1,5 +1,5 @@
 from tools import *
-from main import printGreen, printError, printWarning, printBlue
+from AutoAFK import printGreen, printError, printWarning, printBlue
 import datetime
 
 d = datetime.datetime.now()
@@ -187,7 +187,7 @@ def shopPurchases(shoprefreshes):
     clickXY(300, 1725, seconds=5)
     if isVisible('labels/store'):
         # First purchases
-        swipe(550, 1500, 550, 1200, 500)
+        swipe(550, 1500, 550, 1200, 500, seconds=2)
         # Buy TG
         clickXY(650, 800)
         click('buttons/shop/purchase', suppress=True)
@@ -210,9 +210,9 @@ def shopPurchases(shoprefreshes):
         # refresh purchases
         while counter < shoprefreshes:
             clickXY(1000, 300)
-            click('buttons/confirm', suppress=True)
+            click('buttons/confirm', suppress=True, seconds=4)
             print('    Refreshed store ' + str(counter+1) + ' times.')
-            swipe(550, 1500, 550, 1200, 500)
+            swipe(550, 1500, 550, 1200, 500, seconds=2)
             # Buy Shards
             clickXY(200, 800)
             click('buttons/shop/purchase', suppress=True)
@@ -252,7 +252,9 @@ def handleGuildHunts():
             printGreen('    Wrizz Found, collecting')
             click('buttons/quickbattle')
             clickXY(725, 1300)
-            wait()
+            # So we don't get stuck on capped resources screen
+            if isVisible('buttons/confirm'):
+               click('buttons/confirm')
             clickXY(550, 500)
             clickXY(550, 500,seconds=2)
         else:
@@ -341,8 +343,9 @@ def clearMerchant():
     clickXY(400, 1675)
     # Biweeklies
     if d.isoweekday() == 7:
+        print('    Collecting Biweekly Deals')
         clickXY(550, 1625)
-        swipe(300, 1400, 200, 1200, 500, second=3)
+        swipe(300, 1400, 200, 1200, 500, seconds=3)
         clickXY(200, 1200)
         clickXY(550, 1625)
     # Yuexi
