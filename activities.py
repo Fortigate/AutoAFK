@@ -1,7 +1,10 @@
 from tools import *
 from AutoAFK import printGreen, printError, printWarning, printBlue
 import datetime
+import configparser
 
+config = configparser.ConfigParser()
+config.read('settings.ini')
 d = datetime.datetime.now()
 
 def collectAFKRewards():
@@ -141,6 +144,37 @@ def handleArenaOfHeroes(count):
         printError('Arena of Heroes not found, attempting to recover')
         recover()
 
+def collectGladiatorCoins():
+    printBlue('Collecting Gladiator Coins')
+    confirmLocation('darkforest')
+    clickXY(740, 1050)
+    clickXY(550, 50)
+    if isVisible('labels/legendstournament2'):
+        clickXY(550, 300, seconds=2)
+        clickXY(50, 1850)
+        click('buttons/back')
+        click('buttons/back')
+        printGreen('    Gladiator Coins collected')
+    else:
+        printError('    Legends Tournament not found, attempting to recover')
+        recover()
+
+def collectFountainOfTime():
+    printBlue('Collecting Fountain of Time')
+    confirmLocation('darkforest')
+    clickXY(800, 700, seconds=5)
+    if isVisible('labels/temporalrift'):
+        clickXY(550, 1800)
+        clickXY(250, 1300)
+        clickXY(700, 1350) # Collect
+        clickXY(550, 1800, seconds=5) # Clear level up
+        clickXY(550, 1800, seconds=5) # Clear level up
+        click('buttons/back')
+        printGreen('    Fountain of Time collected')
+    else:
+        printError('    Temporal Rift not found, attempting to recover')
+        recover()
+
 def handleKingsTower():
     printBlue('Attempting Kings Tower battle')
     confirmLocation('darkforest')
@@ -180,6 +214,63 @@ def collectInnGifts():
         printError('    Inn not found, attempting to recover')
         recover()
 
+def handleShopPurchasing():
+    # Buy Shards
+    if config.getboolean('SHOP', 'shards'):
+        clickXY(200, 800)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+    # Buy Shards
+    if config.getboolean('SHOP', 'cores'):
+        clickXY(425, 800)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+    # Buy TG
+    if config.getboolean('SHOP', 'timegazer'):
+        clickXY(650, 800)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+    # Buy Bait
+    if config.getboolean('SHOP', 'baits'):
+        clickXY(875, 800)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+    # Buy Dust Gold
+    if config.getboolean('SHOP', 'dust_gold'):
+        click('buttons/shop/dust', suppress=True)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+    # Buy Dust Diamonds
+    if config.getboolean('SHOP', 'dust_diamond'):
+        click('buttons/shop/dust_diamond', suppress=True)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+    # Buy Super Soulstone
+    if config.getboolean('SHOP', 'superb_soulstone'):
+        click('buttons/shop/superstone', 0.95, suppress=True)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+    # Buy Elite Soulstone
+    if config.getboolean('SHOP', 'elite_soulstone'):
+        click('buttons/shop/superstone', 0.80, suppress=True)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+    # Buy Gold Emblems
+    if config.getboolean('SHOP', 'gold_emblem'):
+        click('buttons/shop/gold_emblems', 0.95, suppress=True)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+    # Buy Silver Emblems
+    if config.getboolean('SHOP', 'silver_emblem'):
+        click('buttons/shop/gold_emblems', 0.95, suppress=True)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+    # Buy PoE Emblems
+    if config.getboolean('SHOP', 'poe'):
+        click('buttons/shop/poe', suppress=True)
+        click('buttons/shop/purchase', suppress=True)
+        clickXY(550, 1220)
+
 def shopPurchases(shoprefreshes):
     printBlue('Attempting store purchases (Refreshes: ' + str(shoprefreshes) + ')')
     counter = 0
@@ -188,56 +279,18 @@ def shopPurchases(shoprefreshes):
     if isVisible('labels/store'):
         # First purchases
         swipe(550, 1500, 550, 1200, 500, seconds=2)
-        # Buy TG
-        clickXY(650, 800)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-        # Buy Shards
-        clickXY(200, 800)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-        # Buy dust
-        click('buttons/shop/dust', suppress=True)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-        # Buy POE
-        click('buttons/shop/poe', suppress=True)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-        # Check for superstones
-        click('buttons/shop/superstone', 0.95, suppress=True)
-        click('buttons/shop/purchase', suppress=True)
+        handleShopPurchasing()
         # refresh purchases
         while counter < shoprefreshes:
             clickXY(1000, 300)
             click('buttons/confirm', suppress=True, seconds=4)
             print('    Refreshed store ' + str(counter+1) + ' times.')
-            swipe(550, 1500, 550, 1200, 500, seconds=2)
-            # Buy Shards
-            clickXY(200, 800)
-            click('buttons/shop/purchase', suppress=True)
-            clickXY(550, 1220)
-            # Buy dust
-            click('buttons/shop/dust', suppress=True)
-            click('buttons/shop/purchase', suppress=True)
-            clickXY(550, 1220)
-            # Buy POE
-            click('buttons/shop/poe', suppress=True)
-            click('buttons/shop/purchase', suppress=True)
-            clickXY(550, 1220)
-            # Check for superstones
-            click('buttons/shop/superstone', 0.95, suppress=True)
-            click('buttons/shop/purchase', suppress=True)
-            clickXY(550, 1220)
-            counter += 1
-            wait(5)
+            handleShopPurchasing()
         click('buttons/back')
         printGreen('Store purchases attempted.')
     else:
         printError('Store not found, attempting to recover')
         recover()
-
-
 
 def handleGuildHunts():
     printBlue('Attempting to run Guild Hunts')
@@ -245,6 +298,15 @@ def handleGuildHunts():
     clickXY(380, 360)
     wait(6)
     clickXY(550, 1800) # Clear chests
+    click('buttons/guild_chests', seconds=2)
+    if isVisible('buttons/collect_guildchest'):
+        click('buttons/collect_guildchest')
+        clickXY(550, 1300)
+        clickXY(900, 550)
+        clickXY(550, 1800)  # Clear window
+        wait(1)
+    else:
+        clickXY(550, 1800)  # Clear window
     clickXY(290, 860)
     # Wrizz check
     if isVisible('labels/wrizz'):
@@ -265,9 +327,11 @@ def handleGuildHunts():
             printGreen('    Soren Found, collecting')
             click('buttons/quickbattle')
             clickXY(725, 1300)
-            wait()
+            # So we don't get stuck on capped resources screen
+            if isVisible('buttons/confirm'):
+               click('buttons/confirm')
             clickXY(550, 500)
-            clickXY(550, 500,seconds=2)
+            clickXY(550, 500, seconds=2)
         else:
             printWarning('    Soren quick battle not found')
         clickXY(70, 1810)
@@ -292,7 +356,8 @@ def collectQuests():
             printGreen('    Weekly Quest(s) found, collecting..')
             clickXY(930, 680, seconds=4) # Click top quest
             click('buttons/fullquestchest', seconds=3, retry=3, suppress=True)
-            clickXY(400, 1650)
+            clickXY(600, 1650, seconds=2)
+            clickXY(600, 1650)  # Second in case we get Limited Rewards popup
         click('buttons/back')
         printGreen('    Quests collected')
     else:
@@ -304,61 +369,95 @@ def clearMerchant():
     clickXY(120, 300, seconds=5)
     swipe(1000, 1825, 100, 1825, 500)
     swipe(1000, 1825, 100, 1825, 500)
-    print('    Collecting Nobles')
-    # Nobles
-    clickXY(675, 1825)
-    # Regal
-    clickXY(450, 1600)
-    clickXY(860, 520, seconds=2)
-    clickXY(860, 520)
-    # Twisted
-    clickXY(600, 1600)
-    clickXY(860, 520, seconds=2)
-    clickXY(860, 520)
-    # Champion
-    clickXY(750, 1600)
-    clickXY(860, 520, seconds=2)
-    clickXY(860, 520)
-    # Monthly Cards
-    print('    Collecting Monthly Cards')
-    clickXY(400, 1825)
-    # Monthly
-    clickXY(300, 1000, seconds=3)
-    clickXY(560, 430)
-    # Deluxe Monthly
-    clickXY(850, 1000, seconds=3)
-    clickXY(560, 430)
-    # Daily Deals
-    print('    Collecting Daily Deals')
-    swipe(200, 1825, 450, 1825, 500, seconds=2)
-    clickXY(400, 1825)
-    # Special Deal
-    clickXY(150, 1675)
-    click('buttons/dailydeals')
-    clickXY(150, 1625)
-    # Daily Deal
-    clickXY(400, 1675)
-    swipe(550, 1400, 550, 1200, 500, seconds=3)
-    click('buttons/dailydeals')
-    clickXY(400, 1675)
-    # Biweeklies
-    if d.isoweekday() == 7:
-        print('    Collecting Biweekly Deals')
-        clickXY(550, 1625)
-        swipe(300, 1400, 200, 1200, 500, seconds=3)
-        clickXY(200, 1200)
-        clickXY(550, 1625)
-    # Yuexi
-    if d.isoweekday() == 1:
-        print('    Collecting Yuexi')
-        clickXY(200, 1825)
-        clickXY(240, 880)
+    if isVisible('buttons/noblesociety'):
+        print('    Collecting Nobles')
+        # Nobles
+        clickXY(675, 1825)
+        # Regal
+        clickXY(450, 1600)
+        clickXY(860, 520, seconds=2)
+        clickXY(860, 520)
+        # Twisted
+        clickXY(600, 1600)
+        clickXY(860, 520, seconds=2)
+        clickXY(860, 520)
+        # Champion
+        clickXY(750, 1600)
+        clickXY(860, 520, seconds=2)
+        clickXY(860, 520)
+        # Monthly Cards
+        print('    Collecting Monthly Cards')
+        clickXY(400, 1825)
+        # Monthly
+        clickXY(300, 1000, seconds=3)
+        clickXY(560, 430)
+        # Deluxe Monthly
+        clickXY(850, 1000, seconds=3)
+        clickXY(560, 430)
+        # Daily Deals
+        print('    Collecting Daily Deals')
+        swipe(200, 1825, 450, 1825, 500, seconds=2)
+        clickXY(400, 1825)
+        # Special Deal
+        clickXY(150, 1675)
+        click('buttons/dailydeals')
         clickXY(150, 1625)
-    # Clear Rhapsody bundles
-    print('    Clearing Rhapsody notification')
-    clickXY(200, 1825)
-    clickXY(620, 1600)
-    clickXY(980, 200)
-    clickXY(70, 1810)
-    clickXY(70, 1810)
-    printBlue('Merchant deals collected')
+        # Daily Deal
+        clickXY(400, 1675)
+        swipe(550, 1400, 550, 1200, 500, seconds=3)
+        click('buttons/dailydeals')
+        clickXY(400, 1675)
+        # Biweeklies
+        if d.isoweekday() == 7:
+            print('    Collecting Biweekly Deals')
+            clickXY(550, 1625)
+            swipe(300, 1400, 200, 1200, 500, seconds=3)
+            clickXY(200, 1200)
+            clickXY(550, 1625)
+        # Yuexi
+        if d.isoweekday() == 1:
+            print('    Collecting Yuexi')
+            clickXY(200, 1825)
+            clickXY(240, 880)
+            clickXY(150, 1625)
+        # Clear Rhapsody bundles
+        print('    Clearing Rhapsody notification')
+        clickXY(200, 1825)
+        clickXY(620, 1600)
+        clickXY(980, 200)
+        clickXY(70, 1810)
+        clickXY(70, 1810)
+        printGreen('    Merchant deals collected')
+    else:
+        printError('    Noble screen not found, attempting to recover')
+        recover()
+
+def handleTwistedRealm():
+    printBlue('Attempting to run Twisted Realm')
+    confirmLocation('ranhorn')
+    clickXY(380, 360, seconds=6)
+    clickXY(550, 1800) # Clear chests
+    clickXY(775, 875)
+    clickXY(550, 850)
+    # Wrizz check
+    if isVisible('buttons/nextboss'):
+        printGreen('    Twisted Realm found, battling')
+        if isVisible('buttons/challenge_tr'):
+            clickXY(550, 1850, seconds=2)
+            click('buttons/autobattle')
+            if not (isVisible('labels/skipbattle_Active')):
+                clickXY(300, 975)  # Activate Skip Battle Animations
+            clickXY(700, 1300, seconds=6)
+            clickXY(550, 1300)
+            clickXY(550, 1800)
+            clickXY(70, 1800)
+            clickXY(70, 1800)
+            clickXY(70, 1800)
+            printGreen('    Twisted Realm attempted successfully')
+        else:
+            clickXY(70, 1800)
+            clickXY(70, 1800)
+            printError('    Challenge button not found, attempting to recover')
+    else:
+        printError('    Error opening Twisted Realm, attempting to recover')
+        recover()

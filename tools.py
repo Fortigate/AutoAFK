@@ -179,7 +179,7 @@ def clickXY(x,y, seconds=1):
 # Seconds is time to wait after clicking the image
 # Retry will try and find the image x number of times, useful for animated or covered buttons, or to make sure the button is not skipped
 # Suppress will disable warnings, sometimes we don't need to know if a button isn't found
-def click(image, confidence=0.9, seconds=1, retry=1, suppress=False):
+def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, mask=[0,0,1920,1080]):
     counter = 0
     take_screenshot(device)
     screenshot = cv2.imread(cwd + 'screen.bin', 0)
@@ -268,12 +268,3 @@ def recover():
     else:
         printError('Recovery failed, exiting')
         exit(0)
-
-# Array for storing text colours
-COLOR = {
-    "CYAN": "\033[96m",
-    "GREEN": "\033[92m",
-    "YELLOW": "\033[93m",
-    "RED": "\033[91m",
-    "RESET": "\033[0m",
-}
