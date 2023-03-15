@@ -95,6 +95,31 @@ def attemptCampaign():
         printError('    Something went wrong, attempting to recover')
         recover()
 
+def pushCampaign(formation=3, duration=1):
+    confirmLocation('campaign')
+    click('buttons/begin', seconds=2)
+    if (isVisible('buttons/begin', 0.7)): # If we see second Begin it's a multi so we take different actions
+        click('buttons/begin', 0.7, seconds=2)
+        click('buttons/formations')
+        clickXY(850, 425+(formation*175))
+        click('buttons/use')
+        click('buttons/confirm_small')
+        click('buttons/autobattle')
+        click('buttons/activate')
+    else:
+        click('buttons/formations')
+        clickXY(850, 425+(formation*175))
+        click('buttons/use')
+        click('buttons/confirm_small')
+        click('buttons/autobattle')
+        click('buttons/activate')
+    wait(duration*60)
+    clickXY(550, 1850)
+    click('buttons/exit', suppress=True)
+    click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
+    click('buttons/exitbattle', suppress=True)
+    clickXY(550, 1850)
+
 def handleBounties(dispatch=False):
     printBlue('Handling Bounty Board')
     confirmLocation('darkforest')
@@ -176,6 +201,33 @@ def collectFountainOfTime():
     else:
         printError('    Temporal Rift not found, attempting to recover')
         recover()
+
+def openTower(name):
+    printBlue('Opening ' + name + ' tower.')
+    confirmLocation('darkforest')
+    clickXY(500, 870, seconds=3) # Long pause for animation
+    if isVisible('labels/kingstower'):
+        towers = {"King's Tower": [500, 870], "Lightbringer": [300, 1000], "Wilder": [800, 600], "Mauler": [400, 1200],
+                  "Graveborn": [800, 1200], "Hypogean": [600, 1500], "Celestial": [300, 500]}
+        for tower, location in towers.items():
+            if tower == name:
+                clickXY(location[0], location[1], seconds=3)
+
+def pushTower(formation=3, duration=1):
+    click('buttons/challenge_plain', 0.7, retry=5, suppress=True, seconds=3)  # lower confidence and retries for animated button
+    if (isVisible('buttons/autobattle')):  # If we see second Begin it's a multi so we take different actions
+        click('buttons/formations')
+        clickXY(850, 425 + (formation * 175))
+        click('buttons/use')
+        click('buttons/confirm_small')
+        click('buttons/autobattle')
+        click('buttons/activate')
+    wait(duration * 60)
+    clickXY(550, 1750)
+    click('buttons/exit', suppress=True)
+    click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
+    click('buttons/exitbattle', suppress=True)
+    clickXY(550, 1750)
 
 def handleKingsTower():
     printBlue('Attempting Kings Tower battle')

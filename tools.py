@@ -133,7 +133,7 @@ def connect_device():
         exit(1)
     else:
 
-        printGreen('Device ' + adb_device + ' successfully connected!')
+        printGreen('Device: ' + adb_device + ' successfully connected!')
         resolutionCheck(device)
         afkRunningCheck()
         waitUntilGameActive()

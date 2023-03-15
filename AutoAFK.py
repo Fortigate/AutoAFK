@@ -4,7 +4,9 @@ import threading
 import sys
 import configparser
 import os
+import datetime
 
+d = datetime.datetime.now()
 cwd = (os.path.dirname(__file__) + '\\')
 config = configparser.ConfigParser()
 config.read('settings.ini')
@@ -110,6 +112,7 @@ class App(customtkinter.CTk):
         # configure window
         self.title("AutoAFK")
         self.geometry(f"{800}x{600}")
+        self.wm_iconbitmap(cwd + 'img\\auto.ico')
 
         # configure grid layout (4x4)
         self.grid_rowconfigure((0, 1, 2), weight=0)
@@ -154,8 +157,8 @@ class App(customtkinter.CTk):
             self.soloBountiesCheckbox.select()
         self.soloBountiesCheckbox.place(x=130, y=180)
         # Shop button
-        self.dailiesButton = customtkinter.CTkButton(master=self, text="Shop Options", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.open_toplevel)
-        self.dailiesButton.place(x=40, y=240)
+        self.dailiesShopButton = customtkinter.CTkButton(master=self, text="Shop Options", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.open_toplevel)
+        self.dailiesShopButton.place(x=40, y=240)
 
         # PvP Frame
         self.arenaFrame = customtkinter.CTkFrame(master=self, height=100, width=180)
@@ -176,23 +179,25 @@ class App(customtkinter.CTk):
         self.pushFrame.place(x=10, y=400)
 
         # Push Button
-        self.pushButton = customtkinter.CTkButton(master=self.pushFrame, state='disabled', text="Coming Soon", command=threading.Thread(target=ticketBurn).start)
+        self.pushButton = customtkinter.CTkButton(master=self.pushFrame, text="Push", command=threading.Thread(target=push).start)
         self.pushButton.place(x=20, y=15)
         # Push Entry
         self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Where to push?', fg_color=("gray86", "gray17"))
         self.pushLabel.place(x=10, y=50)
-        self.pushDropdown = customtkinter.CTkComboBox(master=self.pushFrame,  values=["Campaign", "King's Tower", "Lightbringer", "Wilder", "Mauler", "Graveborn", "Hypogean", "Celestial"], width=160)
-        self.pushDropdown.place(x=10, y=80)
+        self.pushLocationDropdown = customtkinter.CTkComboBox(master=self.pushFrame,  values=["Campaign"], width=160)
+        self.pushLocationDropdown.place(x=10, y=80)
         # Push Formation
         self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Which formation?', fg_color=("gray86", "gray17"))
         self.pushLabel.place(x=10, y=120)
-        self.pushDropdown = customtkinter.CTkComboBox(master=self.pushFrame,  values=["1st", "2nd", "3rd", "4th", "5th"], width=50)
-        self.pushDropdown.place(x=120, y=120)
+        self.pushFormationDropdown = customtkinter.CTkComboBox(master=self.pushFrame,  values=["1", "2", "3", "4", "5"], width=50)
+        self.pushFormationDropdown.set(3)
+        self.pushFormationDropdown.place(x=120, y=120)
         # Push Duration
         self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='How long for?', fg_color=("gray86", "gray17"))
         self.pushLabel.place(x=10, y=150)
-        self.pushDropdown = customtkinter.CTkEntry(master=self.pushFrame, width=50)
-        self.pushDropdown.place(x=120, y=150)
+        self.pushDurationDropdown = customtkinter.CTkEntry(master=self.pushFrame, width=50)
+        self.pushDurationDropdown.insert('end', '10')
+        self.pushDurationDropdown.place(x=120, y=150)
 
         # Textbox Frame
         self.textbox = customtkinter.CTkTextbox(master=self, width=580, height=560)
@@ -224,13 +229,26 @@ class App(customtkinter.CTk):
         with open('settings.ini', 'w') as configfile:
             config.write(configfile)
 
-
     def open_toplevel(self):
         if self.toplevel_window is None or not self.toplevel_window.winfo_exists():
             self.toplevel_window = ToplevelWindow(self)  # create window if its None or destroyed
             self.toplevel_window.focus()
         else:
             self.toplevel_window.focus()  # if window exists focus it
+
+# Will change the dropdown to only include open towers
+# May cause issues with timezones..
+def setUlockedTowers():
+    days = {1:["Campaign", "King's Tower", "Lightbringer"],
+    2:["Campaign", "King's Tower", "Mauler"],
+    3:["Campaign", "King's Tower", "Wilder", "Celestial"],
+    4:["Campaign", "King's Tower", "Graveborn", "Hypogean"],
+    5:["Campaign", "King's Tower", "Lightbringer", "Mauler", "Celestial"],
+    6:["Campaign", "King's Tower", "Wilder", "Graveborn", "Hypogean"],
+    7:["Campaign", "King's Tower", "Lightbringer", "Wilder", "Mauler", "Graveborn", "Hypogean", "Celestial"]}
+    for day, towers in days.items():
+        if d.isoweekday() == day:
+            app.pushLocationDropdown.configure(values=towers)
 
 def buttonState(state):
     app.dailiesButton.configure(state=state)
@@ -245,7 +263,7 @@ def ticketBurn():
 
     buttonState('disabled')
     connect_device()
-    handleArenaOfHeroes(int(config.get('ARENA', 'arenabattles')))
+    handleArenaOfHeroes(config.getint('ARENA', 'arenabattles'))
     buttonState('enabled')
 
 def dailiesButton():
@@ -259,20 +277,22 @@ def dailiesButton():
     with open(cwd + 'settings.ini', 'w') as configfile:
         config.write(configfile)
 
+    buttonState('disabled')
     dailies()
+    buttonState('enabled')
 
 def dailies():
     connect_device()
-    # collectAFKRewards()
-    # collectMail()
-    # collectCompanionPoints()
-    # collectFastRewards(int(app.fastrewardsEntry.get()))
-    # attemptCampaign()
-    # handleBounties()
-    # handleArenaOfHeroes(int(app.arenaEntry.get()))
-    # collectGladiatorCoins()
-    # collectFountainOfTime()
-    # handleKingsTower()
+    collectAFKRewards()
+    collectMail()
+    collectCompanionPoints()
+    collectFastRewards(int(app.fastrewardsEntry.get()))
+    attemptCampaign()
+    handleBounties()
+    handleArenaOfHeroes(int(app.arenaEntry.get()))
+    collectGladiatorCoins()
+    collectFountainOfTime()
+    handleKingsTower()
     collectInnGifts()
     handleGuildHunts()
     shopPurchases(int(app.shoprefreshEntry.get()))
@@ -281,6 +301,18 @@ def dailies():
     clearMerchant()
     printGreen('\nDailies done!')
 
+def push():
+    connect_device()
+
+    if app.pushLocationDropdown.get() == 'Campaign':
+        printBlue('Battling Campaign using formation ' + str(app.pushFormationDropdown.get()) + ' for ' + str(app.pushDurationDropdown.get()) + ' minute cycles.')
+        while 1:
+            pushCampaign(formation=int(app.pushFormationDropdown.get()), duration=int((app.pushDurationDropdown.get())))
+    else:
+        printBlue('Battling Tower using formation ' + str(app.pushFormationDropdown.get()) + ' for ' + str(app.pushDurationDropdown.get()) + ' minute cycles.')
+        openTower(app.pushLocationDropdown.get())
+        while 1:
+            pushTower(formation=int(app.pushFormationDropdown.get()), duration=int((app.pushDurationDropdown.get())))
 
 class IORedirector(object):
     def __init__(self, text_widget):
@@ -307,21 +339,8 @@ class STDOutRedirector(IORedirector):
 
 if __name__ == "__main__":
     app = App()
+    setUlockedTowers()
     app.mainloop()
-
-## Automation Functions
-# Uncomment as needed, screenshot is for debugging/collecting buttons
-
-# take_screenshot(tools.device)
-
-# todolist
-# Clear Merchant gifts & !'s
-# switchCharacter
-# openMenu left and right
-# checkDailyQuestStatus
-# collectFountainOfTime
-# storePurchases
-# attemptCardGame / events
 
 # Coloured text for the console
 def printError(text):
