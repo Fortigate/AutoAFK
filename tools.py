@@ -29,11 +29,11 @@ def waitUntilGameActive():
     loadingcounter = 0
     timeoutcounter = 0
     while loadingcounter < 1:
-        if isVisible('buttons/back'):
-            click('buttons/back')
         clickXY(550, 1850)
         click('buttons/campaign_unselected', seconds=0.5, suppress=True)
         click('buttons/exitmenu', seconds=0.5, suppress=True)
+        click('buttons/exitmenu_trial', seconds=0.5, suppress=True)
+        click('buttons/back', seconds=0.5, suppress=True)
         timeoutcounter += 1
         if isVisible('buttons/campaign_selected', 0.5):
             loadingcounter += 1
@@ -120,8 +120,8 @@ def connect_device():
     if processExists('HD-Player.exe'):
         printGreen('Bluestacks found! Trying to connect via ADB..')
     else:
-        printWarning('Bluestacks not found, please make sure it\'s running before launching')
-        print('Trying to continue..')
+        printError('Bluestacks not found (no running process: HD-Player.exe), please make sure it\'s running before launching!')
+        printWarning('Trying to continue in case we are wrong..')
     global device
     configureADB()
     adb = Client(host='127.0.0.1',port=5037)

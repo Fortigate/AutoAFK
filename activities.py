@@ -102,7 +102,7 @@ def handleBounties(dispatch=False):
     if (isVisible('labels/bountyboard')):
         clickXY(650, 1700) # Solo tab
         click('buttons/collect_all', seconds=2, suppress=True)
-        if dispatch is True:
+        if config.getboolean('BOUNTIES', 'dispatchsolo'):
             click('buttons/dispatch', suppress=True)
             click('buttons/confirm', suppress=True)
         clickXY(950,1700) # Team tab
@@ -149,7 +149,9 @@ def collectGladiatorCoins():
     confirmLocation('darkforest')
     clickXY(740, 1050)
     clickXY(550, 50)
-    if isVisible('labels/legendstournament2'):
+    if isVisible('labels/legendstournament2') or isVisible('labels/legendstournament'): # The label font changes for reasons
+        click('labels/legendstournament', suppress=True)
+        click('labels/legendstournament2', suppress=True)
         clickXY(550, 300, seconds=2)
         clickXY(50, 1850)
         click('buttons/back')
@@ -203,9 +205,9 @@ def collectInnGifts():
     confirmLocation('ranhorn')
     clickXY(800,290, seconds=4)
     if isVisible('buttons/manage'):
-        while clicks < 6: # WE spam clicks in the right area and pray
+        while clicks < 10: # We spam clicks in the right area and pray
             clickXY(x_axis, 1300, seconds=0.5)
-            x_axis = x_axis + 75
+            x_axis = x_axis + 50
             clicks = clicks + 1
             clickXY(550, 1400, seconds=0.5) # Clear loot
         click('buttons/back')
@@ -278,14 +280,16 @@ def shopPurchases(shoprefreshes):
     clickXY(300, 1725, seconds=5)
     if isVisible('labels/store'):
         # First purchases
-        swipe(550, 1500, 550, 1200, 500, seconds=2)
+        swipe(550, 1500, 550, 1200, 500, seconds=5)
         handleShopPurchasing()
         # refresh purchases
         while counter < shoprefreshes:
             clickXY(1000, 300)
-            click('buttons/confirm', suppress=True, seconds=4)
+            click('buttons/confirm', suppress=True, seconds=3)
+            swipe(550, 1500, 550, 1200, 500, seconds=3)
             print('    Refreshed store ' + str(counter+1) + ' times.')
             handleShopPurchasing()
+            counter += 1
         click('buttons/back')
         printGreen('Store purchases attempted.')
     else:
@@ -408,14 +412,14 @@ def clearMerchant():
         click('buttons/dailydeals')
         clickXY(400, 1675)
         # Biweeklies
-        if d.isoweekday() == 7:
+        if d.isoweekday() == 3: # Wednesday
             print('    Collecting Biweekly Deals')
             clickXY(550, 1625)
             swipe(300, 1400, 200, 1200, 500, seconds=3)
             clickXY(200, 1200)
             clickXY(550, 1625)
         # Yuexi
-        if d.isoweekday() == 1:
+        if d.isoweekday() == 1: # Monday
             print('    Collecting Yuexi')
             clickXY(200, 1825)
             clickXY(240, 880)
@@ -433,6 +437,8 @@ def clearMerchant():
         recover()
 
 def handleTwistedRealm():
+    if not bool(config.getboolean('TWISTED REALM', 'twistedrealm')):
+        return
     printBlue('Attempting to run Twisted Realm')
     confirmLocation('ranhorn')
     clickXY(380, 360, seconds=6)

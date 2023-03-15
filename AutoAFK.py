@@ -251,42 +251,35 @@ def ticketBurn():
 def dailiesButton():
     if app.arenaEntry.get() != config.get('DAILIES', 'arenabattles'):
         config.set('DAILIES', 'arenabattles', app.arenaEntry.get())
-
-    if app.fastrewardsEntry.get() == '':
-        intFR = 5
-    else:
-        intFR = int(app.fastrewardsEntry.get())
-
-    if app.shoprefreshEntry.get() == '':
-        intSR = 2
-    else:
-        intSR = int(app.shoprefreshEntry.get())
+    if app.fastrewardsEntry.get() != config.get('DAILIES', 'fastrewards'):
+        config.set('DAILIES', 'fastrewards', app.fastrewardsEntry.get())
+    if app.shoprefreshEntry.get() != config.get('DAILIES', 'shoprefreshes'):
+        config.set('DAILIES', 'shoprefreshes', app.shoprefreshEntry.get())
 
     with open(cwd + 'settings.ini', 'w') as configfile:
         config.write(configfile)
 
-    dailies(fastRewards=intFR, arenaBattles=int(app.arenaEntry.get()), shoprefreshes=intSR)
+    dailies()
 
-def dailies(fastRewards, arenaBattles, shoprefreshes):
+def dailies():
     connect_device()
     # collectAFKRewards()
     # collectMail()
     # collectCompanionPoints()
-    # collectFastRewards(fastRewards)
+    # collectFastRewards(int(app.fastrewardsEntry.get()))
     # attemptCampaign()
-    handleBounties(dispatch=config.getboolean('BOUNTIES', 'dispatchsolo'))
-    # handleArenaOfHeroes(arenaBattles)
-    collectGladiatorCoins()
-    collectFountainOfTime()
+    # handleBounties()
+    # handleArenaOfHeroes(int(app.arenaEntry.get()))
+    # collectGladiatorCoins()
+    # collectFountainOfTime()
     # handleKingsTower()
-    # collectInnGifts()
-    # handleGuildHunts()
-    # clearMerchant()
-    # shopPurchases(shoprefreshes)
-    # if bool(config.get('TWISTED REALM', 'twistedrealm')):
-    #     handleTwistedRealm()
-    # collectQuests()
-    printGreen('Dailies done!')
+    collectInnGifts()
+    handleGuildHunts()
+    shopPurchases(int(app.shoprefreshEntry.get()))
+    handleTwistedRealm()
+    collectQuests()
+    clearMerchant()
+    printGreen('\nDailies done!')
 
 
 class IORedirector(object):
