@@ -122,7 +122,7 @@ class App(customtkinter.CTk):
         self.dailiesFrame = customtkinter.CTkFrame(master=self, height=260, width=180)
         self.dailiesFrame.place(x=10, y=20)
         # Dailies button
-        self.dailiesButton = customtkinter.CTkButton(master=self, text="Run Dailies", command=threading.Thread(target=dailiesButton).start)
+        self.dailiesButton = customtkinter.CTkButton(master=self, text="Run Dailies", command=lambda: threading.Thread(target=dailiesButton).start())
         self.dailiesButton.place(x=30, y=35)
         # Arena Bttls
         self.arenaLabel = customtkinter.CTkLabel(master=self.dailiesFrame, text='Arena Battles', fg_color=("gray86", "gray17"))
@@ -165,7 +165,7 @@ class App(customtkinter.CTk):
         self.arenaFrame.place(x=10, y=290)
 
         # PvP button
-        self.arenaButton = customtkinter.CTkButton(master=self.arenaFrame, text="Run PvP Tickets", command=threading.Thread(target=ticketBurn).start)
+        self.arenaButton = customtkinter.CTkButton(master=self.arenaFrame, text="Run PvP Tickets", command=lambda: threading.Thread(target=ticketBurn).start())
         self.arenaButton.place(x=20, y=15)
         # PvP Entry
         self.pvpLabel = customtkinter.CTkLabel(master=self.arenaFrame, text='How many battles', fg_color=("gray86", "gray17"))
@@ -179,7 +179,7 @@ class App(customtkinter.CTk):
         self.pushFrame.place(x=10, y=400)
 
         # Push Button
-        self.pushButton = customtkinter.CTkButton(master=self.pushFrame, text="Push", command=threading.Thread(target=push).start)
+        self.pushButton = customtkinter.CTkButton(master=self.pushFrame, text="Push", command=lambda: threading.Thread(target=push).start())
         self.pushButton.place(x=20, y=15)
         # Push Entry
         self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Where to push?', fg_color=("gray86", "gray17"))
@@ -198,6 +198,9 @@ class App(customtkinter.CTk):
         self.pushDurationDropdown = customtkinter.CTkEntry(master=self.pushFrame, width=50)
         self.pushDurationDropdown.insert('end', '10')
         self.pushDurationDropdown.place(x=120, y=150)
+        # Quit button
+        # self.quitButton = customtkinter.CTkButton(master=self, text="Quit", fg_color=["#1111FF", "#1F6AFF"], command=lambda: threading.Thread(target=abortAllTasks).start())
+        # self.quitButton.place(x=10, y=650)
 
         # Textbox Frame
         self.textbox = customtkinter.CTkTextbox(master=self, width=580, height=560)
@@ -250,9 +253,16 @@ def setUlockedTowers():
         if d.isoweekday() == day:
             app.pushLocationDropdown.configure(values=towers)
 
+def abortAllTasks():
+    for thread in threading.enumerate():
+        if thread.name != 'MainThread':
+            print(thread.name)
+            thread.join()
+
 def buttonState(state):
     app.dailiesButton.configure(state=state)
     app.arenaButton.configure(state=state)
+    app.pushButton.configure(state=state)
 
 def ticketBurn():
     if app.pvpEntry.get() != config.get('ARENA', 'arenabattles'):
@@ -264,7 +274,9 @@ def ticketBurn():
     buttonState('disabled')
     connect_device()
     handleArenaOfHeroes(config.getint('ARENA', 'arenabattles'))
-    buttonState('enabled')
+    buttonState('normal')
+    print('')
+    return
 
 def dailiesButton():
     if app.arenaEntry.get() != config.get('DAILIES', 'arenabattles'):
@@ -279,7 +291,9 @@ def dailiesButton():
 
     buttonState('disabled')
     dailies()
-    buttonState('enabled')
+    print('')
+    buttonState('normal')
+    return
 
 def dailies():
     connect_device()
@@ -303,6 +317,7 @@ def dailies():
 
 def push():
     connect_device()
+    buttonState('disabled')
 
     if app.pushLocationDropdown.get() == 'Campaign':
         printBlue('Battling Campaign using formation ' + str(app.pushFormationDropdown.get()) + ' for ' + str(app.pushDurationDropdown.get()) + ' minute cycles.')

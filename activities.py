@@ -120,14 +120,15 @@ def pushCampaign(formation=3, duration=1):
     click('buttons/exitbattle', suppress=True)
     clickXY(550, 1850)
 
-def handleBounties(dispatch=False):
+def handleBounties():
     printBlue('Handling Bounty Board')
     confirmLocation('darkforest')
     clickXY(600, 1320)
     if (isVisible('labels/bountyboard')):
         clickXY(650, 1700) # Solo tab
         click('buttons/collect_all', seconds=2, suppress=True)
-        if config.getboolean('BOUNTIES', 'dispatchsolo'):
+        if config.getboolean('BOUNTIES', 'dispatchsolo') is True:
+            wait()
             click('buttons/dispatch', suppress=True)
             click('buttons/confirm', suppress=True)
         clickXY(950,1700) # Team tab
@@ -489,7 +490,7 @@ def clearMerchant():
         recover()
 
 def handleTwistedRealm():
-    if not bool(config.getboolean('TWISTED REALM', 'twistedrealm')):
+    if config.getboolean('TWISTED REALM', 'twistedrealm') is False:
         return
     printBlue('Attempting to run Twisted Realm')
     confirmLocation('ranhorn')
@@ -497,7 +498,6 @@ def handleTwistedRealm():
     clickXY(550, 1800) # Clear chests
     clickXY(775, 875)
     clickXY(550, 850)
-    # Wrizz check
     if isVisible('buttons/nextboss'):
         printGreen('    Twisted Realm found, battling')
         if isVisible('buttons/challenge_tr'):

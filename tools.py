@@ -8,7 +8,8 @@ import socket
 import os
 
 cwd = (os.path.dirname(__file__) + '\\')
-os.system('color') # So colourful text works
+os.system('color')  # So colourful text works
+connected = False
 
 # Expands the left and right button menus
 def expandMenus():
@@ -25,7 +26,7 @@ def afkRunningCheck():
 # Confirms that the game has loaded by checking for the campaign_selected button. Also presses exitmenu.png to clear any new hero popups
 # May also require a ClickXY over Campaign to clear Time Limited Deals that appear
 def waitUntilGameActive():
-    printWarning('Waiting for game to load')
+    printWarning('Searching for Campaign screen..')
     loadingcounter = 0
     timeoutcounter = 0
     while loadingcounter < 1:
@@ -67,19 +68,22 @@ def configureADB():
     global adb_device
     global adb_devices
     adbpath = (os.path.dirname(__file__) + '\\adb.exe') # Locate adb.exe in working directory
-    null = Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the server
+    Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the server
     wait(2)
     adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
     adb_device_str = str(adb_devices[26:40]) # trim the string to extract the first device
     adb_device = adb_device_str[2:15] # trim again because it's a byte object and has extra characters
     # print(adb_device)
+    # processID = Popen('powershell.exe Write-Output (Get-Process -Name "HD-Player").Id', stdout=PIPE).communicate()[0]
+    # print(processID.strip())
+    # ports = Popen('powershell.exe Write-Output(netstat -nao | Select-String ' + str(processID) + ' | Select-String \'127.0.0.1\' | Select-String \'Listening\'\)', stdout=PIPE).communicate()[0]
+    # print(ports)
     if adb_device_str[2:11] == 'localhost':
         adb_device = adb_device_str[2:16] # Extra letter needed if we manually connect
         # print(adb_device)
     if adb_device_str[2:10] != 'emulator' and adb_device_str[2:11] != 'localhost':
         printWarning('No ADB devices found, attempting to find it automatically. This can take up to 30 seconds..')
         Popen([adbpath, 'connect', '127.0.0.1:' + str(portScan())], stdout=PIPE).communicate()[0]
-        # Popen([adbpath, 'connect', '127.0.0.1:5575'], stdout=PIPE).communicate()[0] #faster for testing
         adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0]  # Run 'adb.exe devices' and pipe output to string
         adb_device_str = str(adb_devices[26:40])  # trim the string to extract the first device
         adb_device = adb_device_str[2:16]
@@ -117,6 +121,9 @@ def portScan():
 # Connects to the found ADB device using PPADB, allowing us to send commands via Python
 # On success we go through our startup checks to make sure we are starting from the same point each time, and can recognise the template images
 def connect_device():
+    global connected  # So we don't reconnect with every new activity
+    if connected is True:
+        return
     if processExists('HD-Player.exe'):
         printGreen('Bluestacks found! Trying to connect via ADB..')
     else:
@@ -132,12 +139,12 @@ def connect_device():
         print(adb_devices)
         exit(1)
     else:
-
         printGreen('Device: ' + adb_device + ' successfully connected!')
         resolutionCheck(device)
         afkRunningCheck()
         waitUntilGameActive()
         expandMenus()
+        connected = True
         print('')
 
 # Takes a screenshot and saves it locally
