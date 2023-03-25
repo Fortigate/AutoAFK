@@ -424,6 +424,11 @@ def collectQuests():
 def clearMerchant():
     printBlue('Attempting to collect merchant deals')
     clickXY(120, 300, seconds=5)
+    if isVisible('buttons/confirm_large'):
+        printWarning('Noble resource collection screen found, skipping merchant collection')
+        clickXY(550, 100)
+        clickXY(70, 1810)
+        return
     swipe(1000, 1825, 100, 1825, 500)
     swipe(1000, 1825, 100, 1825, 500)
     if isVisible('buttons/noblesociety'):
