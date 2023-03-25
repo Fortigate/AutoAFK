@@ -18,8 +18,11 @@ def expandMenus():
 
 # Checks if AFK Arena process is running, if not we launch it
 def afkRunningCheck():
-    game = str(device.shell('ps | grep -E com.lilithgame.hgame.gp | awk \'{print$9}\'')).splitlines()
-    if not game:
+    livegame = str(device.shell('ps | grep -E com.lilithgame.hgame.gp | awk \'{print$9}\'')).splitlines()
+    testgame = str(device.shell('ps | grep -E com.lilithgames.hgame.gp.id | awk \'{print$9}\'')).splitlines()
+    print(livegame)
+    print(testgame)
+    if not livegame and not testgame:
         printError('AFK Arena is not running, launching..')
         device.shell('monkey -p com.lilithgame.hgame.gp 1')
 
