@@ -20,8 +20,6 @@ def expandMenus():
 def afkRunningCheck():
     livegame = str(device.shell('ps | grep -E com.lilithgame.hgame.gp | awk \'{print$9}\'')).splitlines()
     testgame = str(device.shell('ps | grep -E com.lilithgames.hgame.gp.id | awk \'{print$9}\'')).splitlines()
-    print(livegame)
-    print(testgame)
     if not livegame and not testgame:
         printError('AFK Arena is not running, launching..')
         device.shell('monkey -p com.lilithgame.hgame.gp 1')
@@ -194,15 +192,15 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, mask=[0,0,1
     take_screenshot(device)
     screenshot = cv2.imread(cwd + 'screen.bin', 0)
     search = cv2.imread(cwd + 'img\\' + image + '.png', 0)
-    res = locate(search, screenshot, grayscale=False, confidence=confidence)
+    result = locate(search, screenshot, grayscale=False, confidence=confidence)
 
-    if res == None and retry != 1:
+    if result == None and retry != 1:
         while counter < retry:
             take_screenshot(device)
             screenshot = cv2.imread(cwd + 'screen.bin', 0)
-            res = locate(search, screenshot, grayscale=False, confidence=confidence)
-            if res != None:
-                x, y, w, h = res
+            result = locate(search, screenshot, grayscale=False, confidence=confidence)
+            if result != None:
+                x, y, w, h = result
                 x_center = round(x + w / 2)
                 y_center = round(y + h / 2)
                 device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
@@ -212,8 +210,8 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, mask=[0,0,1
                 printWarning('Retrying ' + image + ' search: ' + str(counter+1) + '/' + str(retry))
             counter = counter + 1
             wait(1)
-    elif res != None:
-        x, y, w, h = res
+    elif result != None:
+        x, y, w, h = result
         x_center = round(x + w/2)
         y_center = round(y + h/2)
         device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
@@ -221,6 +219,29 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, mask=[0,0,1
     else:
         if suppress is not True:
             printWarning('Image:' + image + ' not found!')
+        wait(seconds)
+
+# Searchs for all matchs of the found image and stores them in a list, from there we select which one we want to click with 'choice'
+# Image is image to be found
+# Choice is which image we click starting at '1', we search from top left line by line, and they will be ordered as found
+# Confidence is confidence in the found image, it needs to be tight here, or we have multiple entries for the same image
+# Seconds is how long to pause after finding the image
+def clickMultipleChoice(image, choice, confidence=0.9, seconds=1):
+    take_screenshot(device)
+    screenshot = cv2.imread(cwd + 'screen.bin', 0)
+    search = cv2.imread(cwd + 'img\\' + image + '.png', 0)
+    results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
+    if choice > len(results):
+        x, y, w, h = results[len(results)-1]
+        x_center = round(x + w / 2)
+        y_center = round(y + h / 2)
+        device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
+        wait(seconds)
+    else:
+        x, y, w, h = results[choice-1] # -1 to match the array starting at 0
+        x_center = round(x + w / 2)
+        y_center = round(y + h / 2)
+        device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
         wait(seconds)
 
 # Checks the pixel at the XY coordinates, returns B,G,R value dependent on c variable

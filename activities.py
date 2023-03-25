@@ -86,7 +86,8 @@ def attemptCampaign():
         click('buttons/exitbattle')
         click('buttons/back')
     else: # else it's a single battle
-        click('buttons/battle', seconds=3)
+        click('buttons/battle', 0.8, retry=3, seconds=3)
+        click('buttons/battle_large', 0.8, suppress=True) #If you have no autobattle button its larger
         click('buttons/pause', 0.8, retry=3) # 3 retries as ulting heroes can cover the button
         click('buttons/exitbattle')
     if verifyLocation('campaign'):
@@ -151,7 +152,7 @@ def handleArenaOfHeroes(count):
         click('labels/arenaofheroes')
         click('buttons/challenge', retry=3) # retries for animated button
         while counter < count:
-            clickXY(820, 1225)
+            clickMultipleChoice('buttons/arenafight', 4, confidence=0.98) # Select 4th opponent
             click('buttons/battle', 0.6, retry=3) # lower confidence as it's an animated button
             wait(2)
             click('buttons/skip', retry=5, suppress=True) # Retries as ulting heros can cover the button
