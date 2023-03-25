@@ -292,12 +292,12 @@ def handleShopPurchasing():
         clickXY(550, 1220)
     # Buy Dust Gold
     if config.getboolean('SHOP', 'dust_gold'):
-        click('buttons/shop/dust', suppress=True)
+        click('buttons/shop/dust', 0.95, suppress=True)
         click('buttons/shop/purchase', suppress=True)
         clickXY(550, 1220)
     # Buy Dust Diamonds
     if config.getboolean('SHOP', 'dust_diamond'):
-        click('buttons/shop/dust_diamond', suppress=True)
+        click('buttons/shop/dust_diamond', 0.95, suppress=True)
         click('buttons/shop/purchase', suppress=True)
         clickXY(550, 1220)
     # Buy Super Soulstone
@@ -330,6 +330,7 @@ def shopPurchases(shoprefreshes):
     printBlue('Attempting store purchases (Refreshes: ' + str(shoprefreshes) + ')')
     counter = 0
     confirmLocation('ranhorn')
+    wait(2)
     clickXY(300, 1725, seconds=5)
     if isVisible('labels/store'):
         # First purchases
