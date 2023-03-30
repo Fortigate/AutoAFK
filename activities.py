@@ -497,14 +497,12 @@ def clearMerchant():
         recover()
 
 def handleTwistedRealm():
-    if config.getboolean('TWISTED REALM', 'twistedrealm') is False:
-        return
     printBlue('Attempting to run Twisted Realm')
     confirmLocation('ranhorn')
     clickXY(380, 360, seconds=6)
     clickXY(550, 1800) # Clear chests
     clickXY(775, 875)
-    clickXY(550, 850)
+    clickXY(550, 600)
     if isVisible('buttons/nextboss'):
         printGreen('    Twisted Realm found, battling')
         if isVisible('buttons/challenge_tr'):

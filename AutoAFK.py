@@ -211,9 +211,7 @@ class App(customtkinter.CTk):
         self.textbox.tag_config('green', foreground='lawngreen')
         self.textbox.tag_config('blue', foreground='cyan')
         self.textbox.insert('end', 'Welcome to AutoAFK!\n')
-        self.textbox.insert('end', 'Some things to note:\n')
-        self.textbox.insert('end', '* Running multiple tasks will give a \'thread\' error, so restart for each new task\n')
-        self.textbox.insert('end', '* We\'re still in Beta so expect bugs, please report them in Github or Discord\n\n')
+        self.textbox.insert('end', 'We\'re still in Beta so expect bugs, please report them in Github or Discord\n\n')
         sys.stdout = STDOutRedirector(self.textbox)
 
         self.toplevel_window = None
@@ -310,7 +308,8 @@ def dailies():
     collectInnGifts()
     handleGuildHunts()
     shopPurchases(int(app.shoprefreshEntry.get()))
-    handleTwistedRealm()
+    if bool(config.getboolean('TWISTED REALM', 'twistedrealm')) is True:
+        handleTwistedRealm()
     collectQuests()
     clearMerchant()
     printGreen('\nDailies done!')

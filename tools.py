@@ -222,7 +222,7 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, mask=[0,0,1
         wait(seconds)
 
 # Searchs for all matchs of the found image and stores them in a list, from there we select which one we want to click with 'choice'
-# Image is image to be found
+# If choice is higher than the found image we default to last found Image in the list
 # Choice is which image we click starting at '1', we search from top left line by line, and they will be ordered as found
 # Confidence is confidence in the found image, it needs to be tight here, or we have multiple entries for the same image
 # Seconds is how long to pause after finding the image
