@@ -48,7 +48,7 @@ def waitUntilGameActive():
 def resolutionCheck(device):
     resolution = device.shell('wm size').split(' ')
     dpi = device.shell('wm density').split(' ')
-    if not str(resolution[2]).strip() == '1920x1080' or str(resolution[2]).strip() == '1080x1920':
+    if not str(resolution[2]).strip() == '1920x1080' and not str(resolution[2]).strip() == '1080x1920':
         printError('Unsupported Resolution! (' + str(resolution[2]).strip() + '). Please change your Bluestacks resolution to 1080x1920')
         exit(1)
     if str(dpi[2]).strip() != '240':
