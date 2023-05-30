@@ -128,7 +128,7 @@ class App(customtkinter.CTk):
         self.textbox.tag_config('green', foreground='lawngreen')
         self.textbox.tag_config('blue', foreground='cyan')
         self.textbox.insert('end', 'Welcome to AutoAFK!\n')
-        self.textbox.insert('end', 'We\'re still in Beta so expect bugs, please report them in Github or Discord\n\n')
+        self.textbox.insert('end', 'The tool is still in Beta so bugs and stability are being worked on, if you find any please report on Github or Discord (Jc#4631)\n\n')
         sys.stdout = STDOutRedirector(self.textbox)
 
         # Configure windows so we can reference them
