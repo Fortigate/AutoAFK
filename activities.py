@@ -13,7 +13,8 @@ def collectAFKRewards():
     if (isVisible('buttons/campaign_selected')):
         clickXY(550, 1550)
         click('buttons/collect', 0.8)
-        clickXY(550, 1800, seconds=5) # Click campaign in case we level up, long pause so we can collect twice
+        clickXY(550, 1800, seconds=2) # Click campaign in case we level up, long pause so we can collect twice
+        clickXY(550, 1800, seconds=2)
         if (isVisible('buttons/begin')):
             clickXY(550, 1550)
         click('buttons/collect')
@@ -128,7 +129,7 @@ def handleBounties():
     if (isVisible('labels/bountyboard')):
         clickXY(650, 1700) # Solo tab
         click('buttons/collect_all', seconds=2, suppress=True)
-        if config.getboolean('BOUNTIES', 'dispatchsolo') is True:
+        if config.getboolean('DAILIES', 'solobounties') is True:
             wait()
             click('buttons/dispatch', suppress=True)
             click('buttons/confirm', suppress=True)
@@ -148,8 +149,9 @@ def handleArenaOfHeroes(count):
     confirmLocation('darkforest')
     clickXY(740, 1050)
     clickXY(550, 50)
-    if isVisible('labels/arenaofheroes'):
-        click('labels/arenaofheroes')
+    if isVisible('labels/arenaofheroes') or isVisible('labels/arenaofheroes2'): # The label font changes for reasons
+        click('labels/arenaofheroes', suppress=True)
+        click('labels/arenaofheroes2', suppress=True)
         click('buttons/challenge', retry=3) # retries for animated button
         while counter < count:
             clickMultipleChoice('buttons/arenafight', 4, confidence=0.98) # Select 4th opponent
@@ -196,8 +198,9 @@ def collectFountainOfTime():
         clickXY(550, 1800)
         clickXY(250, 1300)
         clickXY(700, 1350) # Collect
-        clickXY(550, 1800, seconds=5) # Clear level up
-        clickXY(550, 1800, seconds=5) # Clear level up
+        clickXY(550, 1800, seconds=3) # Clear level up
+        clickXY(550, 1800, seconds=3) # Clear limited deal
+        clickXY(550, 1800, seconds=3) # Clear newly unlocked
         click('buttons/back')
         printGreen('    Fountain of Time collected')
     else:
@@ -216,20 +219,32 @@ def openTower(name):
                 clickXY(location[0], location[1], seconds=3)
 
 def pushTower(formation=3, duration=1):
-    click('buttons/challenge_plain', 0.7, retry=5, suppress=True, seconds=3)  # lower confidence and retries for animated button
-    if (isVisible('buttons/autobattle')):  # If we see second Begin it's a multi so we take different actions
-        click('buttons/formations')
-        clickXY(850, 425 + (formation * 175))
-        click('buttons/use')
-        click('buttons/confirm_small')
-        click('buttons/autobattle')
-        click('buttons/activate')
-    wait(duration * 60)
+    firstrun = True
+    if firstrun is True:
+        click('buttons/challenge_plain', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
+        firstrun = False
+    click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
+    click('buttons/cancel', seconds=2, suppress=True)
+    if (isVisible('buttons/autobattle') and not isVisible('buttons/exit')): # So we don't catch the button in the background
+        if isVisible('buttons/formations'):
+            click('buttons/formations', seconds=3)
+            clickXY(850, 425 + (formation * 175))
+            click('buttons/use', suppress=True)
+            click('buttons/confirm_small', suppress=True)
+            click('buttons/autobattle', suppress=True) # So we don't hit it in the background while autobattle is active
+            click('buttons/activate', suppress=True)
+    wait((duration * 60)-45)
     clickXY(550, 1750)
-    click('buttons/exit', suppress=True)
-    click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
-    click('buttons/exitbattle', suppress=True)
-    clickXY(550, 1750)
+    if isVisible('labels/autobattle_0'):
+        wait(2)
+        printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
+        click('buttons/cancel', retry=3, suppress=True)
+    else:
+        printGreen('Victory! Reloading formation ' + str(formation))
+        click('buttons/exit', suppress=True)
+        click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
+        click('buttons/exitbattle', suppress=True)
+        click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
 
 def handleKingsTower():
     printBlue('Attempting Kings Tower battle')
@@ -318,7 +333,7 @@ def handleShopPurchasing():
         clickXY(550, 1220)
     # Buy Silver Emblems
     if config.getboolean('SHOP', 'silver_emblem'):
-        click('buttons/shop/gold_emblems', 0.95, suppress=True)
+        click('buttons/shop/silver_emblems', 0.95, suppress=True)
         click('buttons/shop/purchase', suppress=True)
         clickXY(550, 1220)
     # Buy PoE Emblems
@@ -426,7 +441,7 @@ def collectQuests():
 def clearMerchant():
     printBlue('Attempting to collect merchant deals')
     clickXY(120, 300, seconds=5)
-    if isVisible('buttons/confirm_large'):
+    if isVisible('buttons/confirm_large', 0.8):
         printWarning('Noble resource collection screen found, skipping merchant collection')
         clickXY(550, 100)
         clickXY(70, 1810)
@@ -524,3 +539,141 @@ def handleTwistedRealm():
     else:
         printError('    Error opening Twisted Realm, attempting to recover')
         recover()
+
+def TS_Battle_Stastistics():
+    region = 10
+    position = 80
+    battle = 1
+    team = 1
+    while position < 100:
+        # Open User
+        clickXY(250, 560) # Click Portrait
+        clickXY(450, 1800) # Follow
+        wait(2)
+        clickXY(550, 110) # Close player window
+        clickXY(1000, 560) # Battle History
+        # Open result 1
+        clickXY(800, 600) # Battle History
+        # open battle 1
+        clickXY(550, 700) # team 1
+        swipe(550, 800, 550, 600, duration=500)
+        save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        click('buttons/exitmenu')
+        team += 1
+        clickXY(550, 1000) # team 2
+        swipe(550, 800, 550, 600, duration=500)
+        save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        click('buttons/exitmenu')
+        team += 1
+        clickXY(550, 1300) # team 3
+        swipe(550, 800, 550, 600, duration=500)
+        save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        click('buttons/exitmenu')
+        click('buttons/exitmenu')
+        # # open battle 2
+        # clickXY(800, 800)
+        # clickXY(550, 700) # team 1
+        # swipe(550, 800, 550, 600, duration=500)
+        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        # click('buttons/exitmenu')
+        # team += 1
+        # clickXY(550, 1000) # team 2
+        # swipe(550, 800, 550, 600, duration=500)
+        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        # click('buttons/exitmenu')
+        # click('buttons/exitmenu')
+        # team = 1
+        # battle += 1
+        # # open battle 3
+        # clickXY(800, 1000)
+        # clickXY(550, 700) # team 1
+        # swipe(550, 800, 550, 600, duration=500)
+        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        # click('buttons/exitmenu')
+        # team += 1
+        # clickXY(550, 1000) # team 2
+        # swipe(550, 800, 550, 600, duration=500)
+        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        # click('buttons/exitmenu')
+        # click('buttons/exitmenu')
+        # team = 1
+        # battle += 1
+        # # open battle 4
+        # clickXY(800, 1200)
+        # clickXY(550, 700) # team 1
+        # swipe(550, 800, 550, 600, duration=500)
+        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        # click('buttons/exitmenu')
+        # team += 1
+        # clickXY(550, 1000) # team 2
+        # swipe(550, 800, 550, 600, duration=500)
+        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        # click('buttons/exitmenu')
+        # click('buttons/exitmenu')
+        # team = 1
+        # battle += 1
+        # # open battle 5
+        # clickXY(800, 1400)
+        # clickXY(550, 700) # team 1
+        # swipe(550, 800, 550, 600, duration=500)
+        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        # click('buttons/exitmenu')
+        # team += 1
+        # clickXY(550, 1000) # team 2
+        # swipe(550, 800, 550, 600, duration=500)
+        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
+        # click('buttons/exitmenu')
+        click('buttons/exitmenu')
+        click('buttons/exitmenu')
+        clickXY(250, 550) # Click Portrait
+        clickXY(450, 1800) # Unfollow
+        clickXY(650, 1250) # Confirm Unfollow
+        clickXY(550, 110) # Close player window
+        team = 1
+        battle = 1
+        position += 1
+        swipe(550, 800, 550, 635, duration=8000)
+
+def TS_Battle_Report():
+    region = 22
+    position = 80
+    battle = 1
+    while position < 100:
+        # Open User
+        clickXY(250, 550, seconds=2) # Click Portrait
+        clickXY(450, 1800, seconds=2) # Follow
+        wait(2)
+        clickXY(550, 110, seconds=2) # Close player window
+        clickXY(1000, 550, seconds=2) # Battle History
+        # Open battle 1
+        clickXY(800, 600, seconds=2)
+        save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle))
+        click('buttons/exitmenu')
+        battle += 1
+        # # open battle 2
+        # clickXY(800, 800, seconds=2)
+        # save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle))
+        # click('buttons/exitmenu')
+        # battle += 1
+        # # open battle 3
+        # clickXY(800, 1000, seconds=2)
+        # save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle))
+        # click('buttons/exitmenu')
+        # battle += 1
+        # # open battle 4
+        # clickXY(800, 1200, seconds=2)
+        # save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle))
+        # click('buttons/exitmenu')
+        # battle += 1
+        # # open battle 5
+        # clickXY(800, 1400, seconds=2)
+        # save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle))
+        # click('buttons/exitmenu')
+        click('buttons/exitmenu')
+        clickXY(250, 550, seconds=2) # Click Portrait
+        clickXY(450, 1800, seconds=2) # Unfollow
+        clickXY(650, 1250, seconds=2) # Confirm Unfollow
+        clickXY(550, 110, seconds=2) # Close player window
+        battle = 1
+        position += 1
+        swipe(550, 800, 550, 635, duration=8000)

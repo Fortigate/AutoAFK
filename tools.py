@@ -154,6 +154,11 @@ def take_screenshot(device):
     with open('screen.bin', 'wb') as f:
         f.write(image)
 
+def save_screenshot(name):
+    image = device.screencap()
+    with open(name + '.png', 'wb') as f:
+        f.write(image)
+
 # Wait command, default 1 second
 def wait(seconds=1):
     time.sleep(seconds)
@@ -187,18 +192,18 @@ def clickXY(x,y, seconds=1):
 # Seconds is time to wait after clicking the image
 # Retry will try and find the image x number of times, useful for animated or covered buttons, or to make sure the button is not skipped
 # Suppress will disable warnings, sometimes we don't need to know if a button isn't found
-def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, mask=[0,0,1920,1080]):
+def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False):
     counter = 0
     take_screenshot(device)
     screenshot = cv2.imread(cwd + 'screen.bin', 0)
     search = cv2.imread(cwd + 'img\\' + image + '.png', 0)
-    result = locate(search, screenshot, grayscale=False, confidence=confidence)
+    result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
 
     if result == None and retry != 1:
         while counter < retry:
             take_screenshot(device)
             screenshot = cv2.imread(cwd + 'screen.bin', 0)
-            result = locate(search, screenshot, grayscale=False, confidence=confidence)
+            result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
             if result != None:
                 x, y, w, h = result
                 x_center = round(x + w / 2)
