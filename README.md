@@ -8,21 +8,31 @@ While the bot is designed for AFK Arena the core logic will work for anything re
 Issues/Comments/Suggestions? [Join the Discord server!](https://discord.gg/pfU7UB5A)
 
 # What does it do?
-The current Beta version will run the minimum in order to complete the dailies quests:
-* Launch Game
+In the current release you can select from the following tasks:
+
+## Dailies Tasks
 * Collect AFK rewards twice
-* Collect mail if there is a notification !
-* Send/Recieve companion points if there is a notification !
+* Collect mail if there is a notification
+* Send/Recieve companion points if there is a notification, and optionally send mercs
 * Collect Fast Rewards if available (The amount of times can be configured)
 * Load and exit a campaign battle
 * Collect and optionally dispatch bounty quests
 * Load and battle in the Arena of Heroes (Amount of times configurable)
+* Collect Gladiator Coins
+* Collect Fountain of Time rewards
 * Load and exit a tower battle
 * Collect daily gifts from the inn
 * Auto battle available Guild Hunts
+* Battle Twisted Realm
 * Collect available daily and weekly quest chests
 * Clear Merchant menu free gifts & !'s
-* Make daily store purchases
+* Make customizable daily store purchases
+
+## Arena Ticket spending
+* Run a configurable number of Arena Tickets
+ 
+## Auto push
+* Auto load configured formation and push towers/campaign
 
 
 # How do I run it?
@@ -40,7 +50,7 @@ The following features will be added soon(tm)
 * Discord notification on success/failure
 * Run Fight of Fates / Battle of Blood
 * Purchase selected Dimensional Gear
-* Docmentation on how to full automate luanching, loading and running the script for managing accounts with no oversight
+* Documentation on how to full automate launching, loading and running the script for managing accounts via cron
 
 # I'm having an issue
 Note that the bot is currently in Beta and stability is still being worked into the functions. If you having issues please create an issue here or ask on the Discord server.
