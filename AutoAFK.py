@@ -14,13 +14,15 @@ config.read('settings.ini')
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
 
+version = "0.8.6"
+
 #Main Window
 class App(customtkinter.CTk):
     def __init__(self):
         super().__init__()
 
         # configure window
-        self.title("AutoAFK - v0.8.5")
+        self.title("AutoAFK - v" + version)
         self.geometry(f"{800}x{600}")
         self.wm_iconbitmap(cwd + 'img\\auto.ico')
 
@@ -72,10 +74,13 @@ class App(customtkinter.CTk):
         self.activitiesButton.place(x=40, y=170)
         # Shop button
         self.dailiesShopButton = customtkinter.CTkButton(master=self, text="Shop Options", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.open_shopwindow)
-        self.dailiesShopButton.place(x=40, y=210)
-        # Shop button
-        self.dailiesShopButton = customtkinter.CTkButton(master=self, text="Advanced", fg_color=["#3B8ED0", "#1F6AA5"], width=120, state="disabled", command=self.open_shopwindow)
-        self.dailiesShopButton.place(x=40, y=250)
+        self.dailiesShopButton.place(x=40, y=207)
+        # Advanced button
+        self.advancedButton = customtkinter.CTkButton(master=self, text="Advanced", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.open_advancedwindow)
+        self.advancedButton.place(x=40, y=244)
+        # self.portEntry = customtkinter.CTkEntry(master=self.dailiesFrame, height=20, width=30)
+        # self.portEntry.insert('end', config.get('DAILIES', 'shoprefreshes'))
+        # self.portEntry.place(x=40, y=250)
 
         # PvP Frame
         self.arenaFrame = customtkinter.CTkFrame(master=self, height=100, width=180)
@@ -105,10 +110,10 @@ class App(customtkinter.CTk):
         self.pushLocationDropdown.place(x=10, y=80)
         # Push Formation
         self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Which formation?', fg_color=("gray86", "gray17"))
-        self.pushLabel.place(x=10, y=120)
-        self.pushFormationDropdown = customtkinter.CTkComboBox(master=self.pushFrame,  values=["1", "2", "3", "4", "5"], width=50)
+        self.pushLabel.place(x=10, y=110)
+        self.pushFormationDropdown = customtkinter.CTkComboBox(master=self.pushFrame, values=["1st", "2nd", "3rd", "4th", "5th"], width=80)
         self.pushFormationDropdown.set(config.get('PUSH', 'formation'))
-        self.pushFormationDropdown.place(x=120, y=120)
+        self.pushFormationDropdown.place(x=10, y=140)
         # Push Duration
         # self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Check for Victory every:', fg_color=("gray86", "gray17"))
         # self.pushLabel.place(x=10, y=150)
@@ -134,6 +139,7 @@ class App(customtkinter.CTk):
         # Configure windows so we can reference them
         self.shop_window = None
         self.activity_window = None
+        self.advanced_window = None
 
     def Update(self):
         if self.twistedRealmCheckbox.get() == 1:
@@ -143,6 +149,13 @@ class App(customtkinter.CTk):
 
         with open('settings.ini', 'w') as configfile:
             config.write(configfile)
+
+    def open_advancedwindow(self):
+        if self.advanced_window is None or not self.advanced_window.winfo_exists():
+            self.advanced_window = advancedWindow(self)  # create window if its None or destroyed
+            self.advanced_window.focus()
+        else:
+            self.advanced_window.focus()  # if window exists focus it
 
     def open_shopwindow(self):
         if self.shop_window is None or not self.shop_window.winfo_exists():
@@ -378,16 +391,48 @@ class shopWindow(customtkinter.CTkToplevel):
         with open('settings.ini', 'w') as configfile:
             config.write(configfile)
 
+class advancedWindow(customtkinter.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.geometry("200x200")
+        self.title('Advanced Options')
+        self.attributes("-topmost", True)
+
+        # Activity Frame
+        self.advancedFrame = customtkinter.CTkFrame(master=self, width=180, height=180)
+        self.advancedFrame.place(x=10, y=10)
+        self.label = customtkinter.CTkLabel(master=self.advancedFrame, text="Advanced Options:", font=("Arial", 15, 'bold'))
+        self.label.place(x=20, y=5)
+
+        # Port Entry
+        self.portLabel = customtkinter.CTkLabel(master=self.advancedFrame, text='Port:', fg_color=("gray86", "gray17"))
+        self.portLabel.place(x=10, y=40)
+        self.portEntry = customtkinter.CTkEntry(master=self.advancedFrame, height=25, width=60)
+        self.portEntry.insert('end', config.get('ADVANCED', 'port'))
+        self.portEntry.place(x=50, y=40)
+
+        # Save button
+        self.advanceSaveButton = customtkinter.CTkButton(master=self.advancedFrame, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.advancedSave)
+        self.advanceSaveButton.place(x=30, y=140)
+
+    def advancedSave(self):
+        if self.portEntry.get() != config.get('ADVANCED', 'port'):
+            config.set('ADVANCED', 'port', self.portEntry.get())
+
+        with open('settings.ini', 'w') as configfile:
+            config.write(configfile)
+        config.read('settings.ini')  # to load the new value into memory
+
 # Will change the dropdown to only include open towers
 # May cause issues with timezones..
 def setUlockedTowers():
     days = {1:["Campaign", "King's Tower", "Lightbringer"],
-    2:["Campaign", "King's Tower", "Mauler"],
-    3:["Campaign", "King's Tower", "Wilder", "Celestial"],
-    4:["Campaign", "King's Tower", "Graveborn", "Hypogean"],
-    5:["Campaign", "King's Tower", "Lightbringer", "Mauler", "Celestial"],
-    6:["Campaign", "King's Tower", "Wilder", "Graveborn", "Hypogean"],
-    7:["Campaign", "King's Tower", "Lightbringer", "Wilder", "Mauler", "Graveborn", "Hypogean", "Celestial"]}
+    2:["Campaign", "King's Tower", "Mauler Tower"],
+    3:["Campaign", "King's Tower", "Wilder Tower", "Celestial Tower"],
+    4:["Campaign", "King's Tower", "Graveborn Tower", "Hypogean Tower"],
+    5:["Campaign", "King's Tower", "Lightbringer Tower", "Mauler Tower", "Celestial Tower"],
+    6:["Campaign", "King's Tower", "Wilder Tower", "Graveborn Tower", "Hypogean Tower"],
+    7:["Campaign", "King's Tower", "Lightbringer Tower", "Wilder Tower", "Mauler Tower", "Graveborn Tower", "Hypogean Tower", "Celestial Tower"]}
     for day, towers in days.items():
         if currenttimeutc.isoweekday() == day:
             app.pushLocationDropdown.configure(values=towers)
@@ -480,16 +525,17 @@ def push():
 
     connect_device()
     buttonState('disabled')
+    formationstr = str(config.get('PUSH', 'formation'))[0:1]
 
     if app.pushLocationDropdown.get() == 'Campaign':
-        printBlue('Auto-Pushing Campaign using formation ' + str(config.get('PUSH', 'formation')))
+        printBlue('Auto-Pushing Campaign using the ' + str(config.get('PUSH', 'formation') + ' formation'))
         while 1:
-            pushCampaign(formation=int(app.pushFormationDropdown.get()), duration=int(config.get('PUSH', 'victoryCheck')))
+            pushCampaign(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
     else:
-        printBlue('Auto-Pushing Tower using formation ' + str(config.get('PUSH', 'formation')))
+        printBlue('Auto-Pushing Tower using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
         openTower(app.pushLocationDropdown.get())
         while 1:
-            pushTower(formation=int(config.get('PUSH', 'formation')), duration=int(config.get('PUSH', 'victoryCheck')))
+            pushTower(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
 
 class IORedirector(object):
     def __init__(self, text_widget):

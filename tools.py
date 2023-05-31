@@ -6,7 +6,10 @@ import cv2
 import time
 import socket
 import os
+import configparser
 
+config = configparser.ConfigParser()
+config.read('settings.ini')
 cwd = (os.path.dirname(__file__) + '\\')
 os.system('color')  # So colourful text works
 connected = False
@@ -83,11 +86,13 @@ def configureADB():
         adb_device = adb_device_str[2:16] # Extra letter needed if we manually connect
         # print(adb_device)
     if adb_device_str[2:10] != 'emulator' and adb_device_str[2:11] != 'localhost':
-        printWarning('No ADB devices found, attempting to find it automatically. This can take up to 30 seconds..')
         Popen([adbpath, 'connect', '127.0.0.1:' + str(portScan())], stdout=PIPE).communicate()[0]
         adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0]  # Run 'adb.exe devices' and pipe output to string
         adb_device_str = str(adb_devices[26:40])  # trim the string to extract the first device
-        adb_device = adb_device_str[2:16]
+        if len(str(config.get('ADVANCED', 'port'))) > 4:
+            adb_device = '127.0.0.1:' + (str(config.get('ADVANCED', 'port')))
+        else:
+            adb_device = adb_device_str[2:16]
 
 # If we don't find a device we use this to scan the odd ports between 5555 and 5587 to find the ADB port
 # This is a very slow implementation (1 second per port, up to 30 seconds for port 5587). We can multithread it to speed it up
@@ -96,6 +101,14 @@ def portScan():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     start = time.time()
     adbport = ''
+
+    config.read('settings.ini')  # to load any new values (ie port changed and saved) into memory
+    if int(config.get('ADVANCED', 'port')) != 0:
+        printGreen('Port: ' + str(config.get('ADVANCED', 'port')) + ' found in the settings.ini file, connecting using that..')
+        adbport = int(config.get('ADVANCED', 'port'))
+        return adbport
+
+    printWarning('No ADB devices found, and no configured port in settings.ini. Scanning ADB ports to find it automatically, this can take up to 30 seconds..')
 
     # Port scanner function
     def port_scan(port):

@@ -208,12 +208,12 @@ def collectFountainOfTime():
         recover()
 
 def openTower(name):
-    printBlue('Opening ' + name + ' tower.')
+    printBlue('Opening ' + name + '.')
     confirmLocation('darkforest')
     clickXY(500, 870, seconds=3) # Long pause for animation
     if isVisible('labels/kingstower'):
-        towers = {"King's Tower": [500, 870], "Lightbringer": [300, 1000], "Wilder": [800, 600], "Mauler": [400, 1200],
-                  "Graveborn": [800, 1200], "Hypogean": [600, 1500], "Celestial": [300, 500]}
+        towers = {"King's Tower": [500, 870], "Lightbringer Tower": [300, 1000], "Wilder Tower": [800, 600], "Mauler Tower": [400, 1200],
+                  "Graveborn Tower": [800, 1200], "Hypogean Tower": [600, 1500], "Celestial Tower": [300, 500]}
         for tower, location in towers.items():
             if tower == name:
                 clickXY(location[0], location[1], seconds=3)
