@@ -8,6 +8,7 @@ import socket
 import os
 import configparser
 import sys
+import numbers
 
 config = configparser.ConfigParser()
 config.read('settings.ini')
@@ -60,6 +61,7 @@ def resolutionCheck(device):
         exit(1)
 
 # Checks Windows running processes for Bluestacks.exe
+# This returns a UnicodeDecodeError on some systems despite using 'sys.getdefaultencoding()'
 def processExists(process_name):
     sysEncoding = sys.getdefaultencoding()
     printWarning('System encoding is: ' + sysEncoding)
@@ -107,7 +109,14 @@ def portScan():
     adbport = ''
 
     config.read('settings.ini')  # to load any new values (ie port changed and saved) into memory
-    if int(config.get('ADVANCED', 'port')) != 0:
+    port = config.get('ADVANCED', 'port')
+    if ':' in str(port):
+        printError('Port entered includes the : symbol, it should only be the last 4 or 5 digits not the full IP:Port address. Exiting..')
+        exit()
+    if int(port) == 5037:
+        printError('Port 5037 has been entered, this is the port of the ADB connection service not the emulator, check BlueStacks Settings - Preferences to get the ADB port number')
+        exit()
+    if port != 0:
         printGreen('Port: ' + str(config.get('ADVANCED', 'port')) + ' found in the settings.ini file, connecting using that..')
         adbport = int(config.get('ADVANCED', 'port'))
         return adbport
@@ -142,11 +151,12 @@ def connect_device():
     global connected  # So we don't reconnect with every new activity
     if connected is True:
         return
-    if processExists('HD-Player.exe'):
-        printGreen('Bluestacks found! Trying to connect via ADB..')
-    else:
-        printError('Bluestacks not found (no running process: HD-Player.exe), please make sure it\'s running before launching!')
-        printWarning('Trying to continue in case we are wrong..')
+    printGreen('Attempting to connect, make sure that BlueStacks is running!')
+    # if processExists('HD-Player.exe'):
+    #     printGreen('Bluestacks found! Trying to connect via ADB..')
+    # else:
+    #     printError('Bluestacks not found (no running process: HD-Player.exe), please make sure it\'s running before launching!')
+    #     printWarning('Trying to continue in case we are wrong..')
     global device
     configureADB()
     adb = Client(host='127.0.0.1', port=5037)
