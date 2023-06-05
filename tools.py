@@ -7,6 +7,7 @@ import time
 import socket
 import os
 import configparser
+import sys
 
 config = configparser.ConfigParser()
 config.read('settings.ini')
@@ -60,12 +61,14 @@ def resolutionCheck(device):
 
 # Checks Windows running processes for Bluestacks.exe
 def processExists(process_name):
+    sysEncoding = sys.getdefaultencoding()
+    printWarning('System encoding is: ' + sysEncoding)
     call = 'TASKLIST', '/FI', 'imagename eq %s' % process_name
-    output = check_output(call).decode()
+    output = check_output(call).decode(sysEncoding)
     last_line = output.strip().split('\r\n')[-1]
     return last_line.lower().startswith(process_name.lower())
 
-# This function manages the ADB connection
+# This function manages the ADB connection. It does not do it in a refined manner.
 # First it restarts ADB then checks for `emulator-xxxx` devices, if empty we check for `localhost:xxxx` devices
 # If neither are found we use portScan() to find the active port and connect using that
 def configureADB():
@@ -94,8 +97,9 @@ def configureADB():
         else:
             adb_device = adb_device_str[2:16]
 
-# If we don't find a device we use this to scan the odd ports between 5555 and 5587 to find the ADB port
-# This is a very slow implementation (1 second per port, up to 30 seconds for port 5587). We can multithread it to speed it up
+# If we don't find a device we use first check settings to see if a port has been manually defined and use that
+# if not then we scan the odd ports between 5555 and 5599 to find the ADB port that bluestacks is using (note Hyper-V BS will use a port in the 10000+ range for reasons)
+# This is a very slow implementation (1 second per port, up to 45 seconds for port 5599). We can multithread it to speed it up
 # If no port is found we have exhausted all options to find the ADB device so will exit
 def portScan():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -108,7 +112,7 @@ def portScan():
         adbport = int(config.get('ADVANCED', 'port'))
         return adbport
 
-    printWarning('No ADB devices found, and no configured port in settings.ini. Scanning ADB ports to find it automatically, this can take up to 30 seconds..')
+    printWarning('No ADB devices found, and no configured port in settings.ini. Scanning ADB ports to find it automatically, this can take up to 45 seconds..')
 
     # Port scanner function
     def port_scan(port):
@@ -119,7 +123,7 @@ def portScan():
             pass
 
     # Scan ports
-    for port in range(5555,5588):
+    for port in range(5555,5599):
         if port % 2 != 0: # ADB will only use odd port numbers in this range
             if port_scan(port):
                 printWarning('ADB Device Found at port ' + str(port) + ' in ' + str(round((time.time() - start))) + ' seconds!')
@@ -145,7 +149,7 @@ def connect_device():
         printWarning('Trying to continue in case we are wrong..')
     global device
     configureADB()
-    adb = Client(host='127.0.0.1',port=5037)
+    adb = Client(host='127.0.0.1', port=5037)
     device = adb.device(adb_device) # connect to the device we extracted above
     if device == None:
         printError('No ADB device found, often due to ADB errors. Please try manually connecting your client.')

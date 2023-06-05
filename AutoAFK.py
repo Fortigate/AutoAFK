@@ -14,7 +14,7 @@ config.read('settings.ini')
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
 
-version = "0.8.6"
+version = "0.8.7b"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -513,7 +513,7 @@ def dailies():
         collectQuests()
     if bool(config.getboolean('DAILIES', 'collectmerchants')) is True:
         clearMerchant()
-    printGreen('\nDailies done!')
+    printGreen('Dailies done!')
     return
 
 def push():
@@ -532,7 +532,7 @@ def push():
         while 1:
             pushCampaign(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
     else:
-        printBlue('Auto-Pushing Tower using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
+        printBlue('Auto-Pushing ' + str(app.pushLocationDropdown.get()) + ' using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
         openTower(app.pushLocationDropdown.get())
         while 1:
             pushTower(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))

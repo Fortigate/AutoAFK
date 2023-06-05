@@ -8,17 +8,18 @@ config.read('settings.ini')
 d = datetime.datetime.now()
 
 def collectAFKRewards():
-    printBlue('Attempting AFK Reward collection 2x')
+    printBlue('Attempting AFK Reward collection')
     confirmLocation('campaign')
     if (isVisible('buttons/campaign_selected')):
         clickXY(550, 1550)
         click('buttons/collect', 0.8)
-        clickXY(550, 1800, seconds=2) # Click campaign in case we level up, long pause so we can collect twice
-        clickXY(550, 1800, seconds=2)
-        if (isVisible('buttons/begin')):
-            clickXY(550, 1550)
-        click('buttons/collect')
-        clickXY(550, 1800) # Click campaign in case we level up
+        clickXY(550, 1800, seconds=1) # Click campaign in case we level up
+        clickXY(550, 1800, seconds=1) # again for the time limited deal popup
+        clickXY(550, 1800, seconds=1) # 3rd to be safe
+        # if (isVisible('buttons/begin')):
+        #     clickXY(550, 1550)
+        # click('buttons/collect')
+        # clickXY(550, 1800) # Click campaign in case we level up
         printGreen('    AFK Rewards collected!')
     else:
         printError('AFK Rewards chests not found!')
@@ -222,6 +223,8 @@ def pushTower(formation=3, duration=1):
     firstrun = True
     if firstrun is True:
         click('buttons/challenge_plain', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
+        config.read('settings.ini')  # to load any new values (ie formation downdown changed and saved) into memory
+        wait(3)
         firstrun = False
     click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
     click('buttons/cancel', seconds=2, suppress=True)
@@ -240,7 +243,7 @@ def pushTower(formation=3, duration=1):
         printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
         click('buttons/cancel', retry=3, suppress=True)
     else:
-        printGreen('Victory! Reloading formation ' + str(formation))
+        printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
         click('buttons/exit', suppress=True)
         click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
         click('buttons/exitbattle', suppress=True)
