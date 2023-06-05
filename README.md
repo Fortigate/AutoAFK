@@ -3,7 +3,7 @@ AutoAFK is a tool to automate Bluestacks games via ADB using Python, Pyscreeze a
 
 While the bot is designed for AFK Arena the core logic will work for anything rendered in Bluestacks.
 
-![image](https://github.com/Fortigate/AutoAFK/assets/46250387/3d313aa5-dfe4-4a0a-99d2-ea62fb971df9)
+![image](https://github.com/Fortigate/AutoAFK/assets/46250387/ba116c3c-6718-4361-9aaf-957c17e32ba1)
 
 Issues/Comments/Suggestions? [Join the Discord server!](https://discord.gg/pfU7UB5A)
 
