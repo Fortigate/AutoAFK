@@ -148,6 +148,7 @@ def portScan():
 # Connects to the found ADB device using PPADB, allowing us to send commands via Python
 # On success we go through our startup checks to make sure we are starting from the same point each time, and can recognise the template images
 def connect_device():
+    config.read('settings.ini') # To update any new values before we run activities
     global connected  # So we don't reconnect with every new activity
     if connected is True:
         return
@@ -188,7 +189,8 @@ def save_screenshot(name):
 
 # Wait command, default 1 second
 def wait(seconds=1):
-    time.sleep(seconds)
+    print('waiting: ' + str(seconds*float(config.get('ADVANCED', 'loadingMuliplier'))) + ' seconds')
+    time.sleep(seconds*float(config.get('ADVANCED', 'loadingMuliplier')))
 
 def swipe(x1, y1, x2, y2, duration=100, seconds=1):
     device.shell('input swipe ' + str(x1) + ' ' + str(y1) + ' ' + str(x2) + ' ' + str(y2) + ' ' + str(duration))
@@ -263,7 +265,10 @@ def clickMultipleChoice(image, choice, confidence=0.9, seconds=1):
     screenshot = cv2.imread(cwd + 'screen.bin', 0)
     search = cv2.imread(cwd + 'img\\' + image + '.png', 0)
     results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
-    if choice > len(results):
+    if len(results) == 0:
+        printError('clickMultipleChoice error, image:' + str(image) + ' not found')
+        return
+    if choice > len(results): # If the choice is higher than the amount of results we take the last result
         x, y, w, h = results[len(results)-1]
         x_center = round(x + w / 2)
         y_center = round(y + h / 2)

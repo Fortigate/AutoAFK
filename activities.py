@@ -155,8 +155,9 @@ def handleArenaOfHeroes(count):
         click('labels/arenaofheroes2', suppress=True)
         click('buttons/challenge', retry=3) # retries for animated button
         while counter < count:
+            wait(1) # To avoid error when clickMultipleChoice returns no results
             clickMultipleChoice('buttons/arenafight', 4, confidence=0.98) # Select 4th opponent
-            click('buttons/battle', 0.6, retry=3) # lower confidence as it's an animated button
+            click('buttons/battle', 0.6, retry=3, suppress=True) # lower confidence as it's an animated button
             wait(2)
             click('buttons/skip', retry=5, suppress=True) # Retries as ulting heros can cover the button
             if (isVisible('labels/defeat')):
@@ -452,21 +453,22 @@ def clearMerchant():
     swipe(1000, 1825, 100, 1825, 500)
     swipe(1000, 1825, 100, 1825, 500)
     if isVisible('buttons/noblesociety'):
-        print('    Collecting Nobles')
-        # Nobles
-        clickXY(675, 1825)
-        # Regal
-        clickXY(450, 1600)
-        clickXY(860, 520, seconds=2)
-        clickXY(860, 520)
-        # Twisted
-        clickXY(600, 1600)
-        clickXY(860, 520, seconds=2)
-        clickXY(860, 520)
-        # Champion
-        clickXY(750, 1600)
-        clickXY(860, 520, seconds=2)
-        clickXY(860, 520)
+        ## Disabled for now as the collect button has been replaced by a purchase button
+        # print('    Collecting Nobles')
+        # # Nobles
+        # clickXY(675, 1825)
+        # # Regal
+        # clickXY(450, 1600)
+        # clickXY(860, 520, seconds=2)
+        # clickXY(860, 520)
+        # # Twisted
+        # clickXY(600, 1600)
+        # clickXY(860, 520, seconds=2)
+        # clickXY(860, 520)
+        # # Champion
+        # clickXY(750, 1600)
+        # clickXY(860, 520, seconds=2)
+        # clickXY(860, 520)
         # Monthly Cards
         print('    Collecting Monthly Cards')
         clickXY(400, 1825)

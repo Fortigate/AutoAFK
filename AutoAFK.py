@@ -411,6 +411,13 @@ class advancedWindow(customtkinter.CTkToplevel):
         self.portEntry.insert('end', config.get('ADVANCED', 'port'))
         self.portEntry.place(x=50, y=40)
 
+        # Loading.. Entry
+        self.delayLabel = customtkinter.CTkLabel(master=self.advancedFrame, text='Delay multiplier:', fg_color=("gray86", "gray17"))
+        self.delayLabel.place(x=10, y=70)
+        self.delayEntry = customtkinter.CTkEntry(master=self.advancedFrame, height=25, width=40)
+        self.delayEntry.insert('end', config.get('ADVANCED', 'loadingMuliplier'))
+        self.delayEntry.place(x=130, y=70)
+
         # Save button
         self.advanceSaveButton = customtkinter.CTkButton(master=self.advancedFrame, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.advancedSave)
         self.advanceSaveButton.place(x=30, y=140)
@@ -418,6 +425,8 @@ class advancedWindow(customtkinter.CTkToplevel):
     def advancedSave(self):
         if self.portEntry.get() != config.get('ADVANCED', 'port'):
             config.set('ADVANCED', 'port', self.portEntry.get())
+        if self.delayEntry.get() != config.get('ADVANCED', 'loadingMuliplier'):
+            config.set('ADVANCED', 'loadingMuliplier', self.delayEntry.get())
 
         with open('settings.ini', 'w') as configfile:
             config.write(configfile)
