@@ -188,9 +188,12 @@ def save_screenshot(name):
         f.write(image)
 
 # Wait command, default 1 second
+# Loading multiplier is defined in settings, it is a decimally notated % multiplier. E.G:
+# 0.9 will run with 90% of the default wait times
+# 2.0 will run with 200% of the default wait times
+# This is handy for slower machines where we need to wait for sections/images to load
 def wait(seconds=1):
-    print('waiting: ' + str(seconds*float(config.get('ADVANCED', 'loadingMuliplier'))) + ' seconds')
-    time.sleep(seconds*float(config.get('ADVANCED', 'loadingMuliplier')))
+    time.sleep(seconds * float(config.get('ADVANCED', 'loadingMuliplier')))
 
 def swipe(x1, y1, x2, y2, duration=100, seconds=1):
     device.shell('input swipe ' + str(x1) + ' ' + str(y1) + ' ' + str(x2) + ' ' + str(y2) + ' ' + str(duration))
