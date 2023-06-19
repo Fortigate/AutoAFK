@@ -14,7 +14,7 @@ config.read('settings.ini')
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
 
-version = "0.8.7b"
+version = "0.9"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -132,8 +132,15 @@ class App(customtkinter.CTk):
         self.textbox.tag_config('warning', foreground='yellow')
         self.textbox.tag_config('green', foreground='lawngreen')
         self.textbox.tag_config('blue', foreground='cyan')
-        self.textbox.insert('end', 'Welcome to AutoAFK!\n')
-        self.textbox.insert('end', 'The tool is still in Beta so bugs and stability are being worked on, if you find any please report on Github or Discord (Jc#4631)\n\n')
+        self.textbox.tag_config('purple', foreground='#af5ac9')
+        self.textbox.insert('end', 'Welcome to AutoAFK!\n\n', 'green')
+        self.textbox.insert('end', 'This tool is still in Beta! Report issues on the below channels:\n', 'blue')
+        self.textbox.insert('end', 'Github: ', 'purple')
+        self.textbox.insert('end',  'Github.com/Fortigate/AutoAFK/issues\n')
+        self.textbox.insert('end', 'Discord DM: ', 'purple')
+        self.textbox.insert('end',  'Jc.2\n')
+        self.textbox.insert('end', 'Discord Server: ', 'purple')
+        self.textbox.insert('end',  'discord.gg/floofpire in #auto-afk\n\n')
         sys.stdout = STDOutRedirector(self.textbox)
 
         # Configure windows so we can reference them
