@@ -99,29 +99,45 @@ def attemptCampaign():
         recover()
 
 def pushCampaign(formation=3, duration=1):
-    confirmLocation('campaign')
-    click('buttons/begin', seconds=2)
-    if (isVisible('buttons/begin', 0.7)): # If we see second Begin it's a multi so we take different actions
-        click('buttons/begin', 0.7, seconds=2)
-        click('buttons/formations')
-        clickXY(850, 425+(formation*175))
-        click('buttons/use')
-        click('buttons/confirm_small')
-        click('buttons/autobattle')
-        click('buttons/activate')
+    firstrun = True
+    if firstrun is True:
+        confirmLocation('campaign')
+        click('buttons/begin', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
+        config.read('settings.ini')  # to load any new values (ie formation downdown changed and saved) into memory
+        wait(3)
+        firstrun = False
+    click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
+    click('buttons/cancel', seconds=2, suppress=True)
+    if (isVisible('buttons/begin_plain', 0.7)): # If we see second Begin it's a multi so we take different actions
+        click('buttons/begin_plain', 0.7, seconds=2, retry=2, suppress=True)
+        if isVisible('buttons/formations'):
+            click('buttons/formations', seconds=3)
+            clickXY(850, 425 + (formation * 175))
+            click('buttons/use', suppress=True)
+            click('buttons/confirm_small', suppress=True)
+            click('buttons/autobattle', suppress=True) # So we don't hit it in the background while autobattle is active
+            click('buttons/activate', suppress=True)
     else:
-        click('buttons/formations')
-        clickXY(850, 425+(formation*175))
-        click('buttons/use')
-        click('buttons/confirm_small')
-        click('buttons/autobattle')
-        click('buttons/activate')
-    wait(duration*60)
-    clickXY(550, 1850)
-    click('buttons/exit', suppress=True)
-    click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
-    click('buttons/exitbattle', suppress=True)
-    clickXY(550, 1850)
+        if isVisible('buttons/formations'):
+            click('buttons/formations', seconds=3, suppress=True)
+            clickXY(850, 425 + (formation * 175))
+            click('buttons/use', suppress=True)
+            click('buttons/confirm_small', suppress=True)
+            click('buttons/autobattle', suppress=True) # So we don't hit it in the background while autobattle is active
+            click('buttons/activate', suppress=True)
+    wait((duration * 60) - 45)
+    clickXY(550, 1750)
+    if isVisible('labels/autobattle_0'):
+        wait(2)
+        if config.get('PUSH', 'suppressSpam') is False:
+            printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
+        click('buttons/cancel', retry=3, suppress=True)
+    else:
+        printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
+        click('buttons/exit', suppress=True)
+        click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
+        click('buttons/exitbattle', suppress=True)
+        click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
 
 def handleBounties():
     printBlue('Handling Bounty Board')
@@ -241,7 +257,8 @@ def pushTower(formation=3, duration=1):
     clickXY(550, 1750)
     if isVisible('labels/autobattle_0'):
         wait(2)
-        printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
+        if config.get('PUSH', 'suppressSpam') is False:
+            printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
         click('buttons/cancel', retry=3, suppress=True)
     else:
         printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))

@@ -14,7 +14,7 @@ config.read('settings.ini')
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
 
-version = "0.9"
+version = "0.9.1"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -401,12 +401,12 @@ class shopWindow(customtkinter.CTkToplevel):
 class advancedWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.geometry("200x200")
+        self.geometry("250x300")
         self.title('Advanced Options')
         self.attributes("-topmost", True)
 
         # Activity Frame
-        self.advancedFrame = customtkinter.CTkFrame(master=self, width=180, height=180)
+        self.advancedFrame = customtkinter.CTkFrame(master=self, width=230, height=280)
         self.advancedFrame.place(x=10, y=10)
         self.label = customtkinter.CTkLabel(master=self.advancedFrame, text="Advanced Options:", font=("Arial", 15, 'bold'))
         self.label.place(x=20, y=5)
@@ -416,24 +416,48 @@ class advancedWindow(customtkinter.CTkToplevel):
         self.portLabel.place(x=10, y=40)
         self.portEntry = customtkinter.CTkEntry(master=self.advancedFrame, height=25, width=60)
         self.portEntry.insert('end', config.get('ADVANCED', 'port'))
-        self.portEntry.place(x=50, y=40)
+        self.portEntry.place(x=45, y=40)
 
         # Loading.. Entry
         self.delayLabel = customtkinter.CTkLabel(master=self.advancedFrame, text='Delay multiplier:', fg_color=("gray86", "gray17"))
         self.delayLabel.place(x=10, y=70)
-        self.delayEntry = customtkinter.CTkEntry(master=self.advancedFrame, height=25, width=40)
+        self.delayEntry = customtkinter.CTkEntry(master=self.advancedFrame, height=25, width=30)
         self.delayEntry.insert('end', config.get('ADVANCED', 'loadingMuliplier'))
-        self.delayEntry.place(x=130, y=70)
+        self.delayEntry.place(x=110, y=70)
+
+        # Victory Check Duration Entry
+        self.victoryCheckLabel = customtkinter.CTkLabel(master=self.advancedFrame, text='Victory Check Frequency:', fg_color=("gray86", "gray17"))
+        self.victoryCheckLabel.place(x=10, y=100)
+        self.victoryCheckEntry = customtkinter.CTkEntry(master=self.advancedFrame, height=25, width=30)
+        self.victoryCheckEntry.insert('end', config.get('PUSH', 'victorycheck'))
+        self.victoryCheckEntry.place(x=160, y=100)
+
+        # Victory check suppress non-victory
+        self.supressLabel = customtkinter.CTkLabel(master=self.advancedFrame, text='Suppress victory check spam?', fg_color=("gray86", "gray17"))
+        self.supressLabel.place(x=10, y=130)
+        self.supressCheckbox = customtkinter.CTkCheckBox(master=self.advancedFrame, text=None, onvalue=True, offvalue=False, command=self.advancedSave)
+        self.supressCheckbox.place(x=190, y=130)
 
         # Save button
         self.advanceSaveButton = customtkinter.CTkButton(master=self.advancedFrame, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.advancedSave)
-        self.advanceSaveButton.place(x=30, y=140)
+        self.advanceSaveButton.place(x=60, y=180)
+
+        # Update button state when we open the window
+        if config.getboolean('PUSH', 'suppressSpam'):
+            self.supressCheckbox.select()
 
     def advancedSave(self):
         if self.portEntry.get() != config.get('ADVANCED', 'port'):
             config.set('ADVANCED', 'port', self.portEntry.get())
         if self.delayEntry.get() != config.get('ADVANCED', 'loadingMuliplier'):
             config.set('ADVANCED', 'loadingMuliplier', self.delayEntry.get())
+        if self.victoryCheckEntry.get() != config.get('PUSH', 'victorycheck'):
+            config.set('PUSH', 'victorycheck', self.victoryCheckEntry.get())
+        if self.supressCheckbox.get() != config.get('PUSH', 'suppressSpam'):
+            if self.supressCheckbox.get() == 1:
+                config.set('PUSH', 'suppressSpam', 'True')
+            else:
+                config.set('PUSH', 'suppressSpam', 'False')
 
         with open('settings.ini', 'w') as configfile:
             config.write(configfile)
