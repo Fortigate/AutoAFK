@@ -14,7 +14,7 @@ config.read('settings.ini')
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
 
-version = "0.9.1"
+version = "0.9.2"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -466,7 +466,7 @@ class advancedWindow(customtkinter.CTkToplevel):
 # Will change the dropdown to only include open towers
 # May cause issues with timezones..
 def setUlockedTowers():
-    days = {1:["Campaign", "King's Tower", "Lightbringer"],
+    days = {1:["Campaign", "King's Tower", "Lightbringer Tower"],
     2:["Campaign", "King's Tower", "Mauler Tower"],
     3:["Campaign", "King's Tower", "Wilder Tower", "Celestial Tower"],
     4:["Campaign", "King's Tower", "Graveborn Tower", "Hypogean Tower"],

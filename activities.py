@@ -166,9 +166,8 @@ def handleArenaOfHeroes(count):
     confirmLocation('darkforest')
     clickXY(740, 1050)
     clickXY(550, 50)
-    if isVisible('labels/arenaofheroes') or isVisible('labels/arenaofheroes2'): # The label font changes for reasons
-        click('labels/arenaofheroes', suppress=True)
-        click('labels/arenaofheroes2', suppress=True)
+    if isVisible('labels/arenaofheroes_new'): # The label font changes for reasons
+        click('labels/arenaofheroes_new', suppress=True)
         click('buttons/challenge', retry=3) # retries for animated button
         while counter < count:
             wait(1) # To avoid error when clickMultipleChoice returns no results
@@ -196,9 +195,8 @@ def collectGladiatorCoins():
     confirmLocation('darkforest')
     clickXY(740, 1050)
     clickXY(550, 50)
-    if isVisible('labels/legendstournament2') or isVisible('labels/legendstournament'): # The label font changes for reasons
-        click('labels/legendstournament', suppress=True)
-        click('labels/legendstournament2', suppress=True)
+    if isVisible('labels/legendstournament_new'): # The label font changes for reasons
+        click('labels/legendstournament_new', suppress=True)
         clickXY(550, 300, seconds=2)
         clickXY(50, 1850)
         click('buttons/back')
