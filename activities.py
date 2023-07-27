@@ -1,10 +1,10 @@
 from tools import *
-from AutoAFK import printGreen, printError, printWarning, printBlue
+from AutoAFK import printGreen, printError, printWarning, printBlue, settings
 import datetime
 import configparser
 
 config = configparser.ConfigParser()
-config.read('settings.ini')
+config.read(settings)
 d = datetime.datetime.now()
 
 def collectAFKRewards():
@@ -103,7 +103,7 @@ def pushCampaign(formation=3, duration=1):
     if firstrun is True:
         confirmLocation('campaign')
         click('buttons/begin', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
-        config.read('settings.ini')  # to load any new values (ie formation downdown changed and saved) into memory
+        config.read(settings)  # to load any new values (ie formation downdown changed and saved) into memory
         wait(3)
         firstrun = False
     click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
@@ -238,7 +238,7 @@ def pushTower(formation=3, duration=1):
     firstrun = True
     if firstrun is True:
         click('buttons/challenge_plain', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
-        config.read('settings.ini')  # to load any new values (ie formation downdown changed and saved) into memory
+        config.read(settings)  # to load any new values (ie formation downdown changed and saved) into memory
         wait(3)
         firstrun = False
     click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)

@@ -5,14 +5,28 @@ import sys
 import configparser
 import os
 from datetime import datetime,timezone
+import argparse
 
 currenttime = datetime.now()
 currenttimeutc = datetime.now(timezone.utc)
-cwd = (os.path.dirname(__file__) + '\\')
+cwd = (os.path.dirname(__file__) + '\\') # We prefix all file calls with cwd so we can call from other directories (I.E via batch or cron)
 config = configparser.ConfigParser()
-config.read('settings.ini')
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
+
+parser = argparse.ArgumentParser()
+parser.add_argument("-c", "--config", metavar="CONFIG", default = "settings.ini", help = "Path to your input image")
+parser.add_argument("-a", "--activity", metavar="ACTIVITY", help = "Path to your input image")
+parser.add_argument("-d", "--dailies", action = 'store_true')
+parser.add_argument("-p", "--push", metavar="PUSH", help = "Path to your input image")
+args = vars(parser.parse_args())
+
+global settings
+if args['config']:
+    settings = cwd + (args['config'])
+else:
+    settings = cwd + 'settings.ini'
+config.read(settings)
 
 version = "0.9.2"
 
@@ -141,7 +155,9 @@ class App(customtkinter.CTk):
         self.textbox.insert('end',  'Jc.2\n')
         self.textbox.insert('end', 'Discord Server: ', 'purple')
         self.textbox.insert('end',  'discord.gg/floofpire in #auto-afk\n\n')
-        sys.stdout = STDOutRedirector(self.textbox)
+        self.textbox.insert('end',  'loaded config: ' + str(args['config']))
+        if not args['dailies']:
+            sys.stdout = STDOutRedirector(self.textbox)
 
         # Configure windows so we can reference them
         self.shop_window = None
@@ -153,9 +169,7 @@ class App(customtkinter.CTk):
             config.set('DAILIES', 'twistedRealm', 'True')
         else:
             config.set('DAILIES', 'twistedRealm', 'False')
-
-        with open('settings.ini', 'w') as configfile:
-            config.write(configfile)
+        updateSettings()
 
     def open_advancedwindow(self):
         if self.advanced_window is None or not self.advanced_window.winfo_exists():
@@ -301,8 +315,7 @@ class activityWindow(customtkinter.CTkToplevel):
                 config.set('DAILIES', activity, 'True')
             else:
                 config.set('DAILIES', activity, 'False')
-        with open('settings.ini', 'w') as configfile:
-            config.write(configfile)
+        updateSettings()
 
 
 # Shop Window
@@ -395,7 +408,7 @@ class shopWindow(customtkinter.CTkToplevel):
                 config.set('SHOP', box, 'True')
             else:
                 config.set('SHOP', box, 'False')
-        with open('settings.ini', 'w') as configfile:
+        with open(settings, 'w') as configfile:
             config.write(configfile)
 
 class advancedWindow(customtkinter.CTkToplevel):
@@ -459,9 +472,9 @@ class advancedWindow(customtkinter.CTkToplevel):
             else:
                 config.set('PUSH', 'suppressSpam', 'False')
 
-        with open('settings.ini', 'w') as configfile:
+        with open(settings, 'w') as configfile:
             config.write(configfile)
-        config.read('settings.ini')  # to load the new value into memory
+        config.read(settings)  # to load the new value into memory
 
 # Will change the dropdown to only include open towers
 # May cause issues with timezones..
@@ -477,11 +490,14 @@ def setUlockedTowers():
         if currenttimeutc.isoweekday() == day:
             app.pushLocationDropdown.configure(values=towers)
 
-def abortAllTasks():
-    for thread in threading.enumerate():
-        if thread.name != 'MainThread':
-            print(thread.name)
-            thread.join()
+def launchArgs():
+    if args['dailies']:
+        dailies()
+        sys.exit(0)
+
+def updateSettings():
+    with open(settings, 'w') as configfile:
+        config.write(configfile)
 
 def buttonState(state):
     app.dailiesButton.configure(state=state)
@@ -491,9 +507,7 @@ def buttonState(state):
 def ticketBurn():
     if app.pvpEntry.get() != config.get('ARENA', 'arenabattles'):
         config.set('ARENA', 'arenabattles', app.pvpEntry.get())
-
-    with open('settings.ini', 'w') as configfile:
-        config.write(configfile)
+    updateSettings()
 
     buttonState('disabled')
     connect_device()
@@ -510,9 +524,7 @@ def dailiesButton():
         config.set('DAILIES', 'fastrewards', app.fastrewardsEntry.get())
     if app.shoprefreshEntry.get() != config.get('DAILIES', 'shoprefreshes'):
         config.set('DAILIES', 'shoprefreshes', app.shoprefreshEntry.get())
-
-    with open(cwd + 'settings.ini', 'w') as configfile:
-        config.write(configfile)
+    updateSettings()
 
     buttonState('disabled')
     dailies()
@@ -559,9 +571,7 @@ def dailies():
 def push():
     if app.pushFormationDropdown.get() != config.get('PUSH', 'formation'):
         config.set('PUSH', 'formation', app.pushFormationDropdown.get())
-
-    with open(cwd + 'settings.ini', 'w') as configfile:
-        config.write(configfile)
+    updateSettings()
 
     connect_device()
     buttonState('disabled')
@@ -604,6 +614,7 @@ class STDOutRedirector(IORedirector):
 if __name__ == "__main__":
     app = App()
     setUlockedTowers()
+    launchArgs()
     app.mainloop()
 
 # Coloured text for the console

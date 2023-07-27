@@ -1,5 +1,5 @@
 from ppadb.client import Client
-from AutoAFK import printGreen, printError, printWarning, printBlue
+from AutoAFK import printGreen, printError, printWarning, printBlue, settings
 from pyscreeze import locate, locateAll
 from subprocess import check_output, Popen, PIPE
 import cv2
@@ -11,7 +11,7 @@ import sys
 import numbers
 
 config = configparser.ConfigParser()
-config.read('settings.ini')
+config.read(settings)
 cwd = (os.path.dirname(__file__) + '\\')
 os.system('color')  # So colourful text works
 connected = False
@@ -46,7 +46,7 @@ def waitUntilGameActive():
             loadingcounter += 1
         if timeoutcounter > 10:
             printError('Timed out while loading!')
-            exit(1)
+            sys.exit(1)
     printGreen('Game Loaded!')
 
 # Checks we are running 1920x1080 (or 1080x1920 if we're in landscape mode) and 240 DPI, exits if not.
@@ -108,7 +108,7 @@ def portScan():
     start = time.time()
     adbport = ''
 
-    config.read('settings.ini')  # to load any new values (ie port changed and saved) into memory
+    config.read(settings)  # to load any new values (ie port changed and saved) into memory
     port = config.get('ADVANCED', 'port')
     if ':' in str(port):
         printError('Port entered includes the : symbol, it should only be the last 4 or 5 digits not the full IP:Port address. Exiting..')
@@ -116,7 +116,7 @@ def portScan():
     if int(port) == 5037:
         printError('Port 5037 has been entered, this is the port of the ADB connection service not the emulator, check BlueStacks Settings - Preferences to get the ADB port number')
         exit()
-    if port != 0:
+    if int(port) != 0:
         printGreen('Port: ' + str(config.get('ADVANCED', 'port')) + ' found in the settings.ini file, connecting using that..')
         adbport = int(config.get('ADVANCED', 'port'))
         return adbport
@@ -148,7 +148,7 @@ def portScan():
 # Connects to the found ADB device using PPADB, allowing us to send commands via Python
 # On success we go through our startup checks to make sure we are starting from the same point each time, and can recognise the template images
 def connect_device():
-    config.read('settings.ini') # To update any new values before we run activities
+    config.read(settings) # To update any new values before we run activities
     global connected  # So we don't reconnect with every new activity
     if connected is True:
         return
