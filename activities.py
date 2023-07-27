@@ -127,17 +127,21 @@ def pushCampaign(formation=3, duration=1):
             click('buttons/activate', suppress=True)
     wait((duration * 60) - 45)
     clickXY(550, 1750)
-    if isVisible('labels/autobattle_0'):
-        wait(2)
-        if config.get('PUSH', 'suppressSpam') is False:
-            printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
-        click('buttons/cancel', retry=3, suppress=True)
+    if isVisible('labels/autobattle'):
+        if isVisible('labels/autobattle_0'):
+            wait(2)
+            if config.get('PUSH', 'suppressSpam') is False:
+                printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
+            click('buttons/cancel', retry=3, suppress=True)
+        else:
+            printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
+            click('buttons/exit', suppress=True)
+            click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
+            click('buttons/exitbattle', suppress=True)
+            click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
     else:
-        printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
-        click('buttons/exit', suppress=True)
-        click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
-        click('buttons/exitbattle', suppress=True)
-        click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
+        printError('AutoBattle screen not found, exiting..')
+        sys.exit(1)
 
 def handleBounties():
     printBlue('Handling Bounty Board')
@@ -253,17 +257,21 @@ def pushTower(formation=3, duration=1):
             click('buttons/activate', suppress=True)
     wait((duration * 60)-45)
     clickXY(550, 1750)
-    if isVisible('labels/autobattle_0'):
-        wait(2)
-        if config.get('PUSH', 'suppressSpam') is False:
-            printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
-        click('buttons/cancel', retry=3, suppress=True)
+    if isVisible('labels/autobattle'):
+        if isVisible('labels/autobattle_0'):
+            wait(2)
+            if config.get('PUSH', 'suppressSpam') is False:
+                printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
+            click('buttons/cancel', retry=3, suppress=True)
+        else:
+            printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
+            click('buttons/exit', suppress=True)
+            click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
+            click('buttons/exitbattle', suppress=True)
+            click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
     else:
-        printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
-        click('buttons/exit', suppress=True)
-        click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
-        click('buttons/exitbattle', suppress=True)
-        click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
+        printError('AutoBattle screen not found, exiting..')
+        sys.exit(1)
 
 def handleKingsTower():
     printBlue('Attempting Kings Tower battle')
