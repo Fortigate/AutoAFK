@@ -40,6 +40,7 @@ Configure your Bluestacks client so that:
 * ADB is enabled
 * Resolution is 1920x1080
 * DPI is 240
+* AFK's language is set to English
 
 Then download the latest [release](https://github.com/Fortigate/AutoAFK/releases), unzip and run AutoAFK.exe.
 
