@@ -202,7 +202,7 @@ def swipe(x1, y1, x2, y2, duration=100, seconds=1):
 
 # Returns True if the image is found, False if not
 # Confidence value can be reduced for images with animations
-def isVisible(image, confidence=0.9, seconds=1):
+def isVisible(image, confidence=0.9, seconds=1, click=False):
     take_screenshot(device)
     screenshot = cv2.imread(cwd + 'screen.bin')
     search = cv2.imread(cwd + 'img\\' + image + '.png')
@@ -210,6 +210,11 @@ def isVisible(image, confidence=0.9, seconds=1):
     wait(seconds)
 
     if res != None:
+        if click is True:
+            x, y, w, h = res
+            x_center = round(x + w / 2)
+            y_center = round(y + h / 2)
+            device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
         return True
     else:
         return False

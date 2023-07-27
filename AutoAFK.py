@@ -6,6 +6,7 @@ import configparser
 import os
 from datetime import datetime,timezone
 import argparse
+import requests
 
 currenttime = datetime.now()
 currenttimeutc = datetime.now(timezone.utc)
@@ -28,7 +29,15 @@ else:
     settings = cwd + 'settings.ini'
 config.read(settings)
 
-version = "0.9.2"
+repo_releases = requests.get('https://api.github.com/repos/Fortigate/AutoAFK/releases/latest')
+json = repo_releases.json() if repo_releases and repo_releases.status_code == 200 else None
+if json != None:
+    latest_release = json.get('name')
+else:
+    latest_release = 'Cannot retrieve!'
+
+
+version = "0.9.5"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -36,7 +45,7 @@ class App(customtkinter.CTk):
         super().__init__()
 
         # configure window
-        self.title("AutoAFK - v" + version)
+        self.title("AutoAFK " + version)
         self.geometry(f"{800}x{600}")
         self.wm_iconbitmap(cwd + 'img\\auto.ico')
 
@@ -147,15 +156,16 @@ class App(customtkinter.CTk):
         self.textbox.tag_config('green', foreground='lawngreen')
         self.textbox.tag_config('blue', foreground='cyan')
         self.textbox.tag_config('purple', foreground='#af5ac9')
-        self.textbox.insert('end', 'Welcome to AutoAFK!\n\n', 'green')
-        self.textbox.insert('end', 'This tool is still in Beta! Report issues on the below channels:\n', 'blue')
+        self.textbox.tag_config('yellow', foreground='yellow')
+        self.textbox.insert('end', 'Welcome to AutoAFK!\n', 'green')
         self.textbox.insert('end', 'Github: ', 'purple')
-        self.textbox.insert('end',  'Github.com/Fortigate/AutoAFK/issues\n')
+        self.textbox.insert('end',  'Github.com/Fortigate/AutoAFK/\n')
         self.textbox.insert('end', 'Discord DM: ', 'purple')
         self.textbox.insert('end',  'Jc.2\n')
         self.textbox.insert('end', 'Discord Server: ', 'purple')
         self.textbox.insert('end',  'discord.gg/floofpire in #auto-afk\n\n')
-        self.textbox.insert('end',  'loaded config: ' + str(args['config']))
+        if latest_release.split(' ')[1] != version and latest_release.split(' ')[1] != 'retrieve!':
+            self.textbox.insert('end', 'Newer version available (' + latest_release.split(' ')[1] + '), please update!\n\n', 'yellow')
         if not args['dailies']:
             sys.stdout = STDOutRedirector(self.textbox)
 
@@ -196,7 +206,7 @@ class App(customtkinter.CTk):
 class activityWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.geometry("250x600")
+        self.geometry("500x600")
         self.title('Activity Selection')
         self.attributes("-topmost", True)
 
@@ -299,9 +309,21 @@ class activityWindow(customtkinter.CTkToplevel):
         self.collectMerchantsCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
         self.collectMerchantsCheckbox.place(x=200, y=550)
 
+        # Events Frame
+        self.eventsFrame = customtkinter.CTkFrame(master=self, width=235, height=580)
+        self.eventsFrame.place(x=255, y=10)
+        self.label = customtkinter.CTkLabel(master=self.eventsFrame, text="Events:", font=("Arial", 15, 'bold'))
+        self.label.place(x=20, y=5)
+
+        # Fight of Fates
+        self.fightOfFatesLabel = customtkinter.CTkLabel(master=self.eventsFrame, text='Fight of Fates', fg_color=("gray86", "gray17"))
+        self.fightOfFatesLabel.place(x=10, y=40)
+        self.fightOfFatesCheckbox = customtkinter.CTkCheckBox(master=self.eventsFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
+        self.fightOfFatesCheckbox.place(x=200, y=40)
+
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties', 'soloBounties',
                       'gladiatorCollect', 'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
-                         'collectQuests', 'collectMerchants']
+                         'collectQuests', 'collectMerchants', 'fightOfFates']
         for activity in activityBoxes:
             if config.getboolean('DAILIES', activity):
                 self.__getattribute__(activity+'Checkbox').select()
@@ -309,7 +331,7 @@ class activityWindow(customtkinter.CTkToplevel):
     def activityUpdate(self):
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties', 'soloBounties',
                       'gladiatorCollect', 'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
-                         'collectQuests', 'collectMerchants']
+                         'collectQuests', 'collectMerchants', 'fightOfFates']
         for activity in activityBoxes:
             if self.__getattribute__(activity + 'Checkbox').get() == 1:
                 config.set('DAILIES', activity, 'True')
@@ -534,6 +556,7 @@ def dailiesButton():
 
 def dailies():
     connect_device()
+    clearMerchant()
     if bool(config.getboolean('DAILIES', 'collectrewards')) is True:
         collectAFKRewards()
     if bool(config.getboolean('DAILIES', 'collectmail')) is True:
@@ -561,6 +584,8 @@ def dailies():
     shopPurchases(int(app.shoprefreshEntry.get()))
     if bool(config.getboolean('DAILIES', 'twistedrealm')) is True:
         handleTwistedRealm()
+    if bool(config.getboolean('DAILIES', 'fightoffates')) is True:
+        handleFightOfFates()
     if bool(config.getboolean('DAILIES', 'collectquests')) is True:
         collectQuests()
     if bool(config.getboolean('DAILIES', 'collectmerchants')) is True:

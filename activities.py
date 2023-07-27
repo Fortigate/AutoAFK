@@ -476,22 +476,33 @@ def clearMerchant():
     swipe(1000, 1825, 100, 1825, 500)
     swipe(1000, 1825, 100, 1825, 500)
     if isVisible('buttons/noblesociety'):
-        ## Disabled for now as the collect button has been replaced by a purchase button
-        # print('    Collecting Nobles')
-        # # Nobles
-        # clickXY(675, 1825)
-        # # Regal
-        # clickXY(450, 1600)
-        # clickXY(860, 520, seconds=2)
-        # clickXY(860, 520)
-        # # Twisted
-        # clickXY(600, 1600)
-        # clickXY(860, 520, seconds=2)
-        # clickXY(860, 520)
-        # # Champion
-        # clickXY(750, 1600)
-        # clickXY(860, 520, seconds=2)
-        # clickXY(860, 520)
+        print('    Collecting Nobles')
+        # Nobles
+        clickXY(675, 1825)
+        # Champion
+        clickXY(750, 1600) # Icon
+        clickXY(440, 1470, seconds=0.5)
+        clickXY(440, 1290, seconds=0.5)
+        clickXY(440, 1100, seconds=0.5)
+        clickXY(440, 915, seconds=0.5)
+        clickXY(440, 725, seconds=0.5)
+        clickXY(750, 1600) # Icon
+        # Twisted
+        clickXY(600, 1600) # Icon
+        clickXY(440, 1470, seconds=0.5)
+        clickXY(440, 1290, seconds=0.5)
+        clickXY(440, 1100, seconds=0.5)
+        clickXY(440, 915, seconds=0.5)
+        clickXY(440, 725, seconds=0.5)
+        clickXY(600, 1600) # Icon
+        # Regal
+        clickXY(450, 1600) # Icon
+        clickXY(440, 1470, seconds=0.5)
+        clickXY(440, 1290, seconds=0.5)
+        clickXY(440, 1100, seconds=0.5)
+        clickXY(440, 915, seconds=0.5)
+        clickXY(440, 725, seconds=0.5)
+        clickXY(450, 1600) # Icon
         # Monthly Cards
         print('    Collecting Monthly Cards')
         clickXY(400, 1825)
@@ -502,25 +513,26 @@ def clearMerchant():
         clickXY(850, 1000, seconds=3)
         clickXY(560, 430)
         # Daily Deals
-        print('    Collecting Daily Deals')
         swipe(200, 1825, 450, 1825, 500, seconds=2)
         clickXY(400, 1825)
         # Special Deal
-        clickXY(150, 1675)
+        # if isVisible('buttons/merchant_special', confidence=0.8, click=True):
+        print('    Collecting Special Deal')
         click('buttons/dailydeals')
         clickXY(150, 1625)
         # Daily Deal
-        clickXY(400, 1675)
-        swipe(550, 1400, 550, 1200, 500, seconds=3)
-        click('buttons/dailydeals')
-        clickXY(400, 1675)
+        if isVisible('buttons/merchant_daily', confidence=0.8, click=True):
+            print('    Collecting Daily Deal')
+            swipe(550, 1400, 550, 1200, 500, seconds=3)
+            click('buttons/dailydeals')
+            clickXY(400, 1675)
         # Biweeklies
         if d.isoweekday() == 3: # Wednesday
-            print('    Collecting Biweekly Deals')
-            clickXY(550, 1625)
-            swipe(300, 1400, 200, 1200, 500, seconds=3)
-            clickXY(200, 1200)
-            clickXY(550, 1625)
+            if isVisible('buttons/merchant_biweekly', confidence=0.8, click=True):
+                print('    Collecting Biweekly Deal')
+                swipe(300, 1400, 200, 1200, 500, seconds=3)
+                clickXY(200, 1200)
+                clickXY(550, 1625)
         # Yuexi
         if d.isoweekday() == 1: # Monday
             print('    Collecting Yuexi')
@@ -567,6 +579,47 @@ def handleTwistedRealm():
     else:
         printError('    Error opening Twisted Realm, attempting to recover')
         recover()
+
+def handleFightOfFates():
+    printBlue('Attempting to run Fight of Fates')
+    counter = 0
+    click('buttons/fightoffates', confidence=0.8, retry=5, seconds=3)
+    if isVisible('labels/fightoffates'):
+        while counter < 3:
+            click('buttons/challenge_tr', suppress=True)
+            wait(6)
+            while not isVisible('labels/fightoffates'):
+                # Hero
+                swipe(200, 1700, 290, 975, 200)
+                # Skill 1
+                swipe(450, 1700, 550, 950, 200)
+                # Hero
+                swipe(200, 1700, 290, 975, 200)
+                # Skill 2
+                swipe(600, 1700, 550, 950, 200)
+                # Hero
+                swipe(200, 1700, 290, 975, 200)
+                # Skill 3
+                swipe(800, 1700, 550, 950, 200)
+            counter = counter + 1
+            printGreen('    Fight of Fates Battle #' + str(counter) + ' complete')
+        # Click quests
+        clickXY(975, 125, seconds=2)
+        # select dailies tab
+        clickXY(650, 1650, seconds=1)
+        # Collect Dailies
+        clickXY(940, 680, seconds=2)
+        clickXY(980, 435, seconds=2)
+        # clear loot
+        clickXY(550, 250, seconds=2)
+        # Back twice to exit
+        clickXY(70, 1650, seconds=1)
+        clickXY(70, 1810, seconds=1)
+        printGreen('    Fight of Fates attempted successfully')
+    else:
+        printWarning('Fight of Fates not found, recovering..')
+        recover()
+
 
 def TS_Battle_Stastistics():
     region = 10
