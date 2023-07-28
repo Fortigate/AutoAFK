@@ -340,7 +340,7 @@ def recover():
     clickXY(70, 1810)
     confirmLocation('campaign')
     if verifyLocation('campaign'):
-        printWarning('Recovered succesfully, continuing script')
+        printWarning('Recovered succesfully')
     else:
         printError('Recovery failed, exiting')
         exit(0)

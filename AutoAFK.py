@@ -37,7 +37,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.9.5"
+version = "0.9.6"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -64,19 +64,19 @@ class App(customtkinter.CTk):
         self.arenaLabel.place(x=10, y=55)
         self.arenaEntry = customtkinter.CTkEntry(master=self.dailiesFrame, height=20, width=30)
         self.arenaEntry.insert('end', config.get('DAILIES', 'arenabattles'))
-        self.arenaEntry.place(x=130, y=60)
+        self.arenaEntry.place(x=130, y=58)
         # Fast Rewards
         self.fastrewardsLabel = customtkinter.CTkLabel(master=self.dailiesFrame, text='Fast Rewards', fg_color=("gray86", "gray17"))
         self.fastrewardsLabel.place(x=10, y=85)
         self.fastrewardsEntry = customtkinter.CTkEntry(master=self.dailiesFrame, height=20, width=30)
         self.fastrewardsEntry.insert('end', config.get('DAILIES', 'fastrewards'))
-        self.fastrewardsEntry.place(x=130, y=90)
+        self.fastrewardsEntry.place(x=130, y=88)
         # Shop Refresh
         self.shoprefreshLabel = customtkinter.CTkLabel(master=self.dailiesFrame, text='Shop Refreshes', fg_color=("gray86", "gray17"))
         self.shoprefreshLabel.place(x=10, y=115)
         self.shoprefreshEntry = customtkinter.CTkEntry(master=self.dailiesFrame, height=20, width=30)
         self.shoprefreshEntry.insert('end', config.get('DAILIES', 'shoprefreshes'))
-        self.shoprefreshEntry.place(x=130, y=120)
+        self.shoprefreshEntry.place(x=130, y=118)
         # # Twisted Realm
         # self.twistedRealmLabel = customtkinter.CTkLabel(master=self.dailiesFrame, text='Twisted Realm?', fg_color=("gray86", "gray17"))
         # self.twistedRealmLabel.place(x=10, y=150)
@@ -106,37 +106,40 @@ class App(customtkinter.CTk):
         # self.portEntry.place(x=40, y=250)
 
         # PvP Frame
-        self.arenaFrame = customtkinter.CTkFrame(master=self, height=100, width=180)
+        self.arenaFrame = customtkinter.CTkFrame(master=self, height=130, width=180)
         self.arenaFrame.place(x=10, y=290)
 
-        # PvP button
-        self.arenaButton = customtkinter.CTkButton(master=self.arenaFrame, text="Run PvP Tickets", command=lambda: threading.Thread(target=ticketBurn).start())
+        # Activities button
+        self.arenaButton = customtkinter.CTkButton(master=self.arenaFrame, text="Run Activity", command=lambda: threading.Thread(target=activityManager).start())
         self.arenaButton.place(x=20, y=15)
-        # PvP Entry
+        # Activities Dropdown
+        self.activityFormationDropdown = customtkinter.CTkComboBox(master=self.arenaFrame, values=["Arena of Heroes", "Fight of Fates"], width=160)
+        self.activityFormationDropdown.place(x=10, y=55)
+        # Activities Entry
         self.pvpLabel = customtkinter.CTkLabel(master=self.arenaFrame, text='How many battles', fg_color=("gray86", "gray17"))
-        self.pvpLabel.place(x=10, y=60)
+        self.pvpLabel.place(x=10, y=90)
         self.pvpEntry = customtkinter.CTkEntry(master=self.arenaFrame, height=20, width=40)
-        self.pvpEntry.insert('end', config.get('ARENA', 'arenabattles'))
-        self.pvpEntry.place(x=130, y=60)
+        self.pvpEntry.insert('end', config.get('ACTIVITY', 'activitybattles'))
+        self.pvpEntry.place(x=130, y=92)
 
         # Push Frame
-        self.pushFrame = customtkinter.CTkFrame(master=self, height=180, width=180)
-        self.pushFrame.place(x=10, y=400)
+        self.pushFrame = customtkinter.CTkFrame(master=self, height=150, width=180)
+        self.pushFrame.place(x=10, y=430)
 
         # Push Button
         self.pushButton = customtkinter.CTkButton(master=self.pushFrame, text="Auto Push", command=lambda: threading.Thread(target=push).start())
-        self.pushButton.place(x=20, y=15)
+        self.pushButton.place(x=20, y=10)
         # Push Entry
-        self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Where to push?', fg_color=("gray86", "gray17"))
-        self.pushLabel.place(x=10, y=50)
+        # self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Where to push?', fg_color=("gray86", "gray17"))
+        # self.pushLabel.place(x=10, y=50)
         self.pushLocationDropdown = customtkinter.CTkComboBox(master=self.pushFrame,  values=["Campaign"], width=160)
-        self.pushLocationDropdown.place(x=10, y=80)
+        self.pushLocationDropdown.place(x=10, y=50)
         # Push Formation
         self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Which formation?', fg_color=("gray86", "gray17"))
-        self.pushLabel.place(x=10, y=110)
+        self.pushLabel.place(x=10, y=80)
         self.pushFormationDropdown = customtkinter.CTkComboBox(master=self.pushFrame, values=["1st", "2nd", "3rd", "4th", "5th"], width=80)
         self.pushFormationDropdown.set(config.get('PUSH', 'formation'))
-        self.pushFormationDropdown.place(x=10, y=140)
+        self.pushFormationDropdown.place(x=10, y=110)
         # Push Duration
         # self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Check for Victory every:', fg_color=("gray86", "gray17"))
         # self.pushLabel.place(x=10, y=150)
@@ -526,18 +529,27 @@ def buttonState(state):
     app.arenaButton.configure(state=state)
     app.pushButton.configure(state=state)
 
-def ticketBurn():
-    if app.pvpEntry.get() != config.get('ARENA', 'arenabattles'):
-        config.set('ARENA', 'arenabattles', app.pvpEntry.get())
+def activityManager():
+    if app.pvpEntry.get() != config.get('ACTIVITY', 'activitybattles'):
+        config.set('ACTIVITY', 'activitybattles', app.pvpEntry.get())
     updateSettings()
 
-    buttonState('disabled')
-    connect_device()
-    # TS_Battle_Stastistics()
-    handleArenaOfHeroes(config.getint('ARENA', 'arenabattles'))
-    buttonState('normal')
-    print('')
-    return
+    if app.activityFormationDropdown.get() == "Fight of Fates":
+        buttonState('disabled')
+        connect_device()
+        handleFightOfFates(config.getint('ACTIVITY', 'activitybattles'))
+        buttonState('normal')
+        print('')
+        return
+
+    if app.activityFormationDropdown.get() == "Arena of Heroes":
+        buttonState('disabled')
+        connect_device()
+        handleArenaOfHeroes(config.getint('ACTIVITY', 'activitybattles'))
+        buttonState('normal')
+        print('')
+        return
+
 
 def dailiesButton():
     if app.arenaEntry.get() != config.get('DAILIES', 'arenabattles'):
@@ -556,7 +568,6 @@ def dailiesButton():
 
 def dailies():
     connect_device()
-    clearMerchant()
     if bool(config.getboolean('DAILIES', 'collectrewards')) is True:
         collectAFKRewards()
     if bool(config.getboolean('DAILIES', 'collectmail')) is True:

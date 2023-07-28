@@ -166,7 +166,7 @@ def handleBounties():
 
 def handleArenaOfHeroes(count):
     counter = 0
-    printBlue('Battling Arena of Heroes ' + str(count) + 'x times')
+    printBlue('Battling Arena of Heroes ' + str(count) + ' times')
     confirmLocation('darkforest')
     clickXY(740, 1050)
     clickXY(550, 50)
@@ -580,15 +580,14 @@ def handleTwistedRealm():
         printError('    Error opening Twisted Realm, attempting to recover')
         recover()
 
-def handleFightOfFates():
-    printBlue('Attempting to run Fight of Fates')
+def handleFightOfFates(battles=3):
+    printBlue('Attempting to run Fight of Fates ' + str(battles) + ' times')
     counter = 0
     click('buttons/fightoffates', confidence=0.8, retry=5, seconds=3)
     if isVisible('labels/fightoffates'):
-        while counter < 3:
-            click('buttons/challenge_tr', suppress=True)
-            wait(6)
-            while not isVisible('labels/fightoffates'):
+        while counter < battles:
+            click('buttons/challenge_tr', confidence=0.8, suppress=True, retry=3, seconds=15)
+            while not isVisible('labels/fightoffates', confidence=0.95):
                 # Hero
                 swipe(200, 1700, 290, 975, 200)
                 # Skill 1
