@@ -1,4 +1,6 @@
 from ppadb.client import Client
+
+import tools
 from AutoAFK import printGreen, printError, printWarning, printBlue, settings
 from pyscreeze import locate, locateAll
 from subprocess import check_output, Popen, PIPE
@@ -8,13 +10,14 @@ import socket
 import os
 import configparser
 import sys
-import numbers
+import math
 
 config = configparser.ConfigParser()
-config.read(settings)
-cwd = (os.path.dirname(__file__) + '\\')
+config.read(settings) # load settings
+cwd = (os.path.dirname(__file__) + '\\') # variable for current directory of AutoAFK.exe
 os.system('color')  # So colourful text works
 connected = False
+connect_counter = 1
 
 # Expands the left and right button menus
 def expandMenus():
@@ -22,6 +25,7 @@ def expandMenus():
         click('buttons/downarrow', 0.8, retry=3)
 
 # Checks if AFK Arena process is running, if not we launch it
+# TODO Add test server launch flag
 def afkRunningCheck():
     livegame = str(device.shell('ps | grep -E com.lilithgame.hgame.gp | awk \'{print$9}\'')).splitlines()
     testgame = str(device.shell('ps | grep -E com.lilithgames.hgame.gp.id | awk \'{print$9}\'')).splitlines()
@@ -61,7 +65,7 @@ def resolutionCheck(device):
         exit(1)
 
 # Checks Windows running processes for Bluestacks.exe
-# This returns a UnicodeDecodeError on some systems despite using 'sys.getdefaultencoding()'
+# Depreciated as this returns a UnicodeDecodeError on some systems despite using 'sys.getdefaultencoding()'
 def processExists(process_name):
     sysEncoding = sys.getdefaultencoding()
     printWarning('System encoding is: ' + sysEncoding)
@@ -70,7 +74,7 @@ def processExists(process_name):
     last_line = output.strip().split('\r\n')[-1]
     return last_line.lower().startswith(process_name.lower())
 
-# This function manages the ADB connection. It does not do it in a refined manner.
+# This function manages the ADB connection to Bluestacks. It does not do it in a refined manner.
 # First it restarts ADB then checks for `emulator-xxxx` devices, if empty we check for `localhost:xxxx` devices
 # If neither are found we use portScan() to find the active port and connect using that
 def configureADB():
@@ -78,20 +82,14 @@ def configureADB():
     global adb_devices
     adbpath = (os.path.dirname(__file__) + '\\adb.exe') # Locate adb.exe in working directory
     Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the server
-    wait(2)
+    wait(1)
     adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
     adb_device_str = str(adb_devices[26:40]) # trim the string to extract the first device
     adb_device = adb_device_str[2:15] # trim again because it's a byte object and has extra characters
-    # print(adb_device)
-    # processID = Popen('powershell.exe Write-Output (Get-Process -Name "HD-Player").Id', stdout=PIPE).communicate()[0]
-    # print(processID.strip())
-    # ports = Popen('powershell.exe Write-Output(netstat -nao | Select-String ' + str(processID) + ' | Select-String \'127.0.0.1\' | Select-String \'Listening\'\)', stdout=PIPE).communicate()[0]
-    # print(ports)
     if adb_device_str[2:11] == 'localhost':
         adb_device = adb_device_str[2:16] # Extra letter needed if we manually connect
-        # print(adb_device)
     if adb_device_str[2:10] != 'emulator' and adb_device_str[2:11] != 'localhost':
-        Popen([adbpath, 'connect', '127.0.0.1:' + str(portScan())], stdout=PIPE).communicate()[0]
+        Popen([adbpath, 'connect', '127.0.0.1:' + str(portScan())], stdout=PIPE).communicate()[0] # Here we run portScan()
         adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0]  # Run 'adb.exe devices' and pipe output to string
         adb_device_str = str(adb_devices[26:40])  # trim the string to extract the first device
         if len(str(config.get('ADVANCED', 'port'))) > 4:
@@ -112,10 +110,10 @@ def portScan():
     port = config.get('ADVANCED', 'port')
     if ':' in str(port):
         printError('Port entered includes the : symbol, it should only be the last 4 or 5 digits not the full IP:Port address. Exiting..')
-        exit()
+        sys.exit(1)
     if int(port) == 5037:
         printError('Port 5037 has been entered, this is the port of the ADB connection service not the emulator, check BlueStacks Settings - Preferences to get the ADB port number')
-        exit()
+        sys.exit(1)
     if int(port) != 0:
         printGreen('Port: ' + str(config.get('ADVANCED', 'port')) + ' found in the settings.ini file, connecting using that..')
         adbport = int(config.get('ADVANCED', 'port'))
@@ -141,35 +139,45 @@ def portScan():
 
     if adbport == '':
         printError('No device found! Exiting..')
-        exit(1)
+        sys.exit(1)
 
     return adbport
 
 # Connects to the found ADB device using PPADB, allowing us to send commands via Python
 # On success we go through our startup checks to make sure we are starting from the same point each time, and can recognise the template images
 def connect_device():
+    if tools.connect_counter == 1:
+        printGreen('Attempting to connect, make sure that BlueStacks is running!')
     config.read(settings) # To update any new values before we run activities
     global connected  # So we don't reconnect with every new activity
+    global device # Contains our located device
     if connected is True:
         return
-    printGreen('Attempting to connect, make sure that BlueStacks is running!')
-    # if processExists('HD-Player.exe'):
-    #     printGreen('Bluestacks found! Trying to connect via ADB..')
-    # else:
-    #     printError('Bluestacks not found (no running process: HD-Player.exe), please make sure it\'s running before launching!')
-    #     printWarning('Trying to continue in case we are wrong..')
-    global device
     configureADB()
     adb = Client(host='127.0.0.1', port=5037)
-    device = adb.device(adb_device) # connect to the device we extracted above
+    device = adb.device(adb_device) # connect to the device we extracted in configureADB()
+    # PPADB can throw errors occasionally for no good reason, here we try and catch them and retry for stability
+    while tools.connect_counter < 4:
+        try:
+            device.shell('echo Hello World!')
+        except Exception as e:
+            if str(e) != 'ERROR: \'FAIL\' 000edevice offline':
+                printError('PPADB Error: ' + str(e) + ', retrying ' + str(tools.connect_counter) + '/3')
+                wait(3)
+                tools.connect_counter+=1
+                device = None
+                connect_device()
+        else:
+            break
     if device == None:
         printError('No ADB device found, often due to ADB errors. Please try manually connecting your client.')
-        print('Debug lines:')
-        print(adb_devices)
-        exit(1)
+        printWarning('Debug:')
+        print(adb_devices.decode())
+        sys.exit(1)
     else:
         printGreen('Device: ' + adb_device + ' successfully connected!')
-        resolutionCheck(device)
+        tools.connect_counter = 1 # reset counter just in case
+        resolutionCheck(device) # Four start up checks so we have an exact position/screen configuration to start with
         afkRunningCheck()
         waitUntilGameActive()
         expandMenus()
@@ -179,7 +187,7 @@ def connect_device():
 # Takes a screenshot and saves it locally
 def take_screenshot(device):
     image = device.screencap()
-    with open('screen.bin', 'wb') as f:
+    with open(cwd + 'screen.bin', 'wb') as f:
         f.write(image)
 
 def save_screenshot(name):
@@ -195,33 +203,46 @@ def save_screenshot(name):
 def wait(seconds=1):
     time.sleep(seconds * float(config.get('ADVANCED', 'loadingMuliplier')))
 
+# Performs a swipe from X1/Y1 to X2/Y2 at the speed defined in duration
 def swipe(x1, y1, x2, y2, duration=100, seconds=1):
-    device.shell('input swipe ' + str(x1) + ' ' + str(y1) + ' ' + str(x2) + ' ' + str(y2) + ' ' + str(duration))
+    device.input_swipe(x1, y1, x2, y2, duration)
     wait(seconds)
-
 
 # Returns True if the image is found, False if not
 # Confidence value can be reduced for images with animations
-def isVisible(image, confidence=0.9, seconds=1, click=False):
+# Retry for retrying image search
+def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
+    counter = 0
     take_screenshot(device)
     screenshot = cv2.imread(cwd + 'screen.bin')
     search = cv2.imread(cwd + 'img\\' + image + '.png')
     res = locate(search, screenshot, grayscale=False, confidence=confidence)
     wait(seconds)
 
-    if res != None:
+    if res == None and retry != 1:
+        while counter < retry:
+            res = locate(search, screenshot, grayscale=False, confidence=confidence)
+            if res != None:
+                if click is True:
+                    x, y, w, h = res
+                    x_center = round(x + w / 2)
+                    y_center = round(y + h / 2)
+                    device.input_tap(x_center, y_center)
+                return True
+            counter = counter + 1
+    elif res != None:
         if click is True:
             x, y, w, h = res
             x_center = round(x + w / 2)
             y_center = round(y + h / 2)
-            device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
+            device.input_tap(x_center, y_center)
         return True
     else:
         return False
 
 # Clicks on the given XY coordinates
 def clickXY(x,y, seconds=1):
-    device.shell('input tap ' + str(x) + ' ' + str(y))
+    device.input_tap(x, y)
     wait(seconds)
 
 # If the given image is found, it will click on the center of it, if not returns "No image found"
@@ -245,7 +266,7 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=F
                 x, y, w, h = result
                 x_center = round(x + w / 2)
                 y_center = round(y + h / 2)
-                device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
+                device.input_tap(x_center, y_center)
                 wait(seconds)
                 return
             if suppress is not True:
@@ -256,7 +277,7 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=F
         x, y, w, h = result
         x_center = round(x + w/2)
         y_center = round(y + h/2)
-        device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
+        device.input_tap(x_center, y_center)
         wait(seconds)
     else:
         if suppress is not True:
@@ -280,66 +301,50 @@ def clickMultipleChoice(image, choice, confidence=0.9, seconds=1):
         x, y, w, h = results[len(results)-1]
         x_center = round(x + w / 2)
         y_center = round(y + h / 2)
-        device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
+        device.input_tap(x_center, y_center)
         wait(seconds)
     else:
         x, y, w, h = results[choice-1] # -1 to match the array starting at 0
         x_center = round(x + w / 2)
         y_center = round(y + h / 2)
-        device.shell('input tap ' + str(x_center) + ' ' + str(y_center))
+        device.input_tap(x_center, y_center)
         wait(seconds)
 
 # Checks the pixel at the XY coordinates, returns B,G,R value dependent on c variable
 def pixelCheck(x,y,c,seconds=1):
     take_screenshot(device)
-    screenshot = cv2.imread('screen.bin')
-    # print(screenshot[y, x , c])
+    screenshot = cv2.imread(cwd + 'screen.bin')
     wait(seconds)
     return screenshot[y, x , c]
 
 # Used to confirm which game screen we're currently sitting in, and change to if we're not.
-# Very slow function, we should handle this more smarterly
-def confirmLocation(location, change=True):
+# Optionally with 'bool' flag we can return boolean for if statements
+def confirmLocation(location, change=True, bool=False):
     detected = ''
+    locations = {'campaign_selected': 'campaign', 'darkforest_selected': 'darkforest', 'ranhorn_selected': 'ranhorn'}
+    take_screenshot(device)
+    screenshot = cv2.imread(cwd + 'screen.bin')
+    for location_button, string in locations.items():
+        search = cv2.imread(cwd + 'img\\buttons\\' + location_button + '.png')
+        res = locate(search, screenshot, grayscale=False)
+        if res != None:
+            detected = string
 
-    if (isVisible('buttons/' + location  + '_selected')): # if we're in the right place break early
-        return
-    else:
-        if (isVisible('buttons/campaign_selected', seconds=0)):
-            detected = 'campaign'
-        if (isVisible('buttons/darkforest_selected', seconds=0)):
-            detected = 'darkforest'
-        if (isVisible('buttons/ranhorn_selected', seconds=0)):
-            detected = 'ranhorn'
-
-    if detected != location and change is True:
-        click('buttons/' + location + '_unselected')
-
-# Returns True if `location` is found
-def verifyLocation(location):
-    detected = ''
-
-    if (isVisible('buttons/' + location  + '_selected')): # if we're in the right place break early
+    if detected == location and bool is True:
         return True
-    else:
-        if (isVisible('buttons/campaign_selected')):
-            detected = 'campaign'
-        if (isVisible('buttons/darkforest_selected')):
-            detected = 'darkforest'
-        if (isVisible('buttons/ranhorn_selected')):
-            detected = 'ranhorn'
-
-    if detected != location:
+    elif detected != location and change is True and bool is False:
+        click('buttons/' + location + '_unselected')
+    elif detected != location and bool is True:
         return False
 
 # Last ditch effort to keep clicking the back button to return to a known location
-# Should be updated to handle battle screen and screens without a back button
+# TODO update to handle battle screen and screens without a back button
 def recover():
     clickXY(70, 1810)
     clickXY(70, 1810)
     clickXY(70, 1810)
     confirmLocation('campaign')
-    if verifyLocation('campaign'):
+    if confirmLocation('campaign', bool=True):
         printWarning('Recovered succesfully')
     else:
         printError('Recovery failed, exiting')

@@ -92,7 +92,7 @@ def attemptCampaign():
         click('buttons/battle_large', 0.8, suppress=True) #If you have no autobattle button its larger
         click('buttons/pause', 0.8, retry=3) # 3 retries as ulting heroes can cover the button
         click('buttons/exitbattle')
-    if verifyLocation('campaign'):
+    if confirmLocation('campaign', bool=True):
         printGreen('    Campaign attempted successfully')
     else:
         printError('    Something went wrong, attempting to recover')
@@ -103,7 +103,7 @@ def pushCampaign(formation=3, duration=1):
     if firstrun is True:
         confirmLocation('campaign')
         click('buttons/begin', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
-        config.read(settings)  # to load any new values (ie formation downdown changed and saved) into memory
+        config.read(settings)  # to load any new values (ie formation dropdown changed and saved) into memory
         wait(3)
         firstrun = False
     click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
@@ -213,7 +213,7 @@ def collectGladiatorCoins():
 def collectFountainOfTime():
     printBlue('Collecting Fountain of Time')
     confirmLocation('darkforest')
-    clickXY(800, 700, seconds=5)
+    clickXY(800, 700, seconds=6)
     if isVisible('labels/temporalrift'):
         clickXY(550, 1800)
         clickXY(250, 1300)
@@ -257,7 +257,7 @@ def pushTower(formation=3, duration=1):
             click('buttons/activate', suppress=True)
     wait((duration * 60)-45)
     clickXY(550, 1750)
-    if isVisible('labels/autobattle'):
+    if isVisible('labels/autobattle', retry=3):
         if isVisible('labels/autobattle_0'):
             wait(2)
             if config.get('PUSH', 'suppressSpam') is False:
@@ -468,7 +468,7 @@ def collectQuests():
 def clearMerchant():
     printBlue('Attempting to collect merchant deals')
     clickXY(120, 300, seconds=5)
-    if isVisible('buttons/confirm_large', 0.8):
+    if isVisible('buttons/confirm_nobles', 0.8, retry=2):
         printWarning('Noble resource collection screen found, skipping merchant collection')
         clickXY(550, 100)
         clickXY(70, 1810)

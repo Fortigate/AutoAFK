@@ -550,7 +550,6 @@ def activityManager():
         print('')
         return
 
-
 def dailiesButton():
     if app.arenaEntry.get() != config.get('DAILIES', 'arenabattles'):
         config.set('DAILIES', 'arenabattles', app.arenaEntry.get())
@@ -560,7 +559,7 @@ def dailiesButton():
         config.set('DAILIES', 'shoprefreshes', app.shoprefreshEntry.get())
     updateSettings()
 
-    buttonState('disabled')
+    # buttonState('disabled')
     dailies()
     print('')
     buttonState('normal')
