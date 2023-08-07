@@ -16,10 +16,12 @@ customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dar
 customtkinter.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-c", "--config", metavar="CONFIG", default = "settings.ini", help = "Path to your input image")
-parser.add_argument("-a", "--activity", metavar="ACTIVITY", help = "Path to your input image")
-parser.add_argument("-d", "--dailies", action = 'store_true')
-parser.add_argument("-p", "--push", metavar="PUSH", help = "Path to your input image")
+parser.add_argument("-c", "--config", metavar="CONFIG", default = "settings.ini", help = "Define alternative settings file to load")
+# parser.add_argument("-a", "--activity", metavar="ACTIVITY", help = "Define Activity")
+# parser.add_argument("-p", "--push", metavar="PUSH", help = "Path to your input image")
+parser.add_argument("-d", "--dailies", action = 'store_true', help = "Run the Dailies function")
+parser.add_argument("-t", "--test", action = 'store_true', help = "Auto-launch Test server")
+parser.add_argument("-l", "--logging", action = 'store_true', help = "Log output to text file")
 args = vars(parser.parse_args())
 
 global settings
@@ -37,7 +39,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.9.6"
+version = "0.10.1"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -169,6 +171,8 @@ class App(customtkinter.CTk):
         self.textbox.insert('end',  'discord.gg/floofpire in #auto-afk\n\n')
         if latest_release.split(' ')[1] != version and latest_release.split(' ')[1] != 'retrieve!':
             self.textbox.insert('end', 'Newer version available (' + latest_release.split(' ')[1] + '), please update!\n\n', 'yellow')
+        if (args['config']) != 'settings.ini':
+            self.textbox.insert('end', (args['config']) + ' loaded\n\n', 'yellow')
         if not args['dailies']:
             sys.stdout = STDOutRedirector(self.textbox)
 
@@ -559,7 +563,7 @@ def dailiesButton():
         config.set('DAILIES', 'shoprefreshes', app.shoprefreshEntry.get())
     updateSettings()
 
-    # buttonState('disabled')
+    buttonState('disabled')
     dailies()
     print('')
     buttonState('normal')
@@ -614,11 +618,17 @@ def push():
 
     if app.pushLocationDropdown.get() == 'Campaign':
         printBlue('Auto-Pushing Campaign using the ' + str(config.get('PUSH', 'formation') + ' formation'))
+        confirmLocation('campaign')
+        click('buttons/begin', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
+        config.read(settings)  # to load any new values (ie formation dropdown changed and saved) into memory
+        wait(3)
         while 1:
             pushCampaign(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
     else:
         printBlue('Auto-Pushing ' + str(app.pushLocationDropdown.get()) + ' using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
         openTower(app.pushLocationDropdown.get())
+        config.read(settings)  # to load any new values (ie formation downdown changed and saved) into memory
+        wait(3)
         while 1:
             pushTower(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
 
@@ -640,6 +650,8 @@ class STDOutRedirector(IORedirector):
             self.text_space.insert('end', timestamp + string[3:], 'green')
         elif entry == 'BLU':
             self.text_space.insert('end', timestamp + string[3:], 'blue')
+        elif entry == 'PUR':
+            self.text_space.insert('end', timestamp + string[3:], 'purple')
         else:
             self.text_space.insert('end', string)
         self.text_space.see('end')
@@ -649,18 +661,47 @@ class STDOutRedirector(IORedirector):
 if __name__ == "__main__":
     app = App()
     setUlockedTowers()
-    launchArgs()
+    launchArgs() # Will launch dailies script before we load the UI if its flagged
     app.mainloop()
+
+def writeToLog(text):
+    if args['logging'] is True:
+        with open((args['config']).split('.')[0] + '.log', 'a') as log:
+            line = '[' + datetime.now().strftime("%d/%m/%y %H:%M:%S") + '] ' + text + '\n'
+            log.write(line)
 
 # Coloured text for the console
 def printError(text):
-    print('ERR' + text)
+    if args['dailies']:
+        print(text)
+    else:
+        print('ERR' + text)
+    writeToLog(text)
 
 def printGreen(text):
-    print('GRE' + text)
+    if args['dailies']:
+        print(text)
+    else:
+        print('GRE' + text)
+    writeToLog(text)
 
 def printWarning(text):
-    print('WAR' + text)
+    if args['dailies']:
+        print(text)
+    else:
+        print('WAR' + text)
+    writeToLog(text)
 
 def printBlue(text):
-    print('BLU' + text)
+    if args['dailies']:
+        print(text)
+    else:
+        print('BLU' + text)
+    writeToLog(text)
+
+def printPurple(text):
+    if args['dailies']:
+        print(text)
+    else:
+        print('PUR' + text)
+    writeToLog(text)

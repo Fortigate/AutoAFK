@@ -1,17 +1,13 @@
+# Imports
 from ppadb.client import Client
-
-import tools
-from AutoAFK import printGreen, printError, printWarning, printBlue, settings
+from AutoAFK import printGreen, printError, printWarning, printBlue, settings, args
 from pyscreeze import locate, locateAll
 from subprocess import check_output, Popen, PIPE
-import cv2
-import time
-import socket
-import os
-import configparser
-import sys
-import math
+import time, socket, os, configparser, sys, tools
+from PIL import Image
+from numpy import asarray
 
+# Configs/settings
 config = configparser.ConfigParser()
 config.read(settings) # load settings
 cwd = (os.path.dirname(__file__) + '\\') # variable for current directory of AutoAFK.exe
@@ -27,10 +23,11 @@ def expandMenus():
 # Checks if AFK Arena process is running, if not we launch it
 # TODO Add test server launch flag
 def afkRunningCheck():
-    livegame = str(device.shell('ps | grep -E com.lilithgame.hgame.gp | awk \'{print$9}\'')).splitlines()
-    testgame = str(device.shell('ps | grep -E com.lilithgames.hgame.gp.id | awk \'{print$9}\'')).splitlines()
-    if not livegame and not testgame:
-        printError('AFK Arena is not running, launching..')
+    if args['test']:
+        # printError('AFK Arena Test Server is not running, launching..')
+        device.shell('monkey -p  com.lilithgames.hgame.gp.id 1')
+    elif not args['test']:
+        # printError('AFK Arena is not running, launching..')
         device.shell('monkey -p com.lilithgame.hgame.gp 1')
 
 # Confirms that the game has loaded by checking for the campaign_selected button. Also presses exitmenu.png to clear any new hero popups
@@ -39,14 +36,18 @@ def waitUntilGameActive():
     printWarning('Searching for Campaign screen..')
     loadingcounter = 0
     timeoutcounter = 0
-    while loadingcounter < 1:
+    if args['dailies']:
+        loaded = 3 # If we're running unattended we want to make real sure there's no delayed popups
+    else:
+        loaded = 1
+
+    while loadingcounter < loaded:
         clickXY(550, 1850)
-        click('buttons/campaign_unselected', seconds=0.5, suppress=True)
-        click('buttons/exitmenu', seconds=0.5, suppress=True)
-        click('buttons/exitmenu_trial', seconds=0.5, suppress=True)
-        click('buttons/back', seconds=0.5, suppress=True)
+        buttons = ['buttons/campaign_unselected', 'buttons/exitmenu_trial']
+        for button in buttons:
+            click(button, seconds=0, suppress=True)
         timeoutcounter += 1
-        if isVisible('buttons/campaign_selected', 0.5):
+        if isVisible('buttons/campaign_selected'):
             loadingcounter += 1
         if timeoutcounter > 10:
             printError('Timed out while loading!')
@@ -75,14 +76,14 @@ def processExists(process_name):
     return last_line.lower().startswith(process_name.lower())
 
 # This function manages the ADB connection to Bluestacks. It does not do it in a refined manner.
-# First it restarts ADB then checks for `emulator-xxxx` devices, if empty we check for `localhost:xxxx` devices
-# If neither are found we use portScan() to find the active port and connect using that
+# First it restarts ADB then checks for `emulator-xxxx` devices, if none found we check for `localhost:xxxx` devices
+# If neither are found we run portScan() to find the active port and connect using that, or load one from settings
 def configureADB():
     global adb_device
     global adb_devices
     adbpath = (os.path.dirname(__file__) + '\\adb.exe') # Locate adb.exe in working directory
-    Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the server
-    wait(1)
+    Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the ADB server
+    wait(2)
     adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
     adb_device_str = str(adb_devices[26:40]) # trim the string to extract the first device
     adb_device = adb_device_str[2:15] # trim again because it's a byte object and has extra characters
@@ -159,13 +160,12 @@ def connect_device():
     # PPADB can throw errors occasionally for no good reason, here we try and catch them and retry for stability
     while tools.connect_counter < 4:
         try:
-            device.shell('echo Hello World!')
+            device.shell('echo Hello World!') # Arbitrary test command
         except Exception as e:
-            if str(e) != 'ERROR: \'FAIL\' 000edevice offline':
+            if str(e) != 'ERROR: \'FAIL\' 000edevice offline': # Skip common device offline error as it still runs after that
                 printError('PPADB Error: ' + str(e) + ', retrying ' + str(tools.connect_counter) + '/3')
                 wait(3)
                 tools.connect_counter+=1
-                device = None
                 connect_device()
         else:
             break
@@ -177,7 +177,7 @@ def connect_device():
     else:
         printGreen('Device: ' + adb_device + ' successfully connected!')
         tools.connect_counter = 1 # reset counter just in case
-        resolutionCheck(device) # Four start up checks so we have an exact position/screen configuration to start with
+        resolutionCheck(device) # Four start up checks, so we have an exact position/screen configuration to start with
         afkRunningCheck()
         waitUntilGameActive()
         expandMenus()
@@ -214,10 +214,9 @@ def swipe(x1, y1, x2, y2, duration=100, seconds=1):
 def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
     counter = 0
     take_screenshot(device)
-    screenshot = cv2.imread(cwd + 'screen.bin')
-    search = cv2.imread(cwd + 'img\\' + image + '.png')
+    screenshot = Image.open(cwd + 'screen.bin')
+    search = Image.open(cwd + 'img\\' + image + '.png')
     res = locate(search, screenshot, grayscale=False, confidence=confidence)
-    wait(seconds)
 
     if res == None and retry != 1:
         while counter < retry:
@@ -228,6 +227,7 @@ def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
                     x_center = round(x + w / 2)
                     y_center = round(y + h / 2)
                     device.input_tap(x_center, y_center)
+                wait(seconds)
                 return True
             counter = counter + 1
     elif res != None:
@@ -236,8 +236,10 @@ def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
             x_center = round(x + w / 2)
             y_center = round(y + h / 2)
             device.input_tap(x_center, y_center)
+        wait(seconds)
         return True
     else:
+        wait(seconds)
         return False
 
 # Clicks on the given XY coordinates
@@ -253,14 +255,14 @@ def clickXY(x,y, seconds=1):
 def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False):
     counter = 0
     take_screenshot(device)
-    screenshot = cv2.imread(cwd + 'screen.bin', 0)
-    search = cv2.imread(cwd + 'img\\' + image + '.png', 0)
+    screenshot = Image.open(cwd + 'screen.bin')
+    search = Image.open(cwd + 'img\\' + image + '.png')
     result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
 
     if result == None and retry != 1:
         while counter < retry:
             take_screenshot(device)
-            screenshot = cv2.imread(cwd + 'screen.bin', 0)
+            screenshot = Image.open(cwd + 'screen.bin')
             result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
             if result != None:
                 x, y, w, h = result
@@ -291,8 +293,8 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=F
 # Seconds is how long to pause after finding the image
 def clickMultipleChoice(image, choice, confidence=0.9, seconds=1):
     take_screenshot(device)
-    screenshot = cv2.imread(cwd + 'screen.bin', 0)
-    search = cv2.imread(cwd + 'img\\' + image + '.png', 0)
+    screenshot = Image.open(cwd + 'screen.bin')
+    search = Image.open(cwd + 'img\\' + image + '.png')
     results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
     if len(results) == 0:
         printError('clickMultipleChoice error, image:' + str(image) + ' not found')
@@ -310,12 +312,13 @@ def clickMultipleChoice(image, choice, confidence=0.9, seconds=1):
         device.input_tap(x_center, y_center)
         wait(seconds)
 
-# Checks the pixel at the XY coordinates, returns B,G,R value dependent on c variable
+# Checks the pixel at the XY coordinates
+# C Variable is array from 0 to 2 for RGB value
 def pixelCheck(x,y,c,seconds=1):
     take_screenshot(device)
-    screenshot = cv2.imread(cwd + 'screen.bin')
+    screenshot = asarray(Image.open(cwd + 'screen.bin')) # Convert PIL Image to NumPy Array for tuples
     wait(seconds)
-    return screenshot[y, x , c]
+    return screenshot[y, x, c]
 
 # Used to confirm which game screen we're currently sitting in, and change to if we're not.
 # Optionally with 'bool' flag we can return boolean for if statements
@@ -323,17 +326,18 @@ def confirmLocation(location, change=True, bool=False):
     detected = ''
     locations = {'campaign_selected': 'campaign', 'darkforest_selected': 'darkforest', 'ranhorn_selected': 'ranhorn'}
     take_screenshot(device)
-    screenshot = cv2.imread(cwd + 'screen.bin')
+    screenshot = Image.open(cwd + 'screen.bin')
     for location_button, string in locations.items():
-        search = cv2.imread(cwd + 'img\\buttons\\' + location_button + '.png')
+        search = Image.open(cwd + 'img\\buttons\\' + location_button + '.png')
         res = locate(search, screenshot, grayscale=False)
         if res != None:
             detected = string
+            break
 
     if detected == location and bool is True:
         return True
     elif detected != location and change is True and bool is False:
-        click('buttons/' + location + '_unselected')
+        click('buttons\\' + location + '_unselected')
     elif detected != location and bool is True:
         return False
 

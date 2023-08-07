@@ -1,5 +1,5 @@
 from tools import *
-from AutoAFK import printGreen, printError, printWarning, printBlue, settings
+from AutoAFK import printGreen, printError, printWarning, printBlue, printPurple, settings
 import datetime
 import configparser
 
@@ -16,10 +16,6 @@ def collectAFKRewards():
         clickXY(550, 1800, seconds=1) # Click campaign in case we level up
         clickXY(550, 1800, seconds=1) # again for the time limited deal popup
         clickXY(550, 1800, seconds=1) # 3rd to be safe
-        # if (isVisible('buttons/begin')):
-        #     clickXY(550, 1550)
-        # click('buttons/collect')
-        # clickXY(550, 1800) # Click campaign in case we level up
         printGreen('    AFK Rewards collected!')
     else:
         printError('AFK Rewards chests not found!')
@@ -28,7 +24,7 @@ def collectAFKRewards():
 def collectMail():
     printBlue('Attempting mail collection')
     if isVisible('buttons/mail'):
-        if (pixelCheck(1012, 610, 2) > 240): # We check if the pixel where the notification sits has a red value of higher than 240
+        if (pixelCheck(1012, 610, 0) > 240): # We check if the pixel where the notification sits has a red value of higher than 240
             clickXY(960, 630)
             click('buttons/collect_all', seconds=3)
             clickXY(550, 1600)
@@ -42,7 +38,7 @@ def collectMail():
 def collectCompanionPoints(mercs=False):
     printBlue('Attempting to send/receive companion points')
     if isVisible('buttons/friends'):
-        if (pixelCheck(1012, 790, 2) > 240):  # We check if the pixel where the notification sits has a red value of higher than 240
+        if (pixelCheck(1012, 790, 0) > 240):  # We check if the pixel where the notification sits has a red value of higher than 240
             clickXY(960, 810)
             click('buttons/sendandreceive')
             if mercs is True:
@@ -62,7 +58,7 @@ def collectFastRewards(count):
     counter = 0
     confirmLocation('campaign')
     if isVisible('buttons/fastrewards'):
-        if (pixelCheck(980, 1620, 2) > 220):  # We check if the pixel where the notification sits has a red value of higher than 240
+        if (pixelCheck(980, 1620, 0) > 220):  # We check if the pixel where the notification sits has a red value of higher than 240
             #todo add isVisible 'collect' button verification
             clickXY(950, 1660)
             while counter < count:
@@ -83,7 +79,7 @@ def attemptCampaign():
     click('buttons/begin', seconds=2)
     if (isVisible('buttons/begin', 0.7)): # If we see second Begin it's a multi so we take different actions
         click('buttons/begin', 0.7, seconds=2)
-        click('buttons/beginbattle', seconds=2)
+        click('buttons/beginbattle', seconds=4)
         click('buttons/pause', retry=3) # 3 retries as ulting heroes can cover the button
         click('buttons/exitbattle')
         click('buttons/back')
@@ -99,27 +95,18 @@ def attemptCampaign():
         recover()
 
 def pushCampaign(formation=3, duration=1):
-    firstrun = True
-    if firstrun is True:
-        confirmLocation('campaign')
-        click('buttons/begin', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
-        config.read(settings)  # to load any new values (ie formation dropdown changed and saved) into memory
-        wait(3)
-        firstrun = False
     click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
     click('buttons/cancel', seconds=2, suppress=True)
     if (isVisible('buttons/begin_plain', 0.7)): # If we see second Begin it's a multi so we take different actions
         click('buttons/begin_plain', 0.7, seconds=2, retry=2, suppress=True)
-        if isVisible('buttons/formations'):
-            click('buttons/formations', seconds=3)
+        if isVisible('buttons/formations', click=True, seconds=3):
             clickXY(850, 425 + (formation * 175))
             click('buttons/use', suppress=True)
             click('buttons/confirm_small', suppress=True)
             click('buttons/autobattle', suppress=True) # So we don't hit it in the background while autobattle is active
             click('buttons/activate', suppress=True)
     else:
-        if isVisible('buttons/formations'):
-            click('buttons/formations', seconds=3, suppress=True)
+        if isVisible('buttons/formations', click=True, seconds=3):
             clickXY(850, 425 + (formation * 175))
             click('buttons/use', suppress=True)
             click('buttons/confirm_small', suppress=True)
@@ -152,11 +139,11 @@ def handleBounties():
         click('buttons/collect_all', seconds=2, suppress=True)
         if config.getboolean('DAILIES', 'solobounties') is True:
             wait()
-            click('buttons/dispatch', suppress=True)
+            click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
             click('buttons/confirm', suppress=True)
         clickXY(950,1700) # Team tab
         click('buttons/collect_all', seconds=2, suppress=True)
-        click('buttons/dispatch', suppress=True)
+        click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
         click('buttons/confirm', suppress=True)
         click('buttons/back')
         printGreen('    Bounties attempted successfully')
@@ -214,6 +201,7 @@ def collectFountainOfTime():
     printBlue('Collecting Fountain of Time')
     confirmLocation('darkforest')
     clickXY(800, 700, seconds=6)
+    clickXY(800, 700, seconds=1)
     if isVisible('labels/temporalrift'):
         clickXY(550, 1800)
         clickXY(250, 1300)
@@ -239,12 +227,7 @@ def openTower(name):
                 clickXY(location[0], location[1], seconds=3)
 
 def pushTower(formation=3, duration=1):
-    firstrun = True
-    if firstrun is True:
-        click('buttons/challenge_plain', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
-        config.read(settings)  # to load any new values (ie formation downdown changed and saved) into memory
-        wait(3)
-        firstrun = False
+    click('buttons/challenge_plain', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
     click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
     click('buttons/cancel', seconds=2, suppress=True)
     if (isVisible('buttons/autobattle') and not isVisible('buttons/exit')): # So we don't catch the button in the background
@@ -257,7 +240,7 @@ def pushTower(formation=3, duration=1):
             click('buttons/activate', suppress=True)
     wait((duration * 60)-45)
     clickXY(550, 1750)
-    if isVisible('labels/autobattle', retry=3):
+    if isVisible('labels/autobattle', retry=2):
         if isVisible('labels/autobattle_0'):
             wait(2)
             if config.get('PUSH', 'suppressSpam') is False:
@@ -279,9 +262,9 @@ def handleKingsTower():
     clickXY(500, 870, seconds=3) # Long pause for animation
     if isVisible('labels/kingstower'):
         clickXY(555, 585)
-        click('buttons/challenge_plain', 0.7, retry=5, suppress=True, seconds=3) # lower confidence and retries for animated button
+        click('buttons/challenge_plain', 0.7, retry=5, suppress=True, seconds=5) # lower confidence and retries for animated button
         # For reasons sometimes this button is 'beginbattle' and sometimes it is 'begin', so we use clickXY
-        clickXY(700, 1850)
+        clickXY(700, 1850, seconds=2)
         # click('buttons/beginbattle', 0.8, seconds=3, retry=5)
         click('buttons/pause', 0.8, retry=5)
         click('buttons/exitbattle')
@@ -312,62 +295,35 @@ def collectInnGifts():
         printError('    Inn not found, attempting to recover')
         recover()
 
-def handleShopPurchasing():
-    # Buy Shards
-    if config.getboolean('SHOP', 'shards'):
-        clickXY(200, 800)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-    # Buy Shards
-    if config.getboolean('SHOP', 'cores'):
-        clickXY(425, 800)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-    # Buy TG
-    if config.getboolean('SHOP', 'timegazer'):
-        clickXY(650, 800)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-    # Buy Bait
-    if config.getboolean('SHOP', 'baits'):
-        clickXY(875, 800)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-    # Buy Dust Gold
-    if config.getboolean('SHOP', 'dust_gold'):
-        click('buttons/shop/dust', 0.95, suppress=True)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-    # Buy Dust Diamonds
-    if config.getboolean('SHOP', 'dust_diamond'):
-        click('buttons/shop/dust_diamond', 0.95, suppress=True)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-    # Buy Super Soulstone
-    if config.getboolean('SHOP', 'superb_soulstone'):
-        click('buttons/shop/superstone', 0.95, suppress=True)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-    # Buy Elite Soulstone
-    if config.getboolean('SHOP', 'elite_soulstone'):
-        click('buttons/shop/superstone', 0.80, suppress=True)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-    # Buy Gold Emblems
-    if config.getboolean('SHOP', 'gold_emblem'):
-        click('buttons/shop/gold_emblems', 0.95, suppress=True)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-    # Buy Silver Emblems
-    if config.getboolean('SHOP', 'silver_emblem'):
-        click('buttons/shop/silver_emblems', 0.95, suppress=True)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
-    # Buy PoE Emblems
-    if config.getboolean('SHOP', 'poe'):
-        click('buttons/shop/poe', suppress=True)
-        click('buttons/shop/purchase', suppress=True)
-        clickXY(550, 1220)
+def handleShopPurchasing(counter):
+    toprow = {'shards': [180, 920], 'cores': [425, 920], 'timegazer': [650, 920], 'baits': [875, 920]}
+    bottomrow = {'dust_gold': 'buttons/shop/dust', 'dust_diamond': 'buttons/shop/dust_diamonds', 'elite_soulstone': 'buttons/shop/soulstone',
+                  'superb_soulstone': 'buttons/shop/superstone', 'silver_emblem': 'buttons/shop/silver_emblems', 'gold_emblem': 'buttons/shop/gold_emblems', 'poe': 'buttons/shop/poe'}
+
+    # Purchase top row
+    for item, pos in toprow.items():
+        if config.getboolean('SHOP', item):
+            if item == 'timegazer' and counter > 0: # only one TG card
+                continue
+            if item == 'baits' and counter > 1: # only two baits
+                continue
+            if (item == 'cores' or item == 'shards') and counter > 2: # only three shards/cores
+                continue
+            printPurple('Buying: ' + item)
+            clickXY(pos[0], pos[1])
+            click('buttons/shop/purchase', suppress=True)
+            clickXY(550, 1220, seconds=2)
+
+    # Scroll down so bottom row is visible
+    swipe(550, 1500, 550, 1200, 500, seconds=5)
+
+    # Purchase everything else
+    for item, button in bottomrow.items():
+        if config.getboolean('SHOP', item):
+            printPurple('Buying: ' + item)
+            click(button, 0.95, suppress=True)
+            click('buttons/shop/purchase', suppress=True)
+            clickXY(550, 1220)
 
 def shopPurchases(shoprefreshes):
     printBlue('Attempting store purchases (Refreshes: ' + str(shoprefreshes) + ')')
@@ -377,16 +333,14 @@ def shopPurchases(shoprefreshes):
     clickXY(300, 1725, seconds=5)
     if isVisible('labels/store'):
         # First purchases
-        swipe(550, 1500, 550, 1200, 500, seconds=5)
-        handleShopPurchasing()
+        handleShopPurchasing(counter)
         # refresh purchases
         while counter < shoprefreshes:
             clickXY(1000, 300)
             click('buttons/confirm', suppress=True, seconds=3)
-            swipe(550, 1500, 550, 1200, 500, seconds=3)
-            print('    Refreshed store ' + str(counter+1) + ' times.')
-            handleShopPurchasing()
             counter += 1
+            printPurple('    Refreshed store ' + str(counter) + ' times.')
+            handleShopPurchasing(counter)
         click('buttons/back')
         printGreen('Store purchases attempted.')
     else:
@@ -468,43 +422,42 @@ def collectQuests():
 def clearMerchant():
     printBlue('Attempting to collect merchant deals')
     clickXY(120, 300, seconds=5)
-    if isVisible('buttons/confirm_nobles', 0.8, retry=2):
-        printWarning('Noble resource collection screen found, skipping merchant collection')
-        clickXY(550, 100)
-        clickXY(70, 1810)
-        return
     swipe(1000, 1825, 100, 1825, 500)
-    swipe(1000, 1825, 100, 1825, 500)
+    swipe(1000, 1825, 100, 1825, 500, seconds=3)
     if isVisible('buttons/noblesociety'):
-        print('    Collecting Nobles')
+        printPurple('    Collecting Nobles')
         # Nobles
         clickXY(675, 1825)
-        # Champion
-        clickXY(750, 1600) # Icon
-        clickXY(440, 1470, seconds=0.5)
-        clickXY(440, 1290, seconds=0.5)
-        clickXY(440, 1100, seconds=0.5)
-        clickXY(440, 915, seconds=0.5)
-        clickXY(440, 725, seconds=0.5)
-        clickXY(750, 1600) # Icon
-        # Twisted
-        clickXY(600, 1600) # Icon
-        clickXY(440, 1470, seconds=0.5)
-        clickXY(440, 1290, seconds=0.5)
-        clickXY(440, 1100, seconds=0.5)
-        clickXY(440, 915, seconds=0.5)
-        clickXY(440, 725, seconds=0.5)
-        clickXY(600, 1600) # Icon
-        # Regal
-        clickXY(450, 1600) # Icon
-        clickXY(440, 1470, seconds=0.5)
-        clickXY(440, 1290, seconds=0.5)
-        clickXY(440, 1100, seconds=0.5)
-        clickXY(440, 915, seconds=0.5)
-        clickXY(440, 725, seconds=0.5)
-        clickXY(450, 1600) # Icon
+        if isVisible('buttons/confirm_nobles', 0.8, retry=2):
+            printWarning('Noble resource collection screen found, skipping Noble collection')
+            clickXY(70, 1810)
+        else:
+            # Champion
+            clickXY(750, 1600) # Icon
+            clickXY(440, 1470, seconds=0.5)
+            clickXY(440, 1290, seconds=0.5)
+            clickXY(440, 1100, seconds=0.5)
+            clickXY(440, 915, seconds=0.5)
+            clickXY(440, 725, seconds=0.5)
+            clickXY(750, 1600) # Icon
+            # Twisted
+            clickXY(600, 1600) # Icon
+            clickXY(440, 1470, seconds=0.5)
+            clickXY(440, 1290, seconds=0.5)
+            clickXY(440, 1100, seconds=0.5)
+            clickXY(440, 915, seconds=0.5)
+            clickXY(440, 725, seconds=0.5)
+            clickXY(600, 1600) # Icon
+            # Regal
+            clickXY(450, 1600) # Icon
+            clickXY(440, 1470, seconds=0.5)
+            clickXY(440, 1290, seconds=0.5)
+            clickXY(440, 1100, seconds=0.5)
+            clickXY(440, 915, seconds=0.5)
+            clickXY(440, 725, seconds=0.5)
+            clickXY(450, 1600) # Icon
         # Monthly Cards
-        print('    Collecting Monthly Cards')
+        printPurple('    Collecting Monthly Cards')
         clickXY(400, 1825)
         # Monthly
         clickXY(300, 1000, seconds=3)
@@ -517,19 +470,19 @@ def clearMerchant():
         clickXY(400, 1825)
         # Special Deal
         # if isVisible('buttons/merchant_special', confidence=0.8, click=True):
-        print('    Collecting Special Deal')
+        printPurple('    Collecting Special Deal')
         click('buttons/dailydeals')
         clickXY(150, 1625)
         # Daily Deal
         if isVisible('buttons/merchant_daily', confidence=0.8, click=True):
-            print('    Collecting Daily Deal')
+            printPurple('    Collecting Daily Deal')
             swipe(550, 1400, 550, 1200, 500, seconds=3)
             click('buttons/dailydeals')
             clickXY(400, 1675)
         # Biweeklies
         if d.isoweekday() == 3: # Wednesday
             if isVisible('buttons/merchant_biweekly', confidence=0.8, click=True):
-                print('    Collecting Biweekly Deal')
+                printPurple('    Collecting Biweekly Deal')
                 swipe(300, 1400, 200, 1200, 500, seconds=3)
                 clickXY(200, 1200)
                 clickXY(550, 1625)
@@ -540,7 +493,7 @@ def clearMerchant():
             clickXY(240, 880)
             clickXY(150, 1625)
         # Clear Rhapsody bundles
-        print('    Clearing Rhapsody notification')
+        printPurple('    Clearing Rhapsody notification')
         clickXY(200, 1825)
         clickXY(620, 1600)
         clickXY(980, 200)
@@ -556,8 +509,8 @@ def handleTwistedRealm():
     confirmLocation('ranhorn')
     clickXY(380, 360, seconds=6)
     clickXY(550, 1800) # Clear chests
-    clickXY(775, 875)
-    clickXY(550, 600)
+    clickXY(775, 875, seconds=2)
+    clickXY(550, 600, seconds=3)
     if isVisible('buttons/nextboss'):
         printGreen('    Twisted Realm found, battling')
         if isVisible('buttons/challenge_tr'):
