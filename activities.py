@@ -234,10 +234,10 @@ def pushTower(formation=3, duration=1):
         if isVisible('buttons/formations'):
             click('buttons/formations', seconds=3)
             clickXY(850, 425 + (formation * 175))
-            click('buttons/use', suppress=True)
-            click('buttons/confirm_small', suppress=True)
-            click('buttons/autobattle', suppress=True) # So we don't hit it in the background while autobattle is active
-            click('buttons/activate', suppress=True)
+            click('buttons/use', retry=3)
+            click('buttons/confirm_small')
+            click('buttons/autobattle')
+            click('buttons/activate')
     wait((duration * 60)-45)
     clickXY(550, 1750)
     if isVisible('labels/autobattle', retry=2):
@@ -337,7 +337,7 @@ def shopPurchases(shoprefreshes):
         # refresh purchases
         while counter < shoprefreshes:
             clickXY(1000, 300)
-            click('buttons/confirm', suppress=True, seconds=3)
+            click('buttons/confirm', suppress=True, seconds=5)
             counter += 1
             printPurple('    Refreshed store ' + str(counter) + ' times.')
             handleShopPurchasing(counter)
