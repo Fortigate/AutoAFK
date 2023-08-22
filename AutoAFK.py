@@ -20,6 +20,7 @@ parser.add_argument("-c", "--config", metavar="CONFIG", default = "settings.ini"
 # parser.add_argument("-a", "--activity", metavar="ACTIVITY", help = "Define Activity")
 # parser.add_argument("-p", "--push", metavar="PUSH", help = "Path to your input image")
 parser.add_argument("-d", "--dailies", action = 'store_true', help = "Run the Dailies function")
+parser.add_argument("-tower", "--towers", action = 'store_true', help = "Run the Towers function")
 parser.add_argument("-t", "--test", action = 'store_true', help = "Auto-launch Test server")
 parser.add_argument("-l", "--logging", action = 'store_true', help = "Log output to text file")
 args = vars(parser.parse_args())
@@ -39,7 +40,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.10.2"
+version = "0.10.3"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -519,10 +520,23 @@ def setUlockedTowers():
         if currenttimeutc.isoweekday() == day:
             app.pushLocationDropdown.configure(values=towers)
 
-def launchArgs():
+def headlessArgs():
     if args['dailies']:
         dailies()
         sys.exit(0)
+    if args['towers']:
+        connect_device()
+        towerdays = {1:'Lightbringer Tower', 2:'Mauler Tower', 3:'Wilder Tower', 4:'Graveborn Tower', 5:'Celestial Tower',
+                     6:'Hypogean Tower', 7:'King\'s Tower'}
+        for day, tower in towerdays.items():
+            if currenttimeutc.isoweekday() == day:
+                printBlue('Auto-Pushing ' + str(tower) + ' using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
+                openTower(tower)
+                config.read(settings)  # to load any new values (ie formation downdown changed and saved) into memory
+                wait(3)
+                while 1:
+                    pushTower(formation=int(str(config.get('PUSH', 'formation'))[0:1]), duration=int(config.get('PUSH', 'victoryCheck')))
+
 
 def updateSettings():
     with open(settings, 'w') as configfile:
@@ -661,7 +675,7 @@ class STDOutRedirector(IORedirector):
 if __name__ == "__main__":
     app = App()
     setUlockedTowers()
-    launchArgs() # Will launch dailies script before we load the UI if its flagged
+    headlessArgs() # Will launch dailies script before we load the UI if its flagged
     app.mainloop()
 
 def writeToLog(text):
