@@ -367,71 +367,76 @@ class shopWindow(customtkinter.CTkToplevel):
         self.label = customtkinter.CTkLabel(master=self.dimFrame, text="Dim Gear:", font=("Arial", 15, 'bold'))
         self.label.place(x=20, y=5)
 
-
+        ypos = 40
+        # Quick
+        self.quickLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Quick buy', fg_color=("gray86", "gray17"))
+        self.quickLabel.place(x=10, y=ypos + 30 * 0)
+        self.quickCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
+        self.quickCheckbox.place(x=130, y=ypos + 30 * 0)
         # Shards
         self.shardsLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Shards', fg_color=("gray86", "gray17"))
-        self.shardsLabel.place(x=10, y=40)
+        self.shardsLabel.place(x=10, y=ypos + 30 * 1)
         self.shardsCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.shardsCheckbox.place(x=130, y=40)
+        self.shardsCheckbox.place(x=130, y=ypos + 30 * 1)
         # Cores
         self.coresLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Cores', fg_color=("gray86", "gray17"))
-        self.coresLabel.place(x=10, y=70)
+        self.coresLabel.place(x=10, y=ypos + 30 * 2)
         self.coresCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.coresCheckbox.place(x=130, y=70)
+        self.coresCheckbox.place(x=130, y=ypos + 30 * 2)
         # Timegazer
         self.timegazerLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Timegazer Card', fg_color=("gray86", "gray17"))
-        self.timegazerLabel.place(x=10, y=100)
+        self.timegazerLabel.place(x=10, y=ypos + 30 * 3)
         self.timegazerCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.timegazerCheckbox.place(x=130, y=100)
+        self.timegazerCheckbox.place(x=130, y=ypos + 30 * 3)
         # Bait
         self.baitsLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Baits', fg_color=("gray86", "gray17"))
-        self.baitsLabel.place(x=10, y=130)
+        self.baitsLabel.place(x=10, y=ypos + 30 * 4)
         self.baitsCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.baitsCheckbox.place(x=130, y=130)
+        self.baitsCheckbox.place(x=130, y=ypos + 30 * 4)
         # Dust Gold
         self.dust_goldLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Dust (gold)', fg_color=("gray86", "gray17"))
-        self.dust_goldLabel.place(x=10, y=160)
+        self.dust_goldLabel.place(x=10, y=ypos + 30 * 5)
         self.dust_goldCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.dust_goldCheckbox.place(x=130, y=160)
+        self.dust_goldCheckbox.place(x=130, y=ypos + 30 * 5)
         # Dust Diamonds
         self.dust_diamondLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Dust (diamonds)', fg_color=("gray86", "gray17"))
-        self.dust_diamondLabel.place(x=10, y=190)
+        self.dust_diamondLabel.place(x=10, y=ypos + 30 * 6)
         self.dust_diamondCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.dust_diamondCheckbox.place(x=130, y=190)
+        self.dust_diamondCheckbox.place(x=130, y=ypos + 30 * 6)
         # Elite Soulstone
         self.elite_soulstoneLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Elite Soulstone', fg_color=("gray86", "gray17"))
-        self.elite_soulstoneLabel.place(x=10, y=220)
+        self.elite_soulstoneLabel.place(x=10, y=ypos + 30 * 7)
         self.elite_soulstoneCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.elite_soulstoneCheckbox.place(x=130, y=220)
+        self.elite_soulstoneCheckbox.place(x=130, y=ypos + 30 * 7)
         # Elite Soulstone
         self.superb_soulstoneLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Superb Soulstone', fg_color=("gray86", "gray17"))
-        self.superb_soulstoneLabel.place(x=10, y=250)
+        self.superb_soulstoneLabel.place(x=10, y=ypos + 30 * 8)
         self.superb_soulstoneCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.superb_soulstoneCheckbox.place(x=130, y=250)
+        self.superb_soulstoneCheckbox.place(x=130, y=ypos + 30 * 8)
         # Silver Emblems
         self.silver_emblemLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Silver Emblems', fg_color=("gray86", "gray17"))
-        self.silver_emblemLabel.place(x=10, y=280)
+        self.silver_emblemLabel.place(x=10, y=ypos + 30 * 9)
         self.silver_emblemCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.silver_emblemCheckbox.place(x=130, y=280)
+        self.silver_emblemCheckbox.place(x=130, y=ypos + 30 * 9)
         # Gold Emblems
         self.gold_emblemLabel = customtkinter.CTkLabel(master=self.shopFrame, text='Gold Emblems', fg_color=("gray86", "gray17"))
-        self.gold_emblemLabel.place(x=10, y=310)
+        self.gold_emblemLabel.place(x=10, y=ypos + 30 * 10)
         self.gold_emblemCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.gold_emblemCheckbox.place(x=130, y=310)
+        self.gold_emblemCheckbox.place(x=130, y=ypos + 30 * 10)
         # PoE
         self.poeLabel = customtkinter.CTkLabel(master=self.shopFrame, text='PoE (gold)', fg_color=("gray86", "gray17"))
-        self.poeLabel.place(x=10, y=340)
+        self.poeLabel.place(x=10, y=ypos + 30 * 11)
         self.poeCheckbox = customtkinter.CTkCheckBox(master=self.shopFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
-        self.poeCheckbox.place(x=130, y=340)
+        self.poeCheckbox.place(x=130, y=ypos + 30 * 11)
 
-        checkboxes = ['shards', 'cores', 'timegazer', 'baits', 'dust_gold', 'dust_diamond', 'elite_soulstone',
+        checkboxes = ['quick', 'shards', 'cores', 'timegazer', 'baits', 'dust_gold', 'dust_diamond', 'elite_soulstone',
                       'superb_soulstone', 'silver_emblem', 'gold_emblem', 'poe']
         for box in checkboxes:
             if config.getboolean('SHOP', box):
                 self.__getattribute__(box+'Checkbox').select()
 
     def shopUpdate(self):
-        checkboxes = ['shards', 'cores', 'timegazer', 'baits', 'dust_gold', 'dust_diamond', 'elite_soulstone',
+        checkboxes = ['quick', 'shards', 'cores', 'timegazer', 'baits', 'dust_gold', 'dust_diamond', 'elite_soulstone',
                       'superb_soulstone', 'silver_emblem', 'gold_emblem', 'poe']
         for box in checkboxes:
             if self.__getattribute__(box+'Checkbox').get() == 1:

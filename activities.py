@@ -326,6 +326,9 @@ def handleShopPurchasing(counter):
             clickXY(550, 1220)
 
 def shopPurchases(shoprefreshes):
+    if config.getboolean('SHOP', 'quick'):
+        shopPurchases_quick(shoprefreshes)
+        return
     printBlue('Attempting store purchases (Refreshes: ' + str(shoprefreshes) + ')')
     counter = 0
     confirmLocation('ranhorn')
@@ -347,6 +350,36 @@ def shopPurchases(shoprefreshes):
         printError('Store not found, attempting to recover')
         recover()
 
+
+def shopPurchases_quick(shoprefreshes):
+    printBlue('Attempting store purchases (Refreshes: ' + str(shoprefreshes) + ')')
+    counter = 0
+    confirmLocation('ranhorn')
+    wait(2)
+    clickXY(300, 1725, seconds=5)
+    if isVisible('labels/store'):
+        if isVisible('buttons/quickbuy', click=True):
+            wait(1)
+            click('buttons/purchase', seconds=5)
+            clickXY(970, 90, seconds=2)
+            while counter < shoprefreshes:
+                clickXY(1000, 300)
+                click('buttons/confirm', suppress=True, seconds=2)
+                click('buttons/quickbuy', seconds=2)
+                click('buttons/purchase', seconds=2)
+                clickXY(970, 90)
+                counter += 1
+            clickXY(70, 1810)
+            click('buttons/back')
+            printGreen('Store purchases attempted.')
+        else:
+            printBlue('Quickbuy not found, switching to old style')
+            clickXY(70, 1810)
+            shopPurchases(shoprefreshes)
+
+    else:
+        printError('Store not found, attempting to recover')
+        recover()
 def handleGuildHunts():
     printBlue('Attempting to run Guild Hunts')
     confirmLocation('ranhorn')
