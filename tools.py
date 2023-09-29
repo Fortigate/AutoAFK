@@ -1,4 +1,6 @@
 # Imports
+import random
+
 from ppadb.client import Client
 from AutoAFK import printGreen, printError, printWarning, printBlue, settings, args
 from pyscreeze import locate, locateAll
@@ -211,12 +213,12 @@ def swipe(x1, y1, x2, y2, duration=100, seconds=1):
 # Returns True if the image is found, False if not
 # Confidence value can be reduced for images with animations
 # Retry for retrying image search
-def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
+def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False, region=None, xyshift=None):
     counter = 0
     take_screenshot(device)
     screenshot = Image.open(cwd + 'screen.bin')
     search = Image.open(cwd + 'img\\' + image + '.png')
-    res = locate(search, screenshot, grayscale=False, confidence=confidence)
+    res = locate(search, screenshot, grayscale=False, confidence=confidence, region=region)
 
     if res == None and retry != 1:
         while counter < retry:
@@ -226,6 +228,9 @@ def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
                     x, y, w, h = res
                     x_center = round(x + w / 2)
                     y_center = round(y + h / 2)
+                    if xyshift is not None:
+                        x_center += xyshift[0]
+                        y_center += xyshift[1]
                     device.input_tap(x_center, y_center)
                 wait(seconds)
                 return True
@@ -243,8 +248,11 @@ def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
         return False
 
 # Clicks on the given XY coordinates
-def clickXY(x,y, seconds=1):
-    device.input_tap(x, y)
+def clickXY(x, y, seconds=1, rs=None, xrandom_shift=0, yrandom_shift=0):
+    if rs is not None:
+        xrandom_shift = rs
+        yrandom_shift = rs
+    device.input_tap(x + random.randint(0, xrandom_shift), y + random.randint(0, yrandom_shift))
     wait(seconds)
 
 # If the given image is found, it will click on the center of it, if not returns "No image found"
@@ -252,7 +260,7 @@ def clickXY(x,y, seconds=1):
 # Seconds is time to wait after clicking the image
 # Retry will try and find the image x number of times, useful for animated or covered buttons, or to make sure the button is not skipped
 # Suppress will disable warnings, sometimes we don't need to know if a button isn't found
-def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False):
+def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False, xyshift=None):
     counter = 0
     take_screenshot(device)
     screenshot = Image.open(cwd + 'screen.bin')
@@ -268,6 +276,9 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=F
                 x, y, w, h = result
                 x_center = round(x + w / 2)
                 y_center = round(y + h / 2)
+                if xyshift is not None:
+                    x_center += xyshift[0]
+                    y_center += xyshift[1]
                 device.input_tap(x_center, y_center)
                 wait(seconds)
                 return
@@ -353,3 +364,38 @@ def recover():
     else:
         printError('Recovery failed, exiting')
         exit(0)
+
+# Check if in-battle
+def inBattle():
+    return isVisible('labels/battleclock', region=[180, 20, 70, 60])
+
+# Wait until we're twice in a row not in battle
+def waitBattleEnd():
+    counter = 0
+    prev = True
+    cur = True
+    while prev or cur:
+        prev = cur
+        cur = inBattle()
+        wait(1)
+        counter += 1
+        if counter > 120:
+            printError('Battle wait loop takes too long')
+            break
+
+# Clicks on a faction in battle preparation menu
+def chooseFaction(faction):
+    """
+    clicks a faction in battle preparation menu
+    :param faction: 0 - all, 1 - LB, 2 - mauler, 3 - wilder, 4 - GB, 5 - cele, 6 - hypo, 7 - dim
+    """
+    # isVisible(f"labels/faction/{['all', 'lb','m', 'w', 'gb', 'c', 'h', 'd'][faction]}", click=True)
+    clickXY([185, 303, 420, 537, 655, 772, 890, 1010][faction], 1675, seconds=2, rs=5)
+
+# Chooses one of the heroes shown on the first two rows in battle preparation
+def chooseHero(position):
+    clickXY(125 + 204 * (position % 5), 1260 + 185 * (position // 5))
+
+def clearFormation():
+    clickXY(1027, 1103)
+    click('buttons/confirm')

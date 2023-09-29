@@ -226,6 +226,73 @@ def openTower(name):
             if tower == name:
                 clickXY(location[0], location[1], seconds=3)
 
+def openVoW():
+    printBlue('Opening VoW')
+    confirmLocation('darkforest')
+    clickXY(345, 470, seconds=3)
+
+def runMisty(merc=True):
+    openVoW()
+    printBlue('Attempting to open Misty Valley')
+    counter = 0
+    while not isVisible('buttons/misty', click=True, seconds=3):
+        clickXY(540, 270, seconds=1.783, rs=15)
+        clickXY(945, 385, seconds=1, rs=5)
+        counter += 1
+        if counter > 10:
+            printError('Couldn\'t open Misty in 10 attempts, quitting')
+            return
+    clickXY(540, 1680, rs=5, seconds=5)
+    mistyCycle('camps/misty_plain', merc=merc)
+    mistyCycle('camps/misty_desert', merc=merc)
+    mistyCycle('camps/misty_stone', merc=merc)
+    mistyCycle('camps/misty_volcano', merc=merc)
+
+def mistyCycle(camp_icon, merc=True):
+    printBlue(f"Clearing camp on {camp_icon[12:]}")
+    for n in range(5):
+        printBlue(f"Battle with 4 of {['LB','Mauler','Wilder','GB','CHaD'][n]}")
+        if n == 0 and camp_icon == 'camps/misty_plain':
+            region = [0, 960, 1080, 960]
+        else:
+            region = [0, 0, 1080, 960]
+        isVisible(camp_icon, 0.7, retry=3, seconds=5, region=region, click=True)
+        clickXY(540, 1575, seconds=5, rs=10)    # begin battle
+        clearFormation()
+        if merc:
+            chooseHero(0)
+        chooseFaction(n + 1)
+        for i in range(1, 7):
+            chooseHero(i)
+        clickXY(540, 1830, rs=10)  # battle button
+        counter = 0
+        while counter < 5:
+            waitBattleEnd()
+            if isVisible('labels/defeat'):
+                printBlue(f'Battle {counter} failed')
+                clickXY(540, 1720, seconds=2)
+                clickXY(540, 1830, rs=10)
+                counter += 1
+            else:
+                break
+        if isVisible('labels/defeat'):
+            printWarning('5 attempts failed, trying strongest 5 heroes')
+            clickXY(540, 1720, seconds=2)
+            clearFormation()
+            for i in range(0, 5):
+                chooseHero(i)
+            clickXY(540, 1830, rs=10)
+            waitBattleEnd()
+            if isVisible('labels/defeat'):
+                printError(f'Can\'t beat floor {n + 1} of {camp_icon}, script will fail now')
+        clickXY(540, 20)
+        if not isVisible('labels/mistyopendoor', retry=3, xyshift=[70, 90], region=[0, 0, 1080, 1100], click=True):
+            printError("Can't find open door")
+
+
+
+
+
 def pushTower(formation=3, duration=1):
     click('buttons/challenge_plain', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
     click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)

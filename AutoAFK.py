@@ -49,7 +49,7 @@ class App(customtkinter.CTk):
 
         # configure window
         self.title("AutoAFK " + version)
-        self.geometry(f"{800}x{600}")
+        self.geometry(f"{800}x{670}")
         self.wm_iconbitmap(cwd + 'img\\auto.ico')
 
         # configure grid layout (4x4)
@@ -58,7 +58,7 @@ class App(customtkinter.CTk):
 
         # Dailies Frame
         self.dailiesFrame = customtkinter.CTkFrame(master=self, height=260, width=180)
-        self.dailiesFrame.place(x=10, y=20)
+        self.dailiesFrame.place(x=10, y=10)
         # Dailies button
         self.dailiesButton = customtkinter.CTkButton(master=self, text="Run Dailies", command=lambda: threading.Thread(target=dailiesButton).start())
         self.dailiesButton.place(x=30, y=35)
@@ -110,7 +110,7 @@ class App(customtkinter.CTk):
 
         # PvP Frame
         self.arenaFrame = customtkinter.CTkFrame(master=self, height=130, width=180)
-        self.arenaFrame.place(x=10, y=290)
+        self.arenaFrame.place(x=10, y=280)
 
         # Activities button
         self.arenaButton = customtkinter.CTkButton(master=self.arenaFrame, text="Run Activity", command=lambda: threading.Thread(target=activityManager).start())
@@ -127,7 +127,7 @@ class App(customtkinter.CTk):
 
         # Push Frame
         self.pushFrame = customtkinter.CTkFrame(master=self, height=150, width=180)
-        self.pushFrame.place(x=10, y=430)
+        self.pushFrame.place(x=10, y=420)
 
         # Push Button
         self.pushButton = customtkinter.CTkButton(master=self.pushFrame, text="Auto Push", command=lambda: threading.Thread(target=push).start())
@@ -153,9 +153,21 @@ class App(customtkinter.CTk):
         # self.quitButton = customtkinter.CTkButton(master=self, text="Quit", fg_color=["#1111FF", "#1F6AFF"], command=lambda: threading.Thread(target=abortAllTasks).start())
         # self.quitButton.place(x=10, y=650)
 
+        # single activity Frame
+        self.singleActivityFrame = customtkinter.CTkFrame(master=self, height=70, width=180)
+        self.singleActivityFrame.place(x=10, y=580)
+
+        # single activity Button
+        self.singleActivityButton = customtkinter.CTkButton(master=self.singleActivityFrame, text="run activity", height=20, width=140,
+                                                            command=lambda: threading.Thread(target=singleActivity).start())
+        self.singleActivityButton.place(x=20, y=10)
+        # single activity Entry
+        self.singleActivityDropdown = customtkinter.CTkComboBox(master=self.singleActivityFrame,  values=["Misty valley"], width=160)
+        self.singleActivityDropdown.place(x=10, y=40)
+
         # Textbox Frame
-        self.textbox = customtkinter.CTkTextbox(master=self, width=580, height=560)
-        self.textbox.place(x=200, y=20)
+        self.textbox = customtkinter.CTkTextbox(master=self, width=580, height=640)
+        self.textbox.place(x=200, y=10)
         self.textbox.configure(text_color='white', font=('Arial', 14))
         self.textbox.tag_config("error", foreground="red")
         self.textbox.tag_config('warning', foreground='yellow')
@@ -650,6 +662,14 @@ def push():
         wait(3)
         while 1:
             pushTower(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
+
+def singleActivity():
+    connect_device()
+    buttonState('disabled')
+    if app.singleActivityDropdown.get() == "Misty valley":
+        printBlue('Misty Valley')
+        confirmLocation('campaign')
+        runMisty(merc=True)
 
 class IORedirector(object):
     def __init__(self, text_widget):
