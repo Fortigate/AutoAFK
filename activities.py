@@ -279,7 +279,7 @@ def mistyCycle(camp_icon, merc=True):
             printWarning('5 attempts failed, trying strongest 5 heroes')
             clickXY(540, 1720, seconds=2)
             clearFormation()
-            for i in range(0, 5):
+            for i in range(0, 7):
                 chooseHero(i)
             clickXY(540, 1830, rs=10)
             waitBattleEnd()
