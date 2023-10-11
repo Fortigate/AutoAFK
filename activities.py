@@ -129,6 +129,7 @@ def pushCampaign(formation=3, duration=1):
     else:
         printError('AutoBattle screen not found, exiting..')
         sys.exit(1)
+        buttonState('enabled')
 
 def handleBounties():
     printBlue('Handling Bounty Board')
@@ -570,6 +571,47 @@ def handleFightOfFates(battles=3):
         printGreen('    Fight of Fates attempted successfully')
     else:
         printWarning('Fight of Fates not found, recovering..')
+        recover()
+
+# Whole things needs alot of refinement, the event is too dynamic for static wait times
+def handleBattleofBlood(battles=3):
+    printBlue('Attempting to run Battle of Blood ' + str(battles) + ' times')
+    counter = 0
+    click('buttons/events', confidence=0.8, retry=3, seconds=3)
+    if isVisible('labels/battleofblood_event_banner', click=True):
+        while counter < battles:
+            click('buttons/challenge_tr', confidence=0.8, suppress=True, retry=3, seconds=20)
+            # Cards 1-2, ready
+            clickXY(550, 1250, seconds=1)
+            clickXY(350, 1250, seconds=1)
+            clickXY(550, 1850, seconds=10)
+            # Cards 3-4, ready
+            clickXY(550, 1250, seconds=1)
+            clickXY(350, 1250, seconds=1)
+            clickXY(550, 1850, seconds=10)
+            # Card 5, ready
+            clickXY(550, 1250, seconds=1)
+            clickXY(550, 1850, seconds=30)
+            # Clear Battle Report
+            clickXY(550, 1850, seconds=3)
+            counter = counter + 1
+            printGreen('    Battle of Blood Battle #' + str(counter) + ' complete')
+        # Click quests
+        clickXY(150, 230, seconds=2)
+        # select dailies tab
+        clickXY(650, 1720, seconds=1)
+        # Collect Dailies
+        clickXY(850, 720, seconds=2)
+        clickXY(920, 525, seconds=2)
+        clickXY(920, 525, seconds=2)
+        # clear loot
+        clickXY(550, 250, seconds=2)
+        # Back twice to exit
+        clickXY(70, 1650, seconds=1)
+        clickXY(70, 1810, seconds=1)
+        printGreen('    Battle of Blood attempted successfully')
+    else:
+        printWarning('Battle of Blood not found, recovering..')
         recover()
 
 

@@ -49,7 +49,7 @@ def waitUntilGameActive():
         timeoutcounter += 1
         if isVisible('buttons/campaign_selected'):
             loadingcounter += 1
-        if timeoutcounter > 10:
+        if timeoutcounter > 30: # Long so patching etc doesn't lead to timeout
             printError('Timed out while loading!')
             sys.exit(1)
     printGreen('Game Loaded!')
@@ -81,15 +81,21 @@ def processExists(process_name):
 def configureADB():
     global adb_device
     global adb_devices
+    config.read(settings)  # to load any new values (ie port changed and saved) into memory
     adbpath = (os.path.dirname(__file__) + '\\adb.exe') # Locate adb.exe in working directory
     Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the ADB server
     wait(2)
     adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
     adb_device_str = str(adb_devices[26:40]) # trim the string to extract the first device
     adb_device = adb_device_str[2:15] # trim again because it's a byte object and has extra characters
+    if config.get('ADVANCED', 'port') != 0:
+        printWarning('Port ' + str(config.get('ADVANCED', 'port'))  + ' found in settings.ini, using that')
+        adb_device = '127.0.0.1:'+str(config.get('ADVANCED', 'port'))
+        Popen([adbpath, 'connect', adb_device], stdout=PIPE).communicate()[0]
+        return
     if adb_device_str[2:11] == 'localhost':
         adb_device = adb_device_str[2:16] # Extra letter needed if we manually connect
-    if adb_device_str[2:10] != 'emulator' and adb_device_str[2:11] != 'localhost':
+    if adb_device_str[2:10] != 'emulator' and adb_device_str[2:11] != 'localhost': # If the ADB device output doesn't use these two prefixes then:
         Popen([adbpath, 'connect', '127.0.0.1:' + str(portScan())], stdout=PIPE).communicate()[0] # Here we run portScan()
         adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0]  # Run 'adb.exe devices' and pipe output to string
         adb_device_str = str(adb_devices[26:40])  # trim the string to extract the first device

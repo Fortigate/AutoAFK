@@ -40,7 +40,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.10.3"
+version = "0.10.5"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -526,8 +526,8 @@ def headlessArgs():
         sys.exit(0)
     if args['towers']:
         connect_device()
-        towerdays = {1:'Lightbringer Tower', 2:'Mauler Tower', 3:'Wilder Tower', 4:'Graveborn Tower', 5:'Celestial Tower',
-                     6:'Hypogean Tower', 7:'King\'s Tower'}
+        towerdays = {1:'Lightbringer Tower', 2:'Mauler Tower', 3:'Wilder Tower', 4:'Graveborn Tower', 5:'King\'s Tower',
+                     6:'King\'s Tower', 7:'King\'s Tower'}
         for day, tower in towerdays.items():
             if currenttimeutc.isoweekday() == day:
                 printBlue('Auto-Pushing ' + str(tower) + ' using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
@@ -583,8 +583,30 @@ def dailiesButton():
     buttonState('normal')
     return
 
+def serverCheck():
+    slotsXY = {1: [700, 575], 2: [700, 775], 3: [700, 975], 4: [700, 1175], 5: [700, 1375]} # Slot positions
+    server = ((config.getint('ADVANCED', 'server'))) # Slot defined in settings
+    if (config.getint('ADVANCED', 'server')) != 0:
+        clickXY(120, 100, seconds=5) # Navigate to server selection
+        clickXY(650, 1675)
+        clickXY(300, 500)
+        for slot, pos in slotsXY.items(): # Click corresponding server
+            if server == slot:
+                clickXY(pos[0], pos[1], seconds=10)
+                if isVisible('buttons/confirm'):
+                    printGreen('Switching to server slot: ' + str(server))
+                    click('buttons/confirm', confidence=0.8)
+                    waitUntilGameActive()
+                else:
+                    printWarning('No server change confirmation found')
+                    clickXY(70, 1810)
+                    clickXY(70, 1810)
+
+
+
 def dailies():
     connect_device()
+    serverCheck() # Change server slot if defined before doing dailies
     if bool(config.getboolean('DAILIES', 'collectrewards')) is True:
         collectAFKRewards()
     if bool(config.getboolean('DAILIES', 'collectmail')) is True:
