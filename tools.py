@@ -88,7 +88,7 @@ def configureADB():
     adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
     adb_device_str = str(adb_devices[26:40]) # trim the string to extract the first device
     adb_device = adb_device_str[2:15] # trim again because it's a byte object and has extra characters
-    if config.get('ADVANCED', 'port') != 0:
+    if config.getint('ADVANCED', 'port') != 0:
         printWarning('Port ' + str(config.get('ADVANCED', 'port'))  + ' found in settings.ini, using that')
         adb_device = '127.0.0.1:'+str(config.get('ADVANCED', 'port'))
         Popen([adbpath, 'connect', adb_device], stdout=PIPE).communicate()[0]

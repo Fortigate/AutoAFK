@@ -526,8 +526,8 @@ def headlessArgs():
         sys.exit(0)
     if args['towers']:
         connect_device()
-        towerdays = {1:'Lightbringer Tower', 2:'Mauler Tower', 3:'Wilder Tower', 4:'Graveborn Tower', 5:'King\'s Tower',
-                     6:'King\'s Tower', 7:'King\'s Tower'}
+        towerdays = {1:'Lightbringer Tower', 2:'Mauler Tower', 3:'Wilder Tower', 4:'Graveborn Tower', 5:'Celestial Tower',
+                     6:'Hypogean Tower', 7:'King\'s Tower'}
         for day, tower in towerdays.items():
             if currenttimeutc.isoweekday() == day:
                 printBlue('Auto-Pushing ' + str(tower) + ' using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
@@ -594,7 +594,7 @@ def serverCheck():
             if server == slot:
                 clickXY(pos[0], pos[1], seconds=10)
                 if isVisible('buttons/confirm'):
-                    printGreen('Switching to server slot: ' + str(server))
+                    printGreen('Switching to server slot ' + str(server))
                     click('buttons/confirm', confidence=0.8)
                     waitUntilGameActive()
                 else:
