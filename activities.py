@@ -138,11 +138,10 @@ def handleBounties():
     if (isVisible('labels/bountyboard')):
         clickXY(650, 1700) # Solo tab
         click('buttons/collect_all', seconds=2, suppress=True)
-        if config.getboolean('DAILIES', 'solobounties') is True:
-            wait()
-            click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
-            click('buttons/confirm', suppress=True)
-        clickXY(950,1700) # Team tab
+        wait(2)
+        if config.getboolean('BOUNTIES', 'dispatchDust') is True or config.getboolean('BOUNTIES', 'dispatchDiamonds') is True:
+            dispatchSoloBounties(remaining=config.getint('BOUNTIES', 'remaining'), maxRefreshes=config.getint('BOUNTIES', 'refreshes'))
+        clickXY(950, 1700) # Team tab
         click('buttons/collect_all', seconds=2, suppress=True)
         click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
         click('buttons/confirm', suppress=True)
@@ -151,6 +150,55 @@ def handleBounties():
     else:
         printError('    Bounty Board not found, attempting to recover')
         recover()
+
+def dispatchSoloBounties(remaining=2, maxRefreshes=3):
+    refreshes = 0
+    while refreshes <= maxRefreshes:
+        if refreshes > 0:
+            printWarning('   Board refreshed (#' + str(refreshes) + ')')
+        dispatches = returnMultiple('buttons/dispatch_bounties', confidence=0.97)
+        dispatcher(dispatches) # Send the list to the function to dispatch
+        swipe(550, 800, 550, 500, duration=200, seconds=3) # scroll down
+        dispatches = returnMultiple('buttons/dispatch_bounties', confidence=0.97)
+        if len(dispatches) <= remaining: # if <=remaining bounties left we just dispatch all and continue
+            printWarning('  ' + str(remaining) + ' or less bounties remaining, dispatching..')
+            click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
+            click('buttons/confirm', suppress=True)
+            return
+        dispatcher(dispatches) # Send the list to the function to dispatch
+        if refreshes < maxRefreshes:
+            clickXY(90, 250)
+            clickXY(700, 1250)
+        refreshes += 1
+    print(str(maxRefreshes) + ' refreshes done, dispatching remaining..')
+    click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
+    click('buttons/confirm', suppress=True)
+
+def dispatcher(dispatches):
+    for button in dispatches:
+        y_center = round(
+            button[1] + button[3] / 2)  # Return left + half the height to get the center Y coord of the image
+        blue_value = pixelCheck(120, y_center, 2, seconds=0)
+        red_value = pixelCheck(120, y_center, 0, seconds=0)
+        if blue_value < 100 and red_value > 200:
+            # print('Skipping Gold')
+            continue
+        elif blue_value > 220 and red_value > 150 and red_value < 200:
+            # print('Skipping Soulstone')
+            continue
+        elif blue_value > 195 and red_value < 150:
+            if config.getboolean('BOUNTIES', 'dispatchDust'):
+                printGreen('    Dispatching Dust')
+                clickXY(900, y_center)
+                clickXY(350, 1150)
+                clickXY(750, 1150)
+        elif blue_value > 240 and red_value > 240:
+            if config.getboolean('BOUNTIES', 'dispatchDiamonds'):
+                printGreen('    Dispatching Diamonds')
+                clickXY(900, y_center)
+                clickXY(350, 1150)
+                clickXY(750, 1150)
+
 
 def handleArenaOfHeroes(count):
     counter = 0
@@ -219,7 +267,8 @@ def collectFountainOfTime():
 def openTower(name):
     printBlue('Opening ' + name + '.')
     confirmLocation('darkforest')
-    clickXY(500, 870, seconds=3) # Long pause for animation
+    wait(3) # Medium wait to make sure tower button is active when we click
+    clickXY(500, 870, seconds=3) # Long pause for animation opening towers
     if isVisible('labels/kingstower'):
         towers = {"King's Tower": [500, 870], "Lightbringer Tower": [300, 1000], "Wilder Tower": [800, 600], "Mauler Tower": [400, 1200],
                   "Graveborn Tower": [800, 1200], "Hypogean Tower": [600, 1500], "Celestial Tower": [300, 500]}
@@ -234,6 +283,7 @@ def pushTower(formation=3, duration=1):
     if (isVisible('buttons/autobattle') and not isVisible('buttons/exit')): # So we don't catch the button in the background
         if isVisible('buttons/formations'):
             click('buttons/formations', seconds=3)
+            clickXY(800, 1650, seconds=2) # Change to 'Popular' tab
             clickXY(850, 425 + (formation * 175))
             click('buttons/use', retry=3)
             click('buttons/confirm_small')
@@ -614,6 +664,35 @@ def handleBattleofBlood(battles=3):
         printWarning('Battle of Blood not found, recovering..')
         recover()
 
+def handleCircusTour(battles = 3):
+    counter = 1
+    printBlue('Attempting to run Circus Tour battles')
+    confirmLocation('ranhorn') # Trying to fix 'buttons/events not found' error
+    click('buttons/events', confidence=0.8, retry=3, seconds=3)
+    if isVisible('labels/circustour', retry=3, click=True):
+        while counter < battles:
+            printGreen('    Circus Tour battle #' + str(counter))
+            click('buttons/challenge_tr', confidence=0.8, retry=3, seconds=3)
+            if counter == 1:
+                clickXY(550, 900, seconds=1) # Clear dialogue box on new boss rotation
+                clickXY(550, 900, seconds=1) # Only need to do this on the first battle
+                clickXY(550, 900, seconds=1)
+                clickXY(550, 900, seconds=1)
+            click('buttons/battle_large', confidence=0.8, retry=3, seconds=5)
+            click('buttons/skip', confidence=0.8, retry=5, seconds=5)
+            clickXY(550, 1800)
+            counter += 1
+        wait(3)
+        clickXY(500, 1600)
+        clickXY(500, 1600) # Twice to clear loot popup
+        clickXY(900, 1600)
+        clickXY(900, 1600) # Twice to clear loot popup
+        # Back twice to exit
+        clickXY(70, 1810, seconds=1)
+        clickXY(70, 1810, seconds=1)
+    else:
+        printWarning('Circus Tour not found, recovering..')
+        recover()
 
 def TS_Battle_Stastistics():
     region = 10

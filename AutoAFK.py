@@ -40,7 +40,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.10.5"
+version = "0.11.0"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -260,17 +260,16 @@ class activityWindow(customtkinter.CTkToplevel):
         self.teamBountiesLabel.place(x=10, y=220)
         self.teamBountiesCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
         self.teamBountiesCheckbox.place(x=200, y=220)
-        # Handle Solo Bounties
-        self.soloBountiesLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Dispatch Solo Bounties', fg_color=("gray86", "gray17"))
-        self.soloBountiesLabel.place(x=40, y=250)
-        self.soloBountiesCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
-        self.soloBountiesCheckbox.place(x=200, y=250)
-        # Arena Battles
-        # self.arenaBattleLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Arena Battles', fg_color=("gray86", "gray17"))
-        # self.arenaBattleLabel.place(x=10, y=280)
-        # self.arenaBattleEntry = customtkinter.CTkEntry(master=self.activityFrame, height=20, width=30)
-        # self.arenaBattleEntry.insert('end', config.get('DAILIES', 'arenabattles'))
-        # self.arenaBattleEntry.place(x=200, y=280)
+        # Handle Solo Bounties Dust
+        self.dispatchDustLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Dispatch Solo Dust Bounties', fg_color=("gray86", "gray17"))
+        self.dispatchDustLabel.place(x=10, y=250)
+        self.dispatchDustCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
+        self.dispatchDustCheckbox.place(x=200, y=250)
+        # Handle Solo Bounties Diamonds
+        self.dispatchDiamondsLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Dispatch Solo Diamond Bounties', fg_color=("gray86", "gray17"))
+        self.dispatchDiamondsLabel.place(x=10, y=280)
+        self.dispatchDiamondsCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
+        self.dispatchDiamondsCheckbox.place(x=200, y=280)
         # Collect Gladiator Coins
         self.gladiatorCollectLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Collect Gladiator Coins', fg_color=("gray86", "gray17"))
         self.gladiatorCollectLabel.place(x=10, y=310)
@@ -329,22 +328,38 @@ class activityWindow(customtkinter.CTkToplevel):
         self.fightOfFatesCheckbox = customtkinter.CTkCheckBox(master=self.eventsFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
         self.fightOfFatesCheckbox.place(x=200, y=40)
 
-        activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties', 'soloBounties',
+        # Circus Tour
+        self.circusTourLabel = customtkinter.CTkLabel(master=self.eventsFrame, text='Circus Tour', fg_color=("gray86", "gray17"))
+        self.circusTourLabel.place(x=10, y=70)
+        self.circusTourCheckbox = customtkinter.CTkCheckBox(master=self.eventsFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
+        self.circusTourCheckbox.place(x=200, y=70)
+
+        activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties',
                       'gladiatorCollect', 'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
-                         'collectQuests', 'collectMerchants', 'fightOfFates']
+                         'collectQuests', 'collectMerchants', 'fightOfFates', 'circusTour', 'dispatchDust', 'dispatchDiamonds' ]
         for activity in activityBoxes:
-            if config.getboolean('DAILIES', activity):
-                self.__getattribute__(activity+'Checkbox').select()
+            if activity == 'dispatchDust' or activity == 'dispatchDiamonds':
+                if config.getboolean('BOUNTIES', activity):
+                    self.__getattribute__(activity + 'Checkbox').select()
+            else:
+                if config.getboolean('DAILIES', activity):
+                    self.__getattribute__(activity+'Checkbox').select()
 
     def activityUpdate(self):
-        activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties', 'soloBounties',
+        activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties',
                       'gladiatorCollect', 'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
-                         'collectQuests', 'collectMerchants', 'fightOfFates']
+                         'collectQuests', 'collectMerchants', 'fightOfFates', 'circusTour', 'dispatchDust', 'dispatchDiamonds' ]
         for activity in activityBoxes:
-            if self.__getattribute__(activity + 'Checkbox').get() == 1:
-                config.set('DAILIES', activity, 'True')
+            if activity == 'dispatchDust' or activity == 'dispatchDiamonds':
+                if self.__getattribute__(activity + 'Checkbox').get() == 1:
+                    config.set('BOUNTIES', activity, 'True')
+                else:
+                    config.set('BOUNTIES', activity, 'False')
             else:
-                config.set('DAILIES', activity, 'False')
+                if self.__getattribute__(activity + 'Checkbox').get() == 1:
+                    config.set('DAILIES', activity, 'True')
+                else:
+                    config.set('DAILIES', activity, 'False')
         updateSettings()
 
 
@@ -634,12 +649,14 @@ def dailies():
     shopPurchases(int(app.shoprefreshEntry.get()))
     if bool(config.getboolean('DAILIES', 'twistedrealm')) is True:
         handleTwistedRealm()
-    if bool(config.getboolean('DAILIES', 'fightoffates')) is True:
-        handleFightOfFates()
     if bool(config.getboolean('DAILIES', 'collectquests')) is True:
         collectQuests()
     if bool(config.getboolean('DAILIES', 'collectmerchants')) is True:
         clearMerchant()
+    if bool(config.getboolean('DAILIES', 'fightoffates')) is True:
+        handleFightOfFates()
+    if bool(config.getboolean('DAILIES', 'circusTour')) is True:
+        handleCircusTour()
     printGreen('Dailies done!')
     return
 

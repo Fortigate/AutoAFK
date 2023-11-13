@@ -21,7 +21,6 @@ def expandMenus():
         click('buttons/downarrow', 0.8, retry=3)
 
 # Checks if AFK Arena process is running, if not we launch it
-# TODO Add test server launch flag
 def afkRunningCheck():
     if args['test']:
         # printError('AFK Arena Test Server is not running, launching..')
@@ -317,6 +316,13 @@ def clickMultipleChoice(image, choice, confidence=0.9, seconds=1):
         y_center = round(y + h / 2)
         device.input_tap(x_center, y_center)
         wait(seconds)
+
+def returnMultiple(image, confidence=0.9, seconds=1):
+    take_screenshot(device)
+    screenshot = Image.open(cwd + 'screen.bin')
+    search = Image.open(cwd + 'img\\' + image + '.png')
+    results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
+    return results
 
 # Checks the pixel at the XY coordinates
 # C Variable is array from 0 to 2 for RGB value
