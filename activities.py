@@ -347,8 +347,8 @@ def collectInnGifts():
         recover()
 
 def handleShopPurchasing(counter):
-    toprow = {'shards': [180, 920], 'cores': [425, 920], 'timegazer': [650, 920], 'baits': [875, 920]}
-    bottomrow = {'dust_gold': 'buttons/shop/dust', 'dust_diamond': 'buttons/shop/dust_diamonds', 'elite_soulstone': 'buttons/shop/soulstone',
+    toprow = {'arcanestaffs': [180, 920], 'cores': [425, 920], 'timegazer': [650, 920], 'baits': [875, 920]}
+    bottomrow = {'dust_gold': 'buttons/shop/dust', 'shards_gold': 'buttons/shop/shards_gold', 'dust_diamond': 'buttons/shop/dust_diamonds', 'elite_soulstone': 'buttons/shop/soulstone',
                   'superb_soulstone': 'buttons/shop/superstone', 'silver_emblem': 'buttons/shop/silver_emblems', 'gold_emblem': 'buttons/shop/gold_emblems', 'poe': 'buttons/shop/poe'}
 
     # Purchase top row
@@ -358,7 +358,7 @@ def handleShopPurchasing(counter):
                 continue
             if item == 'baits' and counter > 1: # only two baits
                 continue
-            if (item == 'cores' or item == 'shards') and counter > 2: # only three shards/cores
+            if (item == 'cores' or item == 'arcanestaffs') and counter > 2: # only three shards/staffs
                 continue
             printPurple('Buying: ' + item)
             clickXY(pos[0], pos[1])
@@ -668,6 +668,7 @@ def handleCircusTour(battles = 3):
     counter = 1
     printBlue('Attempting to run Circus Tour battles')
     confirmLocation('ranhorn') # Trying to fix 'buttons/events not found' error
+    wait()
     click('buttons/events', confidence=0.8, retry=3, seconds=3)
     if isVisible('labels/circustour', retry=3, click=True):
         while counter < battles:
@@ -676,6 +677,8 @@ def handleCircusTour(battles = 3):
             if counter == 1:
                 clickXY(550, 900, seconds=1) # Clear dialogue box on new boss rotation
                 clickXY(550, 900, seconds=1) # Only need to do this on the first battle
+                clickXY(550, 900, seconds=1)
+                clickXY(550, 900, seconds=1)
                 clickXY(550, 900, seconds=1)
                 clickXY(550, 900, seconds=1)
             click('buttons/battle_large', confidence=0.8, retry=3, seconds=5)

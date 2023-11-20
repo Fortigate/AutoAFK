@@ -87,8 +87,10 @@ def configureADB():
     adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
     adb_device_str = str(adb_devices[26:40]) # trim the string to extract the first device
     adb_device = adb_device_str[2:15] # trim again because it's a byte object and has extra characters
+    if config.get('ADVANCED', 'port') == '':
+        config.set('ADVANCED', 'port', '0') # So we don't throw a NaN error on the next if statement if the fields blank
     if config.getint('ADVANCED', 'port') != 0:
-        printWarning('Port ' + str(config.get('ADVANCED', 'port'))  + ' found in settings.ini, using that')
+        printWarning('Port ' + str(config.get('ADVANCED', 'port')) + ' found in settings.ini, using that')
         adb_device = '127.0.0.1:'+str(config.get('ADVANCED', 'port'))
         Popen([adbpath, 'connect', adb_device], stdout=PIPE).communicate()[0]
         return
@@ -114,13 +116,15 @@ def portScan():
 
     config.read(settings)  # to load any new values (ie port changed and saved) into memory
     port = config.get('ADVANCED', 'port')
-    if ':' in str(port):
+    if port == '':
+        port == 0
+    elif ':' in str(port):
         printError('Port entered includes the : symbol, it should only be the last 4 or 5 digits not the full IP:Port address. Exiting..')
         sys.exit(1)
-    if int(port) == 5037:
+    elif int(port) == 5037:
         printError('Port 5037 has been entered, this is the port of the ADB connection service not the emulator, check BlueStacks Settings - Preferences to get the ADB port number')
         sys.exit(1)
-    if int(port) != 0:
+    elif int(port) != 0:
         printGreen('Port: ' + str(config.get('ADVANCED', 'port')) + ' found in the settings.ini file, connecting using that..')
         adbport = int(config.get('ADVANCED', 'port'))
         return adbport
