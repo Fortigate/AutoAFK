@@ -6,6 +6,8 @@ from subprocess import check_output, Popen, PIPE
 import time, socket, os, configparser, sys, tools
 from PIL import Image
 from numpy import asarray
+from shutil import which
+from platform import system
 
 # Configs/settings
 config = configparser.ConfigParser()
@@ -82,6 +84,8 @@ def configureADB():
     global adb_devices
     config.read(settings)  # to load any new values (ie port changed and saved) into memory
     adbpath = os.path.join(cwd, 'adb.exe') # Locate adb.exe in working directory
+    if system() != 'Windows' or not os.path.exists(adbpath):
+        adbpath = which('adb') # If we're not on Windows or can't find adb.exe in the working directory we try and find it in the PATH
     Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the ADB server
     wait(2)
     adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
