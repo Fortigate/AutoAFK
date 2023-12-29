@@ -5,3 +5,5 @@
 /output/main/
 /TS Screens/
 /output/
+venv
+*.pyc
