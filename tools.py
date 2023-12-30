@@ -336,6 +336,51 @@ def pixelCheck(x,y,c,seconds=1):
     wait(seconds)
     return screenshot[y, x, c]
 
+def returnCardPullsRarity():
+    take_screenshot(device)
+    screenshot = asarray(Image.open(cwd + 'screen.bin'))  # Convert PIL Image to NumPy Array for tuples
+    cards = {'1': [95, 550], '2': [95, 900], '3': [95, 1350], '4': [410, 250], '5': [410, 650], '6': [410, 1100], '7': [410, 1550], '8': [729, 550], '9': [729, 900], '10': [729, 1350]}
+
+    for card, location in cards.items(): # screenshot[] searchs Y first then X for reasons, so the locations[] are reversed
+        if screenshot[location[1], location[0], 0] > 200 and screenshot[location[1], location[0], 1] > 200: # Red and Green > 200 = Yellow border
+            return 'Awakened'
+
+    for card, location in cards.items():
+        if screenshot[location[1], location[0], 0] > 200 and screenshot[location[1], location[0], 2] > 200: # Red and Blue > 200 = Purple border
+            return 'Epic'
+
+    return 'Rare'
+
+# def returnAwakened():
+#     take_screenshot(device)
+#     screenshot = Image.open(cwd + 'screen.bin')
+#     wokes = {'Awakened Talene': 'aTalene', 'Gavus': 'Gavus', 'Maetria': 'Maetria', 'Awakened Ezizh': 'aEzizh',
+#              'Awakened Thane': 'aThane', 'Awakened Belinda': 'aBelinda', 'Awakened Brutus': 'aBrutus',
+#              'Awakened Safiya': 'aSafiya', 'Awakened Lyca': 'aLyca', 'Awakened Solise': 'aSolise',
+#              'Awakened Baden': 'aBaden', 'Awakened Shemira': 'aShemira', 'Awakened Athalia': 'aAthalia'}
+#
+#     for awakened, imageloc in wokes.items():
+#         search = Image.open(cwd + 'img\\summons\\awakeneds\\' + imageloc + '.png')
+#         res = locate(search, screenshot, grayscale=False, confidence=0.85)
+#         if res != None:
+#             return awakened
+#     return 'Unknown'
+#
+# def returnCeleHypo():
+#     take_screenshot(device)
+#     screenshot = Image.open(cwd + 'screen.bin')
+#     celehypos = {'Awakened Talene': 'aTalene', 'Gavus': 'Gavus', 'Maetria': 'Maetria', 'Awakened Ezizh': 'aEzizh',
+#              'Awakened Thane': 'aThane', 'Awakened Belinda': 'aBelinda', 'Awakened Brutus': 'aBrutus',
+#              'Awakened Safiya': 'aSafiya', 'Awakened Lyca': 'aLyca', 'Awakened Solise': 'aSolise',
+#              'Awakened Baden': 'aBaden', 'Awakened Shemira': 'aShemira', 'Awakened Athalia': 'aAthalia'}
+#
+#     for celehypo, imageloc in celehypos.items():
+#         search = Image.open(cwd + 'img\\summons\\awakeneds\\' + imageloc + '.png')
+#         res = locate(search, screenshot, grayscale=False, confidence=0.85)
+#         if res != None:
+#             return celehypo
+#     return "Unknown or 4F Epic"
+
 # Used to confirm which game screen we're currently sitting in, and change to if we're not.
 # Optionally with 'bool' flag we can return boolean for if statements
 def confirmLocation(location, change=True, bool=False):

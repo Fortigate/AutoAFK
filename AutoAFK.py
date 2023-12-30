@@ -40,7 +40,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.11.1"
+version = "0.12.1b"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -116,7 +116,7 @@ class App(customtkinter.CTk):
         self.arenaButton = customtkinter.CTkButton(master=self.arenaFrame, text="Run Activity", command=lambda: threading.Thread(target=activityManager).start())
         self.arenaButton.place(x=20, y=15)
         # Activities Dropdown
-        self.activityFormationDropdown = customtkinter.CTkComboBox(master=self.arenaFrame, values=["Arena of Heroes", "Fight of Fates"], width=160)
+        self.activityFormationDropdown = customtkinter.CTkComboBox(master=self.arenaFrame, values=['Unlimited Summons', "Arena of Heroes", "Fight of Fates"], width=160)
         self.activityFormationDropdown.place(x=10, y=55)
         # Activities Entry
         self.pvpLabel = customtkinter.CTkLabel(master=self.arenaFrame, text='How many battles', fg_color=("gray86", "gray17"))
@@ -181,6 +181,7 @@ class App(customtkinter.CTk):
         self.shop_window = None
         self.activity_window = None
         self.advanced_window = None
+        self.summons_window = None
 
     def Update(self):
         if self.twistedRealmCheckbox.get() == 1:
@@ -530,6 +531,50 @@ class advancedWindow(customtkinter.CTkToplevel):
             config.write(configfile)
         config.read(settings)  # to load the new value into memory
 
+class summonsWindow(customtkinter.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.geometry("200x260")
+        self.title('Unlimited Summons')
+        self.attributes("-topmost", True)
+        self.wm_iconbitmap(cwd + 'img\\auto.ico')
+
+        # Activity Frame
+        self.summonsFrame = customtkinter.CTkFrame(master=self, width=180, height=250)
+        self.summonsFrame.place(x=10, y=10)
+        self.label = customtkinter.CTkLabel(master=self.summonsFrame, text="Unlimited Summons:", font=("Arial", 15, 'bold'))
+        self.label.place(x=10, y=5)
+
+        self.wokeLabel = customtkinter.CTkLabel(master=self.summonsFrame, text='Desired Awakened:', fg_color=("gray86", "gray17"))
+        self.wokeLabel.place(x=10, y=40)
+        # Activities Dropdown
+        self.wokeDropdown = customtkinter.CTkComboBox(master=self.summonsFrame, values=['Awakened Talene', 'Awakened Athalia',
+        'Gavus', 'Maetria', 'Awakened Ezizh', 'Awakened Thane', 'Awakened Belinda', 'Awakened Brutus', 'Awakened Safiya',
+        'Awakened Solise', 'Awakened Lyca', 'Awakened Baden', 'Awakened Shemira'], width=160)
+        self.wokeDropdown(state='readonly')
+        self.wokeDropdown.place(x=10, y=70)
+
+        self.celehypoLabel = customtkinter.CTkLabel(master=self.summonsFrame, text='Desired CeleHypo:', fg_color=("gray86", "gray17"))
+        self.celehypoLabel.place(x=10, y=100)
+        # Activities Dropdown
+        self.celehypoDropdown = customtkinter.CTkComboBox(master=self.summonsFrame, values=['Audrae', 'Canisa and Ruke',
+        'Daemia', 'Ezizh', 'Khazard', 'Lavatune', 'Liberta', 'Lucilla', 'Lucretia', 'Mehira', 'Mortas', 'Olgath', 'Talene',
+        'Tarnos', 'Elijah and Lailah', 'Veithal', 'Vyloris', 'Zaphrael', 'Zikis'], width=160)
+        self.celehypoDropdown(state='readonly')
+        self.celehypoDropdown.place(x=10, y=130)
+
+        self.x6Checkbox = customtkinter.CTkCheckBox(master=self.summonsFrame, text='x6 Speed Mode', onvalue=True, offvalue=False)
+        self.x6Checkbox.place(x=10, y=170)
+
+        # Summons button
+        self.summonsButton = customtkinter.CTkButton(master=self.summonsFrame, text="Run Summons", command=lambda: threading.Thread(target=unlimitedSummons).start())
+        self.summonsButton.place(x=20, y=210)
+
+        def unlimitedSummons():
+            connect_device()
+            infiniteSummons(self.wokeDropdown.get(), self.celehypoDropdown.get(), self.x6Checkbox.get())
+            summonsWindow.destroy(self)
+
 # Will change the dropdown to only include open towers
 # May cause issues with timezones..
 def setUlockedTowers():
@@ -592,6 +637,21 @@ def activityManager():
         print('')
         return
 
+    if app.activityFormationDropdown.get() == "Unlimited Summons":
+        buttonState('disabled')
+        open_summonswindow()
+        buttonState('normal')
+        print('')
+        return
+
+def open_summonswindow():
+    summons_window = None
+    if summons_window is None or not summons_window.winfo_exists():
+        summons_window = summonsWindow()  # create window if its None or destroyed
+        summons_window.focus()
+    else:
+        summons_window.focus()  # if window exists focus it
+
 def dailiesButton():
     if app.arenaEntry.get() != config.get('DAILIES', 'arenabattles'):
         config.set('DAILIES', 'arenabattles', app.arenaEntry.get())
@@ -625,8 +685,6 @@ def serverCheck():
                     printWarning('No server change confirmation found')
                     clickXY(70, 1810)
                     clickXY(70, 1810)
-
-
 
 def dailies():
     connect_device()

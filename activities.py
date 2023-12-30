@@ -2,6 +2,7 @@ from tools import *
 from AutoAFK import printGreen, printError, printWarning, printBlue, printPurple, settings
 import datetime
 import configparser
+import random
 
 config = configparser.ConfigParser()
 config.read(settings)
@@ -100,6 +101,7 @@ def pushCampaign(formation=3, duration=1):
     if (isVisible('buttons/begin_plain', 0.7)): # If we see second Begin it's a multi so we take different actions
         click('buttons/begin_plain', 0.7, seconds=2, retry=2, suppress=True)
         if isVisible('buttons/formations', click=True, seconds=3):
+            clickXY(800, 1650, seconds=2) # Change to 'Popular' tab
             clickXY(850, 425 + (formation * 175))
             click('buttons/use', suppress=True)
             click('buttons/confirm_small', suppress=True)
@@ -158,7 +160,7 @@ def dispatchSoloBounties(remaining=2, maxRefreshes=3):
             printWarning('   Board refreshed (#' + str(refreshes) + ')')
         dispatches = returnMultiple('buttons/dispatch_bounties', confidence=0.97)
         dispatcher(dispatches) # Send the list to the function to dispatch
-        swipe(550, 800, 550, 500, duration=200, seconds=3) # scroll down
+        swipe(550, 800, 550, 500, duration=200, seconds=2) # scroll down
         dispatches = returnMultiple('buttons/dispatch_bounties', confidence=0.97)
         if len(dispatches) <= remaining: # if <=remaining bounties left we just dispatch all and continue
             printWarning('  ' + str(remaining) + ' or less bounties remaining, dispatching..')
@@ -175,24 +177,26 @@ def dispatchSoloBounties(remaining=2, maxRefreshes=3):
     click('buttons/confirm', suppress=True)
 
 def dispatcher(dispatches):
+    # print(str(len(dispatches)) + ' Dispatches found.') # Debugging
     for button in dispatches:
         y_center = round(
             button[1] + button[3] / 2)  # Return left + half the height to get the center Y coord of the image
-        blue_value = pixelCheck(120, y_center, 2, seconds=0)
-        red_value = pixelCheck(120, y_center, 0, seconds=0)
+        blue_value = pixelCheck(120, y_center, 2, seconds=0) # Take a reading from the middle of the icon
+        red_value = pixelCheck(120, y_center, 0, seconds=0) # Take a reading from the middle of the icon
+        # printWarning('Red: ' + str(red_value) + '. Blue: ' + str(blue_value) + '.') # Debugging
         if blue_value < 100 and red_value > 200:
-            # print('Skipping Gold')
+            # Gold
             continue
-        elif blue_value > 220 and red_value > 150 and red_value < 200:
-            # print('Skipping Soulstone')
+        elif blue_value > 220 and red_value > 155 and red_value < 200:
+            # Soulstone
             continue
-        elif blue_value > 195 and red_value < 150:
+        elif blue_value > 190 and red_value < 155:
             if config.getboolean('BOUNTIES', 'dispatchDust'):
                 printGreen('    Dispatching Dust')
                 clickXY(900, y_center)
                 clickXY(350, 1150)
                 clickXY(750, 1150)
-        elif blue_value > 240 and red_value > 240:
+        elif blue_value > 230 and red_value > 230:
             if config.getboolean('BOUNTIES', 'dispatchDiamonds'):
                 printGreen('    Dispatching Diamonds')
                 clickXY(900, y_center)
@@ -696,6 +700,63 @@ def handleCircusTour(battles = 3):
     else:
         printWarning('Circus Tour not found, recovering..')
         recover()
+
+def infiniteSummons(woke, celehypo, x6mode=False):
+    printBlue('Attempting to run Unlimited Summons')
+    if isVisible('buttons/summons/summons_sidebar', retry=3, click=True):
+        # List to match the dropdown name to the image file name
+        wokes = {'Awakened Talene': 'aTalene', 'Gavus': 'Gavus', 'Maetria': 'Maetria', 'Awakened Ezizh': 'aEzizh',
+                 'Awakened Thane': 'aThane', 'Awakened Belinda': 'aBelinda', 'Awakened Brutus': 'aBrutus',
+                 'Awakened Safiya': 'aSafiya', 'Awakened Lyca': 'aLyca', 'Awakened Solise': 'aSolise',
+                 'Awakened Baden': 'aBaden', 'Awakened Shemira': 'aShemira', 'Awakened Athalia': 'aAthalia'}
+        # List to match the dropdown name to the image file name
+        celehypos = {'Audrae': 'audrae', 'Canisa and Ruke': 'cruke', 'Daemia': 'daemia', 'Ezizh': 'ezizh', 'Khazard': 'khazard',
+                 'Lavatune': 'lavatune', 'Liberta': 'liberta', 'Lucilla': 'lucilla', 'Lucretia': 'lucretia', 'Mehira': 'mehira',
+                 'Mezoth': 'mezoth', 'Mortas': 'mortas', 'Olgath': 'olgath', 'Talene': 'talene', 'Tarnos': 'tarnos',
+                     'Elijah and Lailah': 'twins', 'Veithael': 'vei', 'Vyloris': 'vyloris', 'Zahprael': 'zaph', 'Zikis': 'zikis'}
+
+        search = True
+        printGreen('Searching for: ' + woke + ' and ' + celehypo)
+        print('')
+        clickXY(125, 850)
+        clickXY(700, 1700, seconds=2)
+        while search is True:
+            # Self-explanatory, if x6 mode is enabled we click a little faster
+            if x6mode is False:
+                clickXY(680, 1820, seconds=2)
+                clickXY(950, 1820)
+                clickXY(950, 1820)
+                wait(6)
+            else:
+                clickXY(680, 1820)
+                clickXY(950, 1820, seconds=0.5)
+                clickXY(950, 1820, seconds=0.5)
+                wait(2)
+            # return Awakened, Epic or Rare
+            found = str(returnCardPullsRarity())
+            if found == "Awakened":
+                printWarning('Awakened Found')
+                if isVisible('\\summons\\awakeneds\\' + wokes[woke], confidence=0.85):
+                    printGreen('    ' + woke + ' found! Checking for ' + celehypo)
+                    if isVisible('\\summons\\celehypos\\' + celehypos[celehypo], confidence=0.85):
+                        printGreen('    ' + celehypo + ' found too! Recording Summon and exiting..')
+                        click('buttons/summons/record', confidence=0.85, retry=3, seconds=3)
+                        click('buttons/summons/change', confidence=0.85, retry=3, seconds=3, suppress=True) # Suppress as this isn't always present
+                        click('buttons/summons/confirm', confidence=0.85, retry=3, seconds=3)
+                        search = False
+                    else:
+                        printError('    ' + celehypo + ' not found, continuing..')
+                # save_screenshot('woke_' + str((random.randrange(1,1000))))
+            if found == 'Epic':
+                printPurple('Epic Found')
+                # save_screenshot('epic_' + str((random.randrange(1,1000))))
+            if found == 'Rare':
+                printBlue('Rare found')
+        printGreen('Unlimited Summons finished!')
+    else:
+        # If we can't find the Unlimited Summons button we end
+        printError('Could not find Unlimited Summons button..')
+
 
 def TS_Battle_Stastistics():
     region = 10
