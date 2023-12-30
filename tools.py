@@ -6,11 +6,13 @@ from subprocess import check_output, Popen, PIPE
 import time, socket, os, configparser, sys, tools
 from PIL import Image
 from numpy import asarray
+from shutil import which
+from platform import system
 
 # Configs/settings
 config = configparser.ConfigParser()
 config.read(settings) # load settings
-cwd = (os.path.dirname(__file__) + '\\') # variable for current directory of AutoAFK.exe
+cwd = os.path.dirname(__file__) # variable for current directory of AutoAFK.exe
 os.system('color')  # So colourful text works
 connected = False
 connect_counter = 1
@@ -81,7 +83,9 @@ def configureADB():
     global adb_device
     global adb_devices
     config.read(settings)  # to load any new values (ie port changed and saved) into memory
-    adbpath = (os.path.dirname(__file__) + '\\adb.exe') # Locate adb.exe in working directory
+    adbpath = os.path.join(cwd, 'adb.exe') # Locate adb.exe in working directory
+    if system() != 'Windows' or not os.path.exists(adbpath):
+        adbpath = which('adb') # If we're not on Windows or can't find adb.exe in the working directory we try and find it in the PATH
     Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the ADB server
     wait(2)
     adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
@@ -196,7 +200,7 @@ def connect_device():
 # Takes a screenshot and saves it locally
 def take_screenshot(device):
     image = device.screencap()
-    with open(cwd + 'screen.bin', 'wb') as f:
+    with open(os.path.join(cwd, 'screen.bin'), 'wb') as f:
         f.write(image)
 
 def save_screenshot(name):
@@ -223,8 +227,8 @@ def swipe(x1, y1, x2, y2, duration=100, seconds=1):
 def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
     counter = 0
     take_screenshot(device)
-    screenshot = Image.open(cwd + 'screen.bin')
-    search = Image.open(cwd + 'img\\' + image + '.png')
+    screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     res = locate(search, screenshot, grayscale=False, confidence=confidence)
 
     if res == None and retry != 1:
@@ -264,14 +268,14 @@ def clickXY(x,y, seconds=1):
 def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False):
     counter = 0
     take_screenshot(device)
-    screenshot = Image.open(cwd + 'screen.bin')
-    search = Image.open(cwd + 'img\\' + image + '.png')
+    screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
 
     if result == None and retry != 1:
         while counter < retry:
             take_screenshot(device)
-            screenshot = Image.open(cwd + 'screen.bin')
+            screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
             result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
             if result != None:
                 x, y, w, h = result
@@ -302,8 +306,8 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=F
 # Seconds is how long to pause after finding the image
 def clickMultipleChoice(image, choice, confidence=0.9, seconds=1):
     take_screenshot(device)
-    screenshot = Image.open(cwd + 'screen.bin')
-    search = Image.open(cwd + 'img\\' + image + '.png')
+    screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
     if len(results) == 0:
         printError('clickMultipleChoice error, image:' + str(image) + ' not found')
@@ -323,8 +327,8 @@ def clickMultipleChoice(image, choice, confidence=0.9, seconds=1):
 
 def returnMultiple(image, confidence=0.9, seconds=1):
     take_screenshot(device)
-    screenshot = Image.open(cwd + 'screen.bin')
-    search = Image.open(cwd + 'img\\' + image + '.png')
+    screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
     return results
 
@@ -332,7 +336,7 @@ def returnMultiple(image, confidence=0.9, seconds=1):
 # C Variable is array from 0 to 2 for RGB value
 def pixelCheck(x,y,c,seconds=1):
     take_screenshot(device)
-    screenshot = asarray(Image.open(cwd + 'screen.bin')) # Convert PIL Image to NumPy Array for tuples
+    screenshot = asarray(Image.open(os.path.join(cwd, 'screen.bin'))) # Convert PIL Image to NumPy Array for tuples
     wait(seconds)
     return screenshot[y, x, c]
 
@@ -387,9 +391,9 @@ def confirmLocation(location, change=True, bool=False):
     detected = ''
     locations = {'campaign_selected': 'campaign', 'darkforest_selected': 'darkforest', 'ranhorn_selected': 'ranhorn'}
     take_screenshot(device)
-    screenshot = Image.open(cwd + 'screen.bin')
+    screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
     for location_button, string in locations.items():
-        search = Image.open(cwd + 'img\\buttons\\' + location_button + '.png')
+        search = Image.open(os.path.join(cwd, 'img', 'buttons', location_button + '.png'))
         res = locate(search, screenshot, grayscale=False)
         if res != None:
             detected = string
@@ -398,7 +402,7 @@ def confirmLocation(location, change=True, bool=False):
     if detected == location and bool is True:
         return True
     elif detected != location and change is True and bool is False:
-        click('buttons\\' + location + '_unselected')
+        click(os.path.join('buttons', location + '_unselected'))
     elif detected != location and bool is True:
         return False
 

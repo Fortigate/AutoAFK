@@ -10,7 +10,7 @@ import requests
 
 currenttime = datetime.now()
 currenttimeutc = datetime.now(timezone.utc)
-cwd = (os.path.dirname(__file__) + '\\') # We prefix all file calls with cwd so we can call from other directories (I.E via batch or cron)
+cwd = os.path.dirname(__file__) # We prefix all file calls with cwd so we can call from other directories (I.E via batch or cron)
 config = configparser.ConfigParser()
 customtkinter.set_appearance_mode("dark")  # Modes: system (default), light, dark
 customtkinter.set_default_color_theme("green")  # Themes: blue (default), dark-blue, green
@@ -27,9 +27,9 @@ args = vars(parser.parse_args())
 
 global settings
 if args['config']:
-    settings = cwd + (args['config'])
+    settings = os.path.join(cwd, args['config'])
 else:
-    settings = cwd + 'settings.ini'
+    settings = os.path.join(cwd, 'settings.ini')
 config.read(settings)
 
 repo_releases = requests.get('https://api.github.com/repos/Fortigate/AutoAFK/releases/latest')
@@ -50,7 +50,7 @@ class App(customtkinter.CTk):
         # configure window
         self.title("AutoAFK " + version)
         self.geometry(f"{800}x{600}")
-        self.wm_iconbitmap(cwd + 'img\\auto.ico')
+        self.wm_iconbitmap(os.path.join(cwd, 'img', 'auto.ico'))
 
         # configure grid layout (4x4)
         self.grid_rowconfigure((0, 1, 2), weight=0)

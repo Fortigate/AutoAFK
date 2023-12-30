@@ -1,0 +1,5 @@
+customtkinter==5.2.1
+numpy==1.26.2
+pure_python_adb==0.3.0.dev0
+PyScreeze==0.1.30
+Requests==2.31.0
