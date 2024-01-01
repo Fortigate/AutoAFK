@@ -3,7 +3,7 @@ from ppadb.client import Client
 from AutoAFK import printGreen, printError, printWarning, printBlue, settings, args
 from pyscreeze import locate, locateAll
 from subprocess import check_output, Popen, PIPE
-import time, socket, os, configparser, sys, tools
+import time, os, configparser, sys
 from PIL import Image
 from numpy import asarray
 from shutil import which
@@ -15,7 +15,129 @@ config.read(settings) # load settings
 cwd = os.path.dirname(__file__) # variable for current directory of AutoAFK.exe
 os.system('color')  # So colourful text works
 connected = False
-connect_counter = 1
+
+# Start PPADB
+adb = Client(host='127.0.0.1', port=5037)
+
+# Connects to the ADB device using PPADB, allowing us to send commands via Python
+# On success we go through our startup checks to make sure we are starting from the same point each time, and can recognise the template images
+def connect_device():
+    connect_counter = 1
+    global device
+
+    if connect_counter == 1:
+        printGreen('Attempting to connect, make sure that BlueStacks is running!')
+
+    config.read(settings) # To update any new values before we run activities
+
+    global connected  # So we don't reconnect with every new activity in the same session
+    if connected is True:
+        return
+
+    # Run through the various methods to find the ADB device of the emulator, and point PPADB to the found device
+    device = configureADB()
+
+    # PPADB can throw errors occasionally for no good reason, here we try and catch them and retry for stability
+    while connect_counter < 4:
+        try:
+            device.shell('echo Hello World!') # Arbitrary test command
+        except Exception as e:
+            if str(e) != 'ERROR: \'FAIL\' 000edevice offline': # Skip common device offline error as it still runs after that
+                printError('PPADB Error: ' + str(e) + ', retrying ' + str(connect_counter) + '/3')
+                wait(3)
+                connect_counter+=1
+                connect_device()
+        else:
+            break
+    if device == None:
+        printError('No ADB device found, often due to ADB errors. Please try manually connecting your client.')
+        printWarning('Debug:')
+        print(device.decode())
+        sys.exit(1)
+    else:
+        printGreen('Device: ' + str(device.serial) + ' successfully connected!')
+        connect_counter = 1 # reset counter just in case
+        resolutionCheck(device) # Four start up checks, so we have an exact position/screen configuration to start with
+        afkRunningCheck()
+        waitUntilGameActive()
+        expandMenus()
+        connected = True
+        print('')
+
+# This function manages the ADB connection to Bluestacks.
+# First it restarts ADB then checks for a port in settings.ini, after that we check for existing connected ADB devices
+# If neither are found we run portScan() to find the active port and connect using that
+def configureADB():
+    # Load any new values (ie port changed and saved) into memory
+    config.read(settings)
+
+    adbpath = os.path.join(cwd, 'adb.exe') # Locate adb.exe in working directory
+    if system() != 'Windows' or not os.path.exists(adbpath):
+        adbpath = which('adb') # If we're not on Windows or can't find adb.exe in the working directory we try and find it in the PATH
+
+    # Restarting the ADB server solves 90% of issues with it
+    Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0]
+    Popen([adbpath, "start-server"], stdout=PIPE).communicate()[0]
+
+    # First we check settings for a valid port and try that
+    if config.getint('ADVANCED', 'port') != 0:
+        port = config.get('ADVANCED', 'port')
+        if port == '':
+            port == 0 # So we don't throw a NaN error if the field's blank
+        if ':' in str(port):
+            printError('Port entered includes the : symbol, it should only be the last 4 or 5 digits not the full IP:Port address. Exiting..')
+            sys.exit(1)
+        if int(port) == 5037:
+            printError('Port 5037 has been entered, this is the port of the ADB connection service not the emulator, check BlueStacks Settings - Preferences to get the ADB port number')
+            sys.exit(1)
+        printWarning('Port ' + str(config.get('ADVANCED', 'port')) + ' found in settings.ini, using that')
+        device = '127.0.0.1:' + str(config.get('ADVANCED', 'port'))
+        Popen([adbpath, 'connect', device], stdout=PIPE).communicate()[0]
+        adb_device = adb.device('127.0.0.1:' + str(config.get('ADVANCED', 'port')))
+        return adb_device
+
+    # Second we list adb devices and see if something is there already, it will take the first device which may not be what we want so settings.ini port takes priority
+    adb_devices = adb.devices()
+    for device in adb_devices:
+        if device is not None:
+            adb_device = adb.device(device.serial) # If we find any we return that and move on
+            return adb_device
+
+    # Last step is to find the port ourselves, this is Windows only as it runs a PowerShell command
+    if system() == 'Windows':
+        device = '127.0.0.1:' + str(portScan())
+        Popen([adbpath, 'connect', device], stdout=PIPE).communicate()[0]
+        adb_device = adb.device(device)
+        return adb_device
+
+    # If none of the above work we exit
+    printError('No device found! Exiting..')
+    sys.exit(1)
+
+# This takes all Listening ports opened by HD-Player.exe and tries to connect to them with ADB
+def portScan():
+    adbpath = os.path.join(cwd, 'adb.exe') # Locate adb.exe in working directory
+    if system() != 'Windows' or not os.path.exists(adbpath):
+        adbpath = which('adb') # If we're not on Windows or can't find adb.exe in the working directory we try and find it in the PATH
+
+    printWarning('No ADB devices found connected already, and no configured port in settings. Manually scanning for the port..')
+
+    # Powershell command that returns all listening ports in use by HD-Player.exe
+    ports = Popen(["powershell.exe", "Get-NetTCPConnection -State Listen | Where-Object OwningProcess -eq (Get-Process hd-player | Select-Object -ExpandProperty Id) | Select-Object -ExpandProperty LocalPort"], stdout=PIPE).communicate()[0]
+    printWarning(str(len(ports.decode().splitlines())) + ' ports found, trying them..')
+
+    # Scan ports
+    for port in ports.decode().splitlines(): # Split by linebreak
+        port = int(port)
+        if port == 10089 or port == 7867: # Non-ADB static ports that we can skip
+            continue
+        if port % 2 != 0: # ADB will only use odd port numbers
+            connectmessage = Popen([adbpath, 'connect', '127.0.0.1:' + str(port)], stdout=PIPE).communicate()[0]
+            if connectmessage.decode().split(' ')[0] == 'failed':
+                printError(connectmessage.decode().rstrip())
+            elif connectmessage.decode().split(' ')[0] == 'connected':
+                printGreen(connectmessage.decode().rstrip())
+                return port
 
 # Expands the left and right button menus
 def expandMenus():
@@ -65,137 +187,6 @@ def resolutionCheck(device):
     if str(dpi[2]).strip() != '240':
         printError('Unsupported DPI! (' + str(dpi[2]).strip() + '). Please change your Bluestacks DPI to 240')
         exit(1)
-
-# Checks Windows running processes for Bluestacks.exe
-# Depreciated as this returns a UnicodeDecodeError on some systems despite using 'sys.getdefaultencoding()'
-def processExists(process_name):
-    sysEncoding = sys.getdefaultencoding()
-    printWarning('System encoding is: ' + sysEncoding)
-    call = 'TASKLIST', '/FI', 'imagename eq %s' % process_name
-    output = check_output(call).decode(sysEncoding)
-    last_line = output.strip().split('\r\n')[-1]
-    return last_line.lower().startswith(process_name.lower())
-
-# This function manages the ADB connection to Bluestacks. It does not do it in a refined manner.
-# First it restarts ADB then checks for `emulator-xxxx` devices, if none found we check for `localhost:xxxx` devices
-# If neither are found we run portScan() to find the active port and connect using that, or load one from settings
-def configureADB():
-    global adb_device
-    global adb_devices
-    config.read(settings)  # to load any new values (ie port changed and saved) into memory
-    adbpath = os.path.join(cwd, 'adb.exe') # Locate adb.exe in working directory
-    if system() != 'Windows' or not os.path.exists(adbpath):
-        adbpath = which('adb') # If we're not on Windows or can't find adb.exe in the working directory we try and find it in the PATH
-    Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0] # Restart the ADB server
-    wait(2)
-    adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0] # Run 'adb.exe devices' and pipe output to string
-    adb_device_str = str(adb_devices[26:40]) # trim the string to extract the first device
-    adb_device = adb_device_str[2:15] # trim again because it's a byte object and has extra characters
-    if config.get('ADVANCED', 'port') == '':
-        config.set('ADVANCED', 'port', '0') # So we don't throw a NaN error on the next if statement if the fields blank
-    if config.getint('ADVANCED', 'port') != 0:
-        printWarning('Port ' + str(config.get('ADVANCED', 'port')) + ' found in settings.ini, using that')
-        adb_device = '127.0.0.1:'+str(config.get('ADVANCED', 'port'))
-        Popen([adbpath, 'connect', adb_device], stdout=PIPE).communicate()[0]
-        return
-    if adb_device_str[2:11] == 'localhost':
-        adb_device = adb_device_str[2:16] # Extra letter needed if we manually connect
-    if adb_device_str[2:10] != 'emulator' and adb_device_str[2:11] != 'localhost': # If the ADB device output doesn't use these two prefixes then:
-        Popen([adbpath, 'connect', '127.0.0.1:' + str(portScan())], stdout=PIPE).communicate()[0] # Here we run portScan()
-        adb_devices = Popen([adbpath, "devices"], stdout=PIPE).communicate()[0]  # Run 'adb.exe devices' and pipe output to string
-        adb_device_str = str(adb_devices[26:40])  # trim the string to extract the first device
-        if len(str(config.get('ADVANCED', 'port'))) > 4:
-            adb_device = '127.0.0.1:' + (str(config.get('ADVANCED', 'port')))
-        else:
-            adb_device = adb_device_str[2:16]
-
-# If we don't find a device we use first check settings to see if a port has been manually defined and use that
-# if not then we scan the odd ports between 5555 and 5599 to find the ADB port that bluestacks is using (note Hyper-V BS will use a port in the 10000+ range for reasons)
-# This is a very slow implementation (1 second per port, up to 45 seconds for port 5599). We can multithread it to speed it up
-# If no port is found we have exhausted all options to find the ADB device so will exit
-def portScan():
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    start = time.time()
-    adbport = ''
-
-    config.read(settings)  # to load any new values (ie port changed and saved) into memory
-    port = config.get('ADVANCED', 'port')
-    if port == '':
-        port == 0
-    elif ':' in str(port):
-        printError('Port entered includes the : symbol, it should only be the last 4 or 5 digits not the full IP:Port address. Exiting..')
-        sys.exit(1)
-    elif int(port) == 5037:
-        printError('Port 5037 has been entered, this is the port of the ADB connection service not the emulator, check BlueStacks Settings - Preferences to get the ADB port number')
-        sys.exit(1)
-    elif int(port) != 0:
-        printGreen('Port: ' + str(config.get('ADVANCED', 'port')) + ' found in the settings.ini file, connecting using that..')
-        adbport = int(config.get('ADVANCED', 'port'))
-        return adbport
-
-    printWarning('No ADB devices found, and no configured port in settings.ini. Scanning ADB ports to find it automatically, this can take up to 45 seconds..')
-
-    # Port scanner function
-    def port_scan(port):
-        try:
-            s.connect(('127.0.0.1', port))
-            return True
-        except:
-            pass
-
-    # Scan ports
-    for port in range(5555,5599):
-        if port % 2 != 0: # ADB will only use odd port numbers in this range
-            if port_scan(port):
-                printWarning('ADB Device Found at port ' + str(port) + ' in ' + str(round((time.time() - start))) + ' seconds!')
-                adbport = port
-                break
-
-    if adbport == '':
-        printError('No device found! Exiting..')
-        sys.exit(1)
-
-    return adbport
-
-# Connects to the found ADB device using PPADB, allowing us to send commands via Python
-# On success we go through our startup checks to make sure we are starting from the same point each time, and can recognise the template images
-def connect_device():
-    if tools.connect_counter == 1:
-        printGreen('Attempting to connect, make sure that BlueStacks is running!')
-    config.read(settings) # To update any new values before we run activities
-    global connected  # So we don't reconnect with every new activity
-    global device # Contains our located device
-    if connected is True:
-        return
-    configureADB()
-    adb = Client(host='127.0.0.1', port=5037)
-    device = adb.device(adb_device) # connect to the device we extracted in configureADB()
-    # PPADB can throw errors occasionally for no good reason, here we try and catch them and retry for stability
-    while tools.connect_counter < 4:
-        try:
-            device.shell('echo Hello World!') # Arbitrary test command
-        except Exception as e:
-            if str(e) != 'ERROR: \'FAIL\' 000edevice offline': # Skip common device offline error as it still runs after that
-                printError('PPADB Error: ' + str(e) + ', retrying ' + str(tools.connect_counter) + '/3')
-                wait(3)
-                tools.connect_counter+=1
-                connect_device()
-        else:
-            break
-    if device == None:
-        printError('No ADB device found, often due to ADB errors. Please try manually connecting your client.')
-        printWarning('Debug:')
-        print(adb_devices.decode())
-        sys.exit(1)
-    else:
-        printGreen('Device: ' + adb_device + ' successfully connected!')
-        tools.connect_counter = 1 # reset counter just in case
-        resolutionCheck(device) # Four start up checks, so we have an exact position/screen configuration to start with
-        afkRunningCheck()
-        waitUntilGameActive()
-        expandMenus()
-        connected = True
-        print('')
 
 # Takes a screenshot and saves it locally
 def take_screenshot(device):

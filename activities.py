@@ -731,8 +731,8 @@ def infiniteSummons(woke, celehypo, x6mode=False):
                 wait(6)
             else:
                 clickXY(680, 1820)
-                clickXY(950, 1820, seconds=0.3)
-                clickXY(950, 1820, seconds=0.3)
+                clickXY(950, 1820, seconds=0.5)
+                clickXY(950, 1820, seconds=0.5)
                 wait(2)
             # return Awakened, Epic or Rare
             found = str(returnCardPullsRarity())
