@@ -44,7 +44,7 @@ def waitUntilGameActive():
 
     while loadingcounter < loaded:
         clickXY(550, 1850)
-        buttons = ['buttons/campaign_unselected', 'buttons/exitmenu_trial']
+        buttons = [os.path.join('buttons', 'campaign_unselected'), os.path.join('buttons', 'exitmenu_trial')]
         for button in buttons:
             click(button, seconds=0, suppress=True)
         timeoutcounter += 1
@@ -342,7 +342,7 @@ def pixelCheck(x,y,c,seconds=1):
 
 def returnCardPullsRarity():
     take_screenshot(device)
-    screenshot = asarray(Image.open(cwd + 'screen.bin'))  # Convert PIL Image to NumPy Array for tuples
+    screenshot = asarray(Image.open(os.path.join(cwd, 'screen.bin')))  # Convert PIL Image to NumPy Array for tuples
     cards = {'1': [95, 550], '2': [95, 900], '3': [95, 1350], '4': [410, 250], '5': [410, 650], '6': [410, 1100], '7': [410, 1550], '8': [729, 550], '9': [729, 900], '10': [729, 1350]}
 
     for card, location in cards.items(): # screenshot[] searchs Y first then X for reasons, so the locations[] are reversed

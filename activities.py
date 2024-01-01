@@ -1,3 +1,5 @@
+import math
+
 from tools import *
 from AutoAFK import printGreen, printError, printWarning, printBlue, printPurple, settings
 import datetime
@@ -703,6 +705,8 @@ def handleCircusTour(battles = 3):
 
 def infiniteSummons(woke, celehypo, x6mode=False):
     printBlue('Attempting to run Unlimited Summons')
+    counter = 0 # Pull amount counter
+    starttime = time.time() # Pull duration counter
     if isVisible('buttons/summons/summons_sidebar', retry=3, click=True):
         # List to match the dropdown name to the image file name
         wokes = {'Awakened Talene': 'aTalene', 'Gavus': 'Gavus', 'Maetria': 'Maetria', 'Awakened Ezizh': 'aEzizh',
@@ -718,27 +722,28 @@ def infiniteSummons(woke, celehypo, x6mode=False):
         search = True
         printGreen('Searching for: ' + woke + ' and ' + celehypo)
         print('')
-        clickXY(125, 850)
-        clickXY(700, 1700, seconds=2)
+        clickXY(700, 1700, seconds=2) # Click 'Summon Again'
         while search is True:
-            # Self-explanatory, if x6 mode is enabled we click a little faster
-            if x6mode is False:
+            if x6mode is False: # Self-explanatory, if x6 mode is enabled we click a little faster, else slower
                 clickXY(680, 1820, seconds=2)
                 clickXY(950, 1820)
                 clickXY(950, 1820)
                 wait(6)
             else:
                 clickXY(680, 1820)
-                clickXY(950, 1820, seconds=0.5)
-                clickXY(950, 1820, seconds=0.5)
+                clickXY(950, 1820, seconds=0.3)
+                clickXY(950, 1820, seconds=0.3)
                 wait(2)
             # return Awakened, Epic or Rare
             found = str(returnCardPullsRarity())
+            counter += 1
             if found == "Awakened":
                 printWarning('Awakened Found')
-                if isVisible('\\summons\\awakeneds\\' + wokes[woke], confidence=0.85):
+                # Let's check if it's the one we want
+                if isVisible(os.path.join('summons', 'awakeneds', wokes[woke]), confidence=0.85, seconds=0.5):
                     printGreen('    ' + woke + ' found! Checking for ' + celehypo)
-                    if isVisible('\\summons\\celehypos\\' + celehypos[celehypo], confidence=0.85):
+                    # If it is we then check the celeypo
+                    if isVisible(os.path.join('summons', 'celehypos', celehypos[celehypo]), confidence=0.85):
                         printGreen('    ' + celehypo + ' found too! Recording Summon and exiting..')
                         click('buttons/summons/record', confidence=0.85, retry=3, seconds=3)
                         click('buttons/summons/change', confidence=0.85, retry=3, seconds=3, suppress=True) # Suppress as this isn't always present
@@ -746,13 +751,16 @@ def infiniteSummons(woke, celehypo, x6mode=False):
                         search = False
                     else:
                         printError('    ' + celehypo + ' not found, continuing..')
-                # save_screenshot('woke_' + str((random.randrange(1,1000))))
             if found == 'Epic':
                 printPurple('Epic Found')
-                # save_screenshot('epic_' + str((random.randrange(1,1000))))
             if found == 'Rare':
                 printBlue('Rare found')
+        # Funky math for duration calculation, ceiling is used to roundup else it returns with a decimal place
+        duration = time.time() - starttime
+        hours = str(math.ceil(duration // 3600))
+        minutes = str(math.ceil(duration // 60))
         printGreen('Unlimited Summons finished!')
+        printGreen('In just ' + str(counter) + ' pulls and ' + hours + ' hours ' + minutes + ' minutes. Hooray!')
     else:
         # If we can't find the Unlimited Summons button we end
         printError('Could not find Unlimited Summons button..')

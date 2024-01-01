@@ -40,7 +40,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.12.1b"
+version = "0.12.2"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -171,7 +171,7 @@ class App(customtkinter.CTk):
         self.textbox.insert('end', 'Discord Server: ', 'purple')
         self.textbox.insert('end',  'discord.gg/floofpire in #auto-afk\n\n')
         if latest_release.split(' ')[1] != version and latest_release.split(' ')[1] != 'retrieve!':
-            self.textbox.insert('end', 'Newer version available (' + latest_release.split(' ')[1] + '), please update!\n\n', 'yellow')
+            self.textbox.insert('end', 'Newer version available (' + latest_release.split(' ')[1] + '), please update!\n', 'yellow')
         if (args['config']) != 'settings.ini':
             self.textbox.insert('end', (args['config']) + ' loaded\n\n', 'yellow')
         if not args['dailies']:
@@ -537,7 +537,7 @@ class summonsWindow(customtkinter.CTkToplevel):
         self.geometry("200x260")
         self.title('Unlimited Summons')
         self.attributes("-topmost", True)
-        self.wm_iconbitmap(cwd + 'img\\auto.ico')
+        self.wm_iconbitmap(os.path.join(cwd, 'img', 'auto.ico'))
 
         # Activity Frame
         self.summonsFrame = customtkinter.CTkFrame(master=self, width=180, height=250)
@@ -551,7 +551,7 @@ class summonsWindow(customtkinter.CTkToplevel):
         self.wokeDropdown = customtkinter.CTkComboBox(master=self.summonsFrame, values=['Awakened Talene', 'Awakened Athalia',
         'Gavus', 'Maetria', 'Awakened Ezizh', 'Awakened Thane', 'Awakened Belinda', 'Awakened Brutus', 'Awakened Safiya',
         'Awakened Solise', 'Awakened Lyca', 'Awakened Baden', 'Awakened Shemira'], width=160)
-        self.wokeDropdown(state='readonly')
+        self.wokeDropdown.configure(state='readonly')
         self.wokeDropdown.place(x=10, y=70)
 
         self.celehypoLabel = customtkinter.CTkLabel(master=self.summonsFrame, text='Desired CeleHypo:', fg_color=("gray86", "gray17"))
@@ -560,7 +560,7 @@ class summonsWindow(customtkinter.CTkToplevel):
         self.celehypoDropdown = customtkinter.CTkComboBox(master=self.summonsFrame, values=['Audrae', 'Canisa and Ruke',
         'Daemia', 'Ezizh', 'Khazard', 'Lavatune', 'Liberta', 'Lucilla', 'Lucretia', 'Mehira', 'Mortas', 'Olgath', 'Talene',
         'Tarnos', 'Elijah and Lailah', 'Veithal', 'Vyloris', 'Zaphrael', 'Zikis'], width=160)
-        self.celehypoDropdown(state='readonly')
+        self.celehypoDropdown.configure(state='readonly')
         self.celehypoDropdown.place(x=10, y=130)
 
         self.x6Checkbox = customtkinter.CTkCheckBox(master=self.summonsFrame, text='x6 Speed Mode', onvalue=True, offvalue=False)
