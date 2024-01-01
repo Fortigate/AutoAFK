@@ -668,7 +668,7 @@ def dailiesButton():
     return
 
 def serverCheck():
-    slotsXY = {1: [700, 575], 2: [700, 775], 3: [700, 975], 4: [700, 1175], 5: [700, 1375]} # Slot positions
+    slotsXY = {1: [700, 575], 2: [700, 750], 3: [700, 920], 4: [700, 1100], 5: [700, 1250], 6: [700, 1450]} # Slot positions
     server = ((config.getint('ADVANCED', 'server'))) # Slot defined in settings
     if (config.getint('ADVANCED', 'server')) != 0:
         clickXY(120, 100, seconds=5) # Navigate to server selection
@@ -688,6 +688,7 @@ def serverCheck():
 
 def dailies():
     connect_device()
+    handleLab()
     serverCheck() # Change server slot if defined before doing dailies
     if bool(config.getboolean('DAILIES', 'collectrewards')) is True:
         collectAFKRewards()

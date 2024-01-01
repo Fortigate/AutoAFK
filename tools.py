@@ -129,8 +129,6 @@ def portScan():
     # Scan ports
     for port in ports.decode().splitlines(): # Split by linebreak
         port = int(port)
-        if port == 10089 or port == 7867: # Non-ADB static ports that we can skip
-            continue
         if port % 2 != 0: # ADB will only use odd port numbers
             connectmessage = Popen([adbpath, 'connect', '127.0.0.1:' + str(port)], stdout=PIPE).communicate()[0]
             if connectmessage.decode().split(' ')[0] == 'failed':
@@ -248,6 +246,7 @@ def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
 
 # Clicks on the given XY coordinates
 def clickXY(x,y, seconds=1):
+    print(str(x) + ' ' + str(y))
     device.input_tap(x, y)
     wait(seconds)
 

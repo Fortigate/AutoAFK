@@ -765,8 +765,255 @@ def infiniteSummons(woke, celehypo, x6mode=False):
         # If we can't find the Unlimited Summons button we end
         printError('Could not find Unlimited Summons button..')
 
+def handleLab():
+    printBlue('Attempting to run Arcane Labyrinth')
+    lowerdirection = 'right' # for whether we go left or right for the first battle
+    upperdirection = 'right' # For whether we go left or right to get the double battle at the end
+    confirmLocation('darkforest')
+    wait()
+    clickXY(400, 1150, seconds=3)
+    if isVisible('labels/lab', retry=3):
+        # Check for Sweep
+        if isVisible('buttons/labsweep', retry=3, confidence=0.8, click=True):
+            printGreen('    Sweep Available!')
+            if isVisible('buttons/labsweepbattle', retry=3, confidence=0.8, click=True):
+                clickXY(720, 1450, seconds=2) # Click Confirm
+                clickXY(550, 1550, seconds=2) # Clear Rewards
+                clickXY(550, 1550, seconds=5) # Clear Roamer Deals, long wait for the Limited Offer to pop up for Lab completion
+                clickXY(550, 1650) # Clear Limited Offer
+                printGreen('    Lab Swept')
+                return
+        else: # Else we run lab manually
+            printGreen('    Sweep not found, attempting manual Lab run..')
+            clickXY(750, 1100, seconds=2) # Center of Dismal
+            clickXY(550, 1475, seconds=2) # Challenge
+            clickXY(550, 1600, seconds=2) # Begin Adventure
+            clickXY(700, 1250, seconds=5) # Confirm
+            clickXY(550, 1600, seconds=3) # Clear Debuff
+            clickXY(950, 1600, seconds=2) # Level Sweep
+            clickXY(550, 1550, seconds=5) # Confirm
+            clickXY(550, 50, seconds=2) # Clear Loot
+            clickXY(550, 1250, seconds=5) # Abandon Roamer
+            clickXY(550, 900) # Relic 1
+            clickXY(550, 1325, seconds=3) # Choose
+            clickXY(550, 900) # Relic 2
+            clickXY(550, 1325, seconds=3) # Choose
+            clickXY(550, 900) # Relic 3
+            clickXY(550, 1325, seconds=3) # Choose
+            clickXY(550, 900) # Relic 4
+            clickXY(550, 1325, seconds=3) # Choose
+            clickXY(550, 900) # Relic 5
+            clickXY(550, 1325, seconds=3) # Choose
+            clickXY(550, 900) # Relic 6
+            clickXY(550, 1325, seconds=3) # Choose
+            clickXY(550, 550, seconds=2) # Portal to 3rd Floor
+            clickXY(550, 1200, seconds=5) # Enter
+            clickXY(550, 1600, seconds=2) # Clear Debuff
 
-def TS_Battle_Stastistics():
+            # Check which route we are taking
+            clickXY(400, 1400, seconds=2) # First tile on the left
+            if isVisible('labels/labguard', retry=2):
+                printWarning('Taking left route')
+                lowerdirection = 'left'
+            else:
+                printWarning('Taking right route')
+                clickXY(550, 50)  # Back to Lab screen
+
+            lowerdirection = 'left'
+            handleLabTile('lower', lowerdirection, '1')
+            configureLabTeams(1)
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults()
+
+            handleLabTile('lower', lowerdirection, '2')
+            clickXY(750, 1725, seconds=4) # Battle
+            labBattleResults(firstOfMulti=True)
+            configureLabTeams(2)
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults()
+
+            handleLabTile('lower', lowerdirection, '3')
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults()
+            clickXY(550, 1350) # Clear Relic reward
+
+            handleLabTile('lower', lowerdirection, '4')
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults(firstOfMulti=True)
+            clickXY(750, 1725, seconds=4) # Continue to second battle
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults()
+
+            handleLabTile('lower', lowerdirection, '5')
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults()
+
+            handleLabTile('lower', lowerdirection, '6')
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults()
+            clickXY(550, 1350) # Clear Relic reward
+
+            # Check which route we are taking
+            swipe(550, 200, 550, 1800, duration=1000)
+            clickXY(400, 1450) # First tile on the left
+            if isVisible('labels/labpraeguard', retry=2):
+                printWarning('Taking left route')
+                upperdirection = 'left'
+            else:
+                printWarning('Taking right route')
+                upperdirection = 'right'
+                clickXY(550, 50)  # Back to Lab screen
+
+            handleLabTile('upper', upperdirection, '1')
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults(firstOfMulti=True)
+            clickXY(750, 1725, seconds=4) # Continue to second battle
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults()
+
+            handleLabTile('upper', upperdirection, '2')
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults(firstOfMulti=True)
+            clickXY(750, 1725, seconds=4) # Continue to second battle
+            clickXY(550, 1850, seconds=4) # Battle
+            labBattleResults()
+
+            handleLabTile('upper', upperdirection, '3')
+
+            handleLabTile('upper', upperdirection, '4')
+            clickXY(550, 1850, seconds=20) # Battle
+            labBattleResults()
+
+            clickXY(550, 50, seconds=2) # Clear Value Bundle for completing lab
+            clickXY(550, 550) # Loot Chest
+            clickXY(550, 50, seconds=2) # Clear Loot
+            clickXY(550, 50, seconds=2) # Clear Loot
+            clickXY(50, 1800, seconds=2) # Clear Loot
+
+            printGreen("    Manual Lab run complete!")
+
+    else:
+        printError("Can't find Lab screen! Exiting..")
+
+def configureLabTeams(team):
+    if team == 1:
+        clickXY(1030, 1100, seconds=2)  # Clear Team
+        clickXY(550, 1250, seconds=2)  # Confirm
+        clickXY(130, 1300)  # Slot 1
+        clickXY(330, 1300)  # Slot 2
+        clickXY(530, 1300)  # Slot 3
+        clickXY(730, 1300)  # Slot 4
+        clickXY(930, 1300)  # Slot 5
+    if team == 2:
+        clickXY(1030, 1100, seconds=2)  # Clear Team
+        clickXY(550, 1250, seconds=2)  # Confirm
+        clickXY(130, 1550)  # Slot 1
+        clickXY(330, 1550)  # Slot 2
+        clickXY(530, 1550)  # Slot 3
+        clickXY(730, 1550)  # Slot 4
+        clickXY(930, 1550)  # Slot 5
+
+# Will select the correct Lab tile and take us to the battle screen
+def handleLabTile(elevation, side, tile):
+    print(elevation + ' ' + side + ' ' + tile)
+    if elevation == 'lower':
+        if side == 'left':
+            if tile == '1': # Single
+                clickXY(400, 1450, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4)  # Go
+            if tile == '2': # Multi
+                clickXY(250, 1250, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4) # Click Go
+                clickXY(750, 1500, seconds=2) # Click Begin Battle
+            if tile == '3': # Single
+                clickXY(400, 1050, seconds =2) # Tile
+                clickXY(550, 1600, seconds=4)  # Go (lower for relic)
+            if tile == '4': # Multi
+                clickXY(550, 850, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4) # Click Go
+                clickXY(750, 1500, seconds=2) # Click Begin Battle
+            if tile == '5': # Single
+                clickXY(400, 650, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4)  # Go
+            if tile == '6': # Single
+                clickXY(550, 450, seconds=2) # Tile
+                clickXY(550, 1600, seconds=4)  # Go (lower for relic)
+        if side == 'right':
+            if tile == '1': # Single
+                clickXY(700, 1450) # Tile
+                clickXY(550, 1500, seconds=4)  # Go
+            if tile == '2': # Multi
+                clickXY(800, 1225) # Tile
+            if tile == '3': # Single
+                clickXY(700, 1050) # Tile
+                clickXY(550, 1600, seconds=4)  # Go (lower for relic)
+            if tile == '4': # Multi
+                clickXY(550, 850) # Tile
+            if tile == '5': # Single
+                clickXY(700, 650) # Tile
+            if tile == '6':
+                clickXY(550, 1600, seconds=4)  # Go (lower for relic)
+    if elevation == 'upper':
+        if side == 'left':
+            if tile == '1': # Multi
+                clickXY(400, 1450, seconds=3) # Tile
+                # No Go as we opened the tile to check direction
+                clickXY(750, 1500, seconds=2) # Click Begin Battle
+            if tile == '2': # Multi
+                clickXY(250, 1250) # Tile
+                clickXY(550, 1500, seconds=2)  # Go
+                clickXY(750, 1500) # Click Begin Battle
+            if tile == '3':  # Witches Den or Well
+                # TODO check which one
+                clickXY(550, 1500, seconds=2)  # Go
+                clickXY(300, 1600)  # Abandon
+            if tile == '4': # Single
+                clickXY(550, 900) # Tile
+                clickXY(550, 1500, seconds=2)  # Go
+        if side == 'right':
+            if tile == '1': # Multi
+                clickXY(700, 1450) # Tile
+                # No Go as we opened the tile to check direction
+                clickXY(750, 1500) # Click Begin Battle
+            if tile == '2': # Multi
+                clickXY(800, 1225) # Tile
+                clickXY(550, 1500, seconds=2)  # Go
+                clickXY(750, 1500) # Click Begin Battle
+            if tile == '3':  # Witches Den or Well
+                # TODO check which one
+                if isVisible('labels/labwitchesden', retry=3):
+                    clickXY(550, 1500, seconds=3) # Go
+                    clickXY(300, 1600, seconds=3) # Abandon
+                else:
+                    print('welp')
+                    # TODO Get Well actions
+            if tile == '4': # Single
+                clickXY(550, 850) # Tile
+                clickXY(550, 1500, seconds=2)  # Go
+
+def labBattleResults(firstOfMulti=False):
+    counter = 0
+    while counter < 10:
+        # For 'resources exceeded' message
+        if isVisible('labels/notice'):
+            clickXY(550, 1250)
+        if (isVisible('labels/defeat')):
+            printError('    Lab Battle  Defeat! Exiting..')
+            wait(2)
+            recover()
+            return
+        if (isVisible('labels/victory')):
+            printGreen('    Lab Battle Victory!')
+            wait(2)
+            if firstOfMulti is False: # Else we exit before second battle while trying to collect loot
+               clickXY(550, 1850, seconds=3)  # Clear loot popup
+            return
+        counter =+ 1
+        print('battle counter: ' + str(counter))
+    printError('Battletimer expired')
+
+# Old TS screenshot farming code
+def TS_Battle_Statistics():
     region = 10
     position = 80
     battle = 1
