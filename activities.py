@@ -10,6 +10,11 @@ config = configparser.ConfigParser()
 config.read(settings)
 d = datetime.datetime.now()
 
+# Counters for summonsCrashDetector()
+rarecounter = int()
+epiccounter = int()
+awakenedcounter = int()
+
 def collectAFKRewards():
     printBlue('Attempting AFK Reward collection')
     confirmLocation('campaign')
@@ -739,6 +744,8 @@ def infiniteSummons(woke, celehypo, x6mode=False):
             counter += 1
             if found == "Awakened":
                 printWarning('Awakened Found')
+                if summonsCrashDetector('awakened'):
+                    return
                 # Let's check if it's the one we want
                 if isVisible(os.path.join('summons', 'awakeneds', wokes[woke]), confidence=0.85, seconds=0.5):
                     printGreen('    ' + woke + ' found! Checking for ' + celehypo)
@@ -752,8 +759,12 @@ def infiniteSummons(woke, celehypo, x6mode=False):
                     else:
                         printError('    ' + celehypo + ' not found, continuing..')
             if found == 'Epic':
+                if summonsCrashDetector('epic'):
+                    return
                 printPurple('Epic Found')
             if found == 'Rare':
+                if summonsCrashDetector('rare'):
+                    return
                 printBlue('Rare found')
         # Funky math for duration calculation, ceiling is used to roundup else it returns with a decimal place
         duration = time.time() - starttime
@@ -765,35 +776,71 @@ def infiniteSummons(woke, celehypo, x6mode=False):
         # If we can't find the Unlimited Summons button we end
         printError('Could not find Unlimited Summons button..')
 
+# Counts if we get 10 of the same type in a row, which indicates the game has crashed or frozen and exits
+def summonsCrashDetector(type):
+    global rarecounter
+    global epiccounter
+    global awakenedcounter
+
+    if type == 'rare':
+        rarecounter += 1
+        epiccounter = 0
+        awakenedcounter = 0
+    elif type == 'epic':
+        rarecounter = 0
+        epiccounter += 1
+        awakenedcounter = 0
+    elif type == 'awakened':
+        rarecounter = 0
+        epiccounter = 0
+        awakenedcounter += 1
+
+    if rarecounter >= 10 or epiccounter >= 10 or awakenedcounter >= 10:
+        printError('10 of the same type in a row, this normally means something has gone wrong, exiting..')
+        recover()
+        return True
+
 def handleLab():
     printBlue('Attempting to run Arcane Labyrinth')
-    lowerdirection = 'right' # for whether we go left or right for the first battle
-    upperdirection = 'right' # For whether we go left or right to get the double battle at the end
+    lowerdirection = '' # for whether we go left or right for the first battle
+    upperdirection = '' # For whether we go left or right to get the double battle at the end
     confirmLocation('darkforest')
     wait()
     clickXY(400, 1150, seconds=3)
     if isVisible('labels/lab', retry=3):
+    # if 1 == 1: # For debugging
         # Check for Sweep
-        if isVisible('buttons/labsweep', retry=3, confidence=0.8, click=True):
+        if isVisible('buttons/labsweep', retry=3, confidence=0.8, click=True, seconds=3):
             printGreen('    Sweep Available!')
-            if isVisible('buttons/labsweepbattle', retry=3, confidence=0.8, click=True):
-                clickXY(720, 1450, seconds=2) # Click Confirm
-                clickXY(550, 1550, seconds=2) # Clear Rewards
+            if isVisible('buttons/labsweepbattle', retry=3, confidence=0.8, click=True, seconds=3):
+                clickXY(720, 1450, seconds=3) # Click Confirm
+                clickXY(550, 1550, seconds=3) # Clear Rewards
+                # TODO Check for notice pop up rather than guessing
+                clickXY(550, 1550, seconds=3) # Clear Notice #1
+                clickXY(550, 1550, seconds=3) # Clear Notice #2
                 clickXY(550, 1550, seconds=5) # Clear Roamer Deals, long wait for the Limited Offer to pop up for Lab completion
                 clickXY(550, 1650) # Clear Limited Offer
-                printGreen('    Lab Swept')
+                printGreen('    Lab Swept!')
                 return
         else: # Else we run lab manually
             printGreen('    Sweep not found, attempting manual Lab run..')
+
+            # Pre-run set up
+            printGreen('    Entering Lab')
             clickXY(750, 1100, seconds=2) # Center of Dismal
             clickXY(550, 1475, seconds=2) # Challenge
             clickXY(550, 1600, seconds=2) # Begin Adventure
             clickXY(700, 1250, seconds=5) # Confirm
             clickXY(550, 1600, seconds=3) # Clear Debuff
+            printGreen('    Sweeping to 2rd Floor')
             clickXY(950, 1600, seconds=2) # Level Sweep
-            clickXY(550, 1550, seconds=5) # Confirm
-            clickXY(550, 50, seconds=2) # Clear Loot
+            clickXY(550, 1550, seconds=8) # Confirm, long wait for animations
+            clickXY(550, 50, seconds=2) # Clear Resources Exceeded message
+            if isVisible('labels/notice'): # And again for safe measure
+                clickXY(550, 1250)
+            clickXY(550, 50, seconds=3) # Clear Loot
             clickXY(550, 1250, seconds=5) # Abandon Roamer
+            printGreen('    Choosing center relics')
             clickXY(550, 900) # Relic 1
             clickXY(550, 1325, seconds=3) # Choose
             clickXY(550, 900) # Relic 2
@@ -806,104 +853,208 @@ def handleLab():
             clickXY(550, 1325, seconds=3) # Choose
             clickXY(550, 900) # Relic 6
             clickXY(550, 1325, seconds=3) # Choose
+            printGreen('    Entering 3rd Floor')
             clickXY(550, 550, seconds=2) # Portal to 3rd Floor
             clickXY(550, 1200, seconds=5) # Enter
             clickXY(550, 1600, seconds=2) # Clear Debuff
 
-            # Check which route we are taking
-            clickXY(400, 1400, seconds=2) # First tile on the left
+            # Check which route we are taking, as to avoid the cart
+            clickXY(400, 1400, seconds=2) # Open first tile on the left
             if isVisible('labels/labguard', retry=2):
-                printWarning('Taking left route')
+                printWarning('    Taking left route')
                 lowerdirection = 'left'
             else:
-                printWarning('Taking right route')
-                clickXY(550, 50)  # Back to Lab screen
+                printWarning('    Taking right route')
+                lowerdirection = 'right'
+                clickXY(550, 50, seconds=3)  # Back to Lab screen
 
-            lowerdirection = 'left'
+            # 1st Row (single)
             handleLabTile('lower', lowerdirection, '1')
-            configureLabTeams(1)
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults()
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                configureLabTeams(1)
+                clickXY(550, 1850, seconds=4)  # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults() is False:
+                return
 
+            # 2nd Row (multi)
             handleLabTile('lower', lowerdirection, '2')
-            clickXY(750, 1725, seconds=4) # Battle
-            labBattleResults(firstOfMulti=True)
-            configureLabTeams(2)
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults()
-
-            handleLabTile('lower', lowerdirection, '3')
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults()
-            clickXY(550, 1350) # Clear Relic reward
-
-            handleLabTile('lower', lowerdirection, '4')
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults(firstOfMulti=True)
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults(firstOfMulti=True) is False:
+                return
             clickXY(750, 1725, seconds=4) # Continue to second battle
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults()
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                configureLabTeams(2)
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults() is False:
+                return
 
+            # 3rd Row (single relic)
+            handleLabTile('lower', lowerdirection, '3')
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults() is False:
+                return
+            clickXY(550, 1350, seconds=2) # Clear Relic reward
+
+            # 4th Row (multi)
+            handleLabTile('lower', lowerdirection, '4')
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults(firstOfMulti=True) is False:
+                return
+            clickXY(750, 1725, seconds=4) # Continue to second battle
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults() is False:
+                return
+
+            # 5th Row (single)
             handleLabTile('lower', lowerdirection, '5')
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults()
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults() is False:
+                return
 
+            # 6th Row (single relic)
             handleLabTile('lower', lowerdirection, '6')
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults()
-            clickXY(550, 1350) # Clear Relic reward
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults() is False:
+                return
+            clickXY(550, 1350, seconds=2) # Clear Relic reward
 
-            # Check which route we are taking
+            # Check which route we are taking for the upper tiles
             swipe(550, 200, 550, 1800, duration=1000)
-            clickXY(400, 1450) # First tile on the left
+            clickXY(400, 1450, seconds=2) # First tile on the left
             if isVisible('labels/labpraeguard', retry=2):
-                printWarning('Taking left route')
+                printWarning('    Taking left route')
                 upperdirection = 'left'
             else:
-                printWarning('Taking right route')
+                printWarning('    Taking right route')
                 upperdirection = 'right'
-                clickXY(550, 50)  # Back to Lab screen
+                clickXY(550, 50, seconds=2)  # Back to Lab screen
 
-            handleLabTile('upper', upperdirection, '1')
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults(firstOfMulti=True)
+            # 7th Row (multi)
+            handleLabTile('upper', upperdirection, '7')
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults(firstOfMulti=True) is False:
+                return
             clickXY(750, 1725, seconds=4) # Continue to second battle
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults()
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults() is False:
+                return
 
-            handleLabTile('upper', upperdirection, '2')
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults(firstOfMulti=True)
+            # 8th Row (multi)
+            handleLabTile('upper', upperdirection, '8')
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults(firstOfMulti=True) is False:
+                return
             clickXY(750, 1725, seconds=4) # Continue to second battle
-            clickXY(550, 1850, seconds=4) # Battle
-            labBattleResults()
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults() is False:
+                return
 
-            handleLabTile('upper', upperdirection, '3')
+            # 9th Row (witches den or fountain)
+            handleLabTile('upper', upperdirection, '9')
+            if isVisible('labels/labwitchsden', retry=3):
+                printWarning('    Clearing Witch\'s Den')
+                clickXY(550, 1500, seconds=3)  # Go
+                clickXY(300, 1600, seconds=4)  # Abandon
+            if isVisible('labels/labfountain', retry=3):
+                printWarning('    Clearing Divine Fountain')
+                clickXY(550, 1250, seconds=3)  # Confirm
+                clickXY(300, 1600, seconds=4)  # Clear popup (a bit of guesswork here)
 
-            handleLabTile('upper', upperdirection, '4')
-            clickXY(550, 1850, seconds=20) # Battle
-            labBattleResults()
+            # 10th row (single boss)
+            handleLabTile('upper', upperdirection, '10')
+            if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                configureLabTeams(1, pet=False) # We've lost heroes to Thoran etc by now, so lets re-pick 5 strongest heroes
+                clickXY(550, 1850, seconds=4) # Battle
+            else:
+                printError('Battle Screen not found! Exiting')
+                recover()
+                return
+            if labBattleResults() is False:
+                return
 
-            clickXY(550, 50, seconds=2) # Clear Value Bundle for completing lab
-            clickXY(550, 550) # Loot Chest
-            clickXY(550, 50, seconds=2) # Clear Loot
-            clickXY(550, 50, seconds=2) # Clear Loot
-            clickXY(50, 1800, seconds=2) # Clear Loot
-
+            wait(5) # Long pause for Value Bundle to pop up
+            clickXY(550, 1600, seconds=3) # Clear Value Bundle for completing lab
+            clickXY(550, 550, seconds=3) # Loot Chest
+            clickXY(550, 1600, seconds=2) # Clear Loot
+            clickXY(550, 1600, seconds=2) # Clear Notice
+            clickXY(550, 1600, seconds=2) # One more for safe measure
+            clickXY(50, 1800, seconds=2) # Click Back to Exit
             printGreen("    Manual Lab run complete!")
-
     else:
         printError("Can't find Lab screen! Exiting..")
 
-def configureLabTeams(team):
+# Clears selected team and replaces it with top5 heroes, and 6th-10th for team2, selects pets in the first and second slots
+def configureLabTeams(team, pet=True):
     if team == 1:
         clickXY(1030, 1100, seconds=2)  # Clear Team
         clickXY(550, 1250, seconds=2)  # Confirm
-        clickXY(130, 1300)  # Slot 1
-        clickXY(330, 1300)  # Slot 2
-        clickXY(530, 1300)  # Slot 3
+        clickXY(930, 1300)  # Slot 5 (Reverse order as our top heroes tend to be squishy so they get back line)
         clickXY(730, 1300)  # Slot 4
-        clickXY(930, 1300)  # Slot 5
+        clickXY(530, 1300)  # Slot 3
+        clickXY(330, 1300)  # Slot 2
+        clickXY(130, 1300)  # Slot 1
+        if pet is True:
+            clickXY(80, 250, seconds=3) # Pet Selection
+            clickXY(150, 1250, seconds=2) # First Pet
+            clickXY(750, 1800, seconds=4) # Confirm
     if team == 2:
         clickXY(1030, 1100, seconds=2)  # Clear Team
         clickXY(550, 1250, seconds=2)  # Confirm
@@ -912,10 +1063,18 @@ def configureLabTeams(team):
         clickXY(530, 1550)  # Slot 3
         clickXY(730, 1550)  # Slot 4
         clickXY(930, 1550)  # Slot 5
+        if pet is True:
+            clickXY(80, 250, seconds=3) # Pet Selection
+            clickXY(350, 1250, seconds=2) # First Pet
+            clickXY(750, 1800, seconds=4) # Confirm
 
 # Will select the correct Lab tile and take us to the battle screen
+# Elevation is either Upper or Lower dependon on whether we have scrolled the screen up or not for the scond half
+# Side is left or right, we choose once at the start and once after scrolling up to get both multi fights
+# Tile is the row of the tile we're aiming for, from 1 at the bottom to 10 at the final boss
 def handleLabTile(elevation, side, tile):
-    print(elevation + ' ' + side + ' ' + tile)
+    printWarning('    Battling ' + elevation + ' ' + side + ' tile ' + tile)
+    wait(1)
     if elevation == 'lower':
         if side == 'left':
             if tile == '1': # Single
@@ -924,14 +1083,14 @@ def handleLabTile(elevation, side, tile):
             if tile == '2': # Multi
                 clickXY(250, 1250, seconds=2) # Tile
                 clickXY(550, 1500, seconds=4) # Click Go
-                clickXY(750, 1500, seconds=2) # Click Begin Battle
+                clickXY(750, 1500, seconds=4) # Click Begin Battle
             if tile == '3': # Single
                 clickXY(400, 1050, seconds =2) # Tile
                 clickXY(550, 1600, seconds=4)  # Go (lower for relic)
             if tile == '4': # Multi
                 clickXY(550, 850, seconds=2) # Tile
                 clickXY(550, 1500, seconds=4) # Click Go
-                clickXY(750, 1500, seconds=2) # Click Begin Battle
+                clickXY(750, 1500, seconds=4) # Click Begin Battle
             if tile == '5': # Single
                 clickXY(400, 650, seconds=2) # Tile
                 clickXY(550, 1500, seconds=4)  # Go
@@ -940,77 +1099,75 @@ def handleLabTile(elevation, side, tile):
                 clickXY(550, 1600, seconds=4)  # Go (lower for relic)
         if side == 'right':
             if tile == '1': # Single
-                clickXY(700, 1450) # Tile
+                clickXY(700, 1450, seconds=2) # Tile
                 clickXY(550, 1500, seconds=4)  # Go
             if tile == '2': # Multi
-                clickXY(800, 1225) # Tile
+                clickXY(800, 1225, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4) # Click Go
+                clickXY(750, 1500, seconds=4) # Click Begin Battle
             if tile == '3': # Single
-                clickXY(700, 1050) # Tile
+                clickXY(700, 1050, seconds=2) # Tile
                 clickXY(550, 1600, seconds=4)  # Go (lower for relic)
             if tile == '4': # Multi
-                clickXY(550, 850) # Tile
+                clickXY(550, 850, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4) # Click Go
+                clickXY(750, 1500, seconds=4) # Click Begin Battle
             if tile == '5': # Single
-                clickXY(700, 650) # Tile
+                clickXY(700, 650, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4)  # Go
             if tile == '6':
+                clickXY(550, 450, seconds=2) # Tile
                 clickXY(550, 1600, seconds=4)  # Go (lower for relic)
     if elevation == 'upper':
         if side == 'left':
-            if tile == '1': # Multi
-                clickXY(400, 1450, seconds=3) # Tile
+            if tile == '7': # Multi
+                clickXY(400, 1450, seconds=2) # Tile
                 # No Go as we opened the tile to check direction
-                clickXY(750, 1500, seconds=2) # Click Begin Battle
-            if tile == '2': # Multi
-                clickXY(250, 1250) # Tile
-                clickXY(550, 1500, seconds=2)  # Go
-                clickXY(750, 1500) # Click Begin Battle
-            if tile == '3':  # Witches Den or Well
-                # TODO check which one
-                clickXY(550, 1500, seconds=2)  # Go
-                clickXY(300, 1600)  # Abandon
-            if tile == '4': # Single
-                clickXY(550, 900) # Tile
-                clickXY(550, 1500, seconds=2)  # Go
+                clickXY(750, 1500, seconds=4) # Click Begin Battle
+            if tile == '8': # Multi
+                clickXY(250, 1250, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4)  # Go
+                clickXY(750, 1500, seconds=4) # Click Begin Battle
+            if tile == '9':  # Witches Den or Well
+                clickXY(400, 1100, seconds=2)  # Tile
+            if tile == '10': # Single
+                clickXY(550, 900, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4)  # Go
         if side == 'right':
-            if tile == '1': # Multi
-                clickXY(700, 1450) # Tile
+            if tile == '7': # Multi
+                clickXY(700, 1450, seconds=2) # Tile
                 # No Go as we opened the tile to check direction
-                clickXY(750, 1500) # Click Begin Battle
-            if tile == '2': # Multi
-                clickXY(800, 1225) # Tile
-                clickXY(550, 1500, seconds=2)  # Go
-                clickXY(750, 1500) # Click Begin Battle
-            if tile == '3':  # Witches Den or Well
-                # TODO check which one
-                if isVisible('labels/labwitchesden', retry=3):
-                    clickXY(550, 1500, seconds=3) # Go
-                    clickXY(300, 1600, seconds=3) # Abandon
-                else:
-                    print('welp')
-                    # TODO Get Well actions
-            if tile == '4': # Single
-                clickXY(550, 850) # Tile
-                clickXY(550, 1500, seconds=2)  # Go
+                clickXY(750, 1500, seconds=4) # Click Begin Battle
+            if tile == '8': # Multi
+                clickXY(800, 1225, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4)  # Go
+                clickXY(750, 1500, seconds=4) # Click Begin Battle
+            if tile == '9':  # Witches Den or Well
+                clickXY(700, 1100, seconds=2)  # Tile
+            if tile == '10': # Single
+                clickXY(550, 850, seconds=2) # Tile
+                clickXY(550, 1500, seconds=4)  # Go
 
+# Returns result of a battle, not lab specific just the first time I've needed it
 def labBattleResults(firstOfMulti=False):
     counter = 0
     while counter < 10:
         # For 'resources exceeded' message
         if isVisible('labels/notice'):
             clickXY(550, 1250)
-        if (isVisible('labels/defeat')):
-            printError('    Lab Battle  Defeat! Exiting..')
-            wait(2)
-            recover()
-            return
-        if (isVisible('labels/victory')):
+        if isVisible('labels/victory'):
             printGreen('    Lab Battle Victory!')
-            wait(2)
-            if firstOfMulti is False: # Else we exit before second battle while trying to collect loot
-               clickXY(550, 1850, seconds=3)  # Clear loot popup
+            if firstOfMulti is False:  # Else we exit before second battle while trying to collect loot
+                clickXY(550, 1850, seconds=5)  # Clear loot popup and wait for Lab to load again
             return
-        counter =+ 1
-        print('battle counter: ' + str(counter))
+        if isVisible('labels/defeat'):
+            printError('    Lab Battle  Defeat! Exiting..')
+            recover()
+            return False
+        counter += 1
     printError('Battletimer expired')
+    recover()
+    return False
 
 # Old TS screenshot farming code
 def TS_Battle_Statistics():

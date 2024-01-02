@@ -15,6 +15,7 @@ config.read(settings) # load settings
 cwd = os.path.dirname(__file__) # variable for current directory of AutoAFK.exe
 os.system('color')  # So colourful text works
 connected = False
+connect_counter = 1
 
 # Start PPADB
 adb = Client(host='127.0.0.1', port=5037)
@@ -22,11 +23,17 @@ adb = Client(host='127.0.0.1', port=5037)
 # Connects to the ADB device using PPADB, allowing us to send commands via Python
 # On success we go through our startup checks to make sure we are starting from the same point each time, and can recognise the template images
 def connect_device():
-    connect_counter = 1
     global device
+    global connect_counter
 
-    if connect_counter == 1:
-        printGreen('Attempting to connect, make sure that BlueStacks is running!')
+    # Break after 3 retries
+    if connect_counter >= 4:
+        printError('No ADB device found, often due to ADB errors. Please try manually connecting your client.')
+        printWarning('Debug:')
+        print(device.decode())
+        sys.exit(1)
+
+    printGreen('Attempting to connect, make sure that BlueStacks is running!')
 
     config.read(settings) # To update any new values before we run activities
 
@@ -38,30 +45,27 @@ def connect_device():
     device = configureADB()
 
     # PPADB can throw errors occasionally for no good reason, here we try and catch them and retry for stability
-    while connect_counter < 4:
+    while connect_counter <= 4:
         try:
             device.shell('echo Hello World!') # Arbitrary test command
         except Exception as e:
             if str(e) != 'ERROR: \'FAIL\' 000edevice offline': # Skip common device offline error as it still runs after that
                 printError('PPADB Error: ' + str(e) + ', retrying ' + str(connect_counter) + '/3')
+                if str(e) == '\'NoneType\' object has no attribute \'shell\'':
+                    printBlue('This usually means the port is wrong as there is no device present')
                 wait(3)
-                connect_counter+=1
+                connect_counter += 1
                 connect_device()
         else:
+            connected = True
             break
-    if device == None:
-        printError('No ADB device found, often due to ADB errors. Please try manually connecting your client.')
-        printWarning('Debug:')
-        print(device.decode())
-        sys.exit(1)
-    else:
+    if connected is True:
         printGreen('Device: ' + str(device.serial) + ' successfully connected!')
         connect_counter = 1 # reset counter just in case
         resolutionCheck(device) # Four start up checks, so we have an exact position/screen configuration to start with
         afkRunningCheck()
         waitUntilGameActive()
         expandMenus()
-        connected = True
         print('')
 
 # This function manages the ADB connection to Bluestacks.
@@ -124,18 +128,21 @@ def portScan():
 
     # Powershell command that returns all listening ports in use by HD-Player.exe
     ports = Popen(["powershell.exe", "Get-NetTCPConnection -State Listen | Where-Object OwningProcess -eq (Get-Process hd-player | Select-Object -ExpandProperty Id) | Select-Object -ExpandProperty LocalPort"], stdout=PIPE).communicate()[0]
-    printWarning(str(len(ports.decode().splitlines())) + ' ports found, trying them..')
+    if len(ports.decode().splitlines()) > 0:
+        printWarning(str(len(ports.decode().splitlines())) + ' ports found, trying them..')
 
-    # Scan ports
-    for port in ports.decode().splitlines(): # Split by linebreak
-        port = int(port)
-        if port % 2 != 0: # ADB will only use odd port numbers
-            connectmessage = Popen([adbpath, 'connect', '127.0.0.1:' + str(port)], stdout=PIPE).communicate()[0]
-            if connectmessage.decode().split(' ')[0] == 'failed':
-                printError(connectmessage.decode().rstrip())
-            elif connectmessage.decode().split(' ')[0] == 'connected':
-                printGreen(connectmessage.decode().rstrip())
-                return port
+        # Scan ports
+        for port in ports.decode().splitlines(): # Split by linebreak
+            port = int(port)
+            if port % 2 != 0: # ADB will only use odd port numbers
+                connectmessage = Popen([adbpath, 'connect', '127.0.0.1:' + str(port)], stdout=PIPE).communicate()[0]
+                if connectmessage.decode().split(' ')[0] == 'failed':
+                    printError(connectmessage.decode().rstrip())
+                elif connectmessage.decode().split(' ')[0] == 'connected':
+                    printGreen(connectmessage.decode().rstrip())
+                    return port
+    else:
+        printError('No ports found! Exiting..')
 
 # Expands the left and right button menus
 def expandMenus():
@@ -246,7 +253,6 @@ def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
 
 # Clicks on the given XY coordinates
 def clickXY(x,y, seconds=1):
-    print(str(x) + ' ' + str(y))
     device.input_tap(x, y)
     wait(seconds)
 

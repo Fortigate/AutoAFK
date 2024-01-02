@@ -40,7 +40,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.12.2"
+version = "0.13.4"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -116,7 +116,7 @@ class App(customtkinter.CTk):
         self.arenaButton = customtkinter.CTkButton(master=self.arenaFrame, text="Run Activity", command=lambda: threading.Thread(target=activityManager).start())
         self.arenaButton.place(x=20, y=15)
         # Activities Dropdown
-        self.activityFormationDropdown = customtkinter.CTkComboBox(master=self.arenaFrame, values=['Unlimited Summons', "Arena of Heroes", "Fight of Fates"], width=160)
+        self.activityFormationDropdown = customtkinter.CTkComboBox(master=self.arenaFrame, values=['Unlimited Summons', "Arena of Heroes", "Arcane Labyrinth", "Fight of Fates"], width=160)
         self.activityFormationDropdown.place(x=10, y=55)
         # Activities Entry
         self.pvpLabel = customtkinter.CTkLabel(master=self.arenaFrame, text='How many battles', fg_color=("gray86", "gray17"))
@@ -171,7 +171,7 @@ class App(customtkinter.CTk):
         self.textbox.insert('end', 'Discord Server: ', 'purple')
         self.textbox.insert('end',  'discord.gg/floofpire in #auto-afk\n\n')
         if latest_release.split(' ')[1] != version and latest_release.split(' ')[1] != 'retrieve!':
-            self.textbox.insert('end', 'Newer version available (' + latest_release.split(' ')[1] + '), please update!\n', 'yellow')
+            self.textbox.insert('end', 'Newer version available (' + latest_release.split(' ')[1] + '), please update!\n\n', 'yellow')
         if (args['config']) != 'settings.ini':
             self.textbox.insert('end', (args['config']) + ' loaded\n\n', 'yellow')
         if not args['dailies']:
@@ -644,6 +644,14 @@ def activityManager():
         print('')
         return
 
+    if app.activityFormationDropdown.get() == "Arcane Labyrinth":
+        buttonState('disabled')
+        connect_device()
+        handleLab()
+        buttonState('normal')
+        print('')
+        return
+
 def open_summonswindow():
     summons_window = None
     if summons_window is None or not summons_window.winfo_exists():
@@ -688,7 +696,6 @@ def serverCheck():
 
 def dailies():
     connect_device()
-    handleLab()
     serverCheck() # Change server slot if defined before doing dailies
     if bool(config.getboolean('DAILIES', 'collectrewards')) is True:
         collectAFKRewards()
