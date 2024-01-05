@@ -1,4 +1,5 @@
 from activities import *
+import tools
 import customtkinter
 import threading
 import sys
@@ -62,6 +63,9 @@ class App(customtkinter.CTk):
         # Dailies button
         self.dailiesButton = customtkinter.CTkButton(master=self, text="Run Dailies", command=lambda: threading.Thread(target=dailiesButton).start())
         self.dailiesButton.place(x=30, y=35)
+        # # Quit button (testing ignore)
+        # self.dailiesButton = customtkinter.CTkButton(master=self, text="Quit", command=lambda: threading.Thread(target=dailiesButton).start())
+        # self.dailiesButton.place(x=30, y=580)
         # Arena Battles
         self.arenaLabel = customtkinter.CTkLabel(master=self.dailiesFrame, text='Arena Battles', fg_color=("gray86", "gray17"))
         self.arenaLabel.place(x=10, y=55)
@@ -510,9 +514,19 @@ class advancedWindow(customtkinter.CTkToplevel):
         self.advanceSaveButton = customtkinter.CTkButton(master=self.advancedFrame, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.advancedSave)
         self.advanceSaveButton.place(x=60, y=180)
 
+        # # Resolution/DPI button
+        # self.advanceSaveButton = customtkinter.CTkButton(master=self.advancedFrame, text="Force Resolution/DPI", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=lambda: threading.Thread(target=self.forceResolution).start())
+        # self.advanceSaveButton.place(x=60, y=210)
+
         # Update button state when we open the window
         if config.getboolean('PUSH', 'suppressSpam'):
             self.supressCheckbox.select()
+
+    # def forceResolution(self):
+    #     connect_device()
+    #     printGreen('Setting Resolution and DPI')
+    #     tools.device.shell('wm density 240')
+    #     tools.device.shell('wm size 1920x1080')
 
     def advancedSave(self):
         if self.portEntry.get() != config.get('ADVANCED', 'port'):
@@ -530,6 +544,7 @@ class advancedWindow(customtkinter.CTkToplevel):
         with open(settings, 'w') as configfile:
             config.write(configfile)
         config.read(settings)  # to load the new value into memory
+        advancedWindow.destroy(self)
 
 class summonsWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
@@ -605,7 +620,6 @@ def headlessArgs():
                 wait(3)
                 while 1:
                     pushTower(formation=int(str(config.get('PUSH', 'formation'))[0:1]), duration=int(config.get('PUSH', 'victoryCheck')))
-
 
 def updateSettings():
     with open(settings, 'w') as configfile:
