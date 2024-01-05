@@ -1,4 +1,6 @@
 # Imports
+import io
+
 from ppadb.client import Client
 from AutoAFK import printGreen, printError, printWarning, printBlue, settings, args
 from pyscreeze import locate, locateAll
@@ -81,7 +83,7 @@ def configureADB():
         adbpath = which('adb') # If we're not on Windows or can't find adb.exe in the working directory we try and find it in the PATH
 
     # Restarting the ADB server solves 90% of issues with it
-    # Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0]
+    Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0]
     Popen([adbpath, "start-server"], stdout=PIPE).communicate()[0]
 
     # First we check settings for a valid port and try that
@@ -193,11 +195,11 @@ def resolutionCheck(device):
     if override_resolution[0] != '':
         if not str(override_resolution[2]).strip() == '1920x1080' and not str(override_resolution[2]).strip() == '1080x1920':
             printError('Unsupported Override Resolution! (' + str(override_resolution[2]).strip() + '). Please change your resolution to 1920x1080')
-            printWarning('Continuining but this may cause errors with image detection')
+            printWarning('We will try and scale the image but non-16:9 formats will likely have issues with image detection')
     else:
         if not str(physical_resolution[2]).strip() == '1920x1080' and not str(physical_resolution[2]).strip() == '1080x1920':
             printError('Unsupported Physical Resolution! (' + str(physical_resolution[2]).strip() + '). Please change your resolution to 1920x1080')
-            printWarning('Continuining but this may cause errors with image detection')
+            printWarning('We will try and scale the image but non-16:9 formats will likely have issues with image detection')
 
     if str(dpi[2]).strip() != '240':
         printError('Unsupported DPI! (' + str(dpi[2]).strip() + '). Please change your DPI to 240')
@@ -205,7 +207,15 @@ def resolutionCheck(device):
 
 # Takes a screenshot and saves it locally
 def take_screenshot(device):
+    global screen
     image = device.screencap()
+    im = Image.open(io.BytesIO(image))
+    if not im.size == (1080, 1920) and not im.size == (1920, 1080):
+        image = im.resize((1080, 1920))
+        # Convert image back to bytearray
+        byteIO = io.BytesIO()
+        image.save(byteIO, format='PNG')
+        image = byteIO.getvalue()
     with open(os.path.join(cwd, 'screen.bin'), 'wb') as f:
         f.write(image)
 
