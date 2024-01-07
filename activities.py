@@ -754,7 +754,7 @@ def infiniteSummons(woke, celehypo, x6mode=False):
                         printGreen('    ' + celehypo + ' found too! Recording Summon and exiting..')
                         click('buttons/summons/record', confidence=0.85, retry=3, seconds=3)
                         click('buttons/summons/change', confidence=0.85, retry=3, seconds=3, suppress=True) # Suppress as this isn't always present
-                        click('buttons/summons/confirm', confidence=0.85, retry=3, seconds=3)
+                        click('buttons/summons/confirm', confidence=0.85, retry=3, seconds=3, suppress=True)# Suppress as this isn't always present
                         search = False
                     else:
                         printError('    ' + celehypo + ' not found, continuing..')
@@ -769,7 +769,7 @@ def infiniteSummons(woke, celehypo, x6mode=False):
         # Funky math for duration calculation, ceiling is used to roundup else it returns with a decimal place
         duration = time.time() - starttime
         hours = str(math.ceil(duration // 3600))
-        minutes = str(math.ceil(duration // 60))
+        minutes = str((math.ceil(duration // 60)) - (int(hours) * 60))
         printGreen('Unlimited Summons finished!')
         printGreen('In just ' + str(counter) + ' pulls and ' + hours + ' hours ' + minutes + ' minutes. Hooray!')
     else:
@@ -798,6 +798,9 @@ def summonsCrashDetector(type):
     if rarecounter >= 10 or epiccounter >= 10 or awakenedcounter >= 10:
         printError('10 of the same type in a row, this normally means something has gone wrong, exiting..')
         recover()
+        rarecounter = 0
+        epiccounter = 0
+        awakenedcounter = 0
         return True
 
 def handleLab():
@@ -808,14 +811,18 @@ def handleLab():
     wait()
     clickXY(400, 1150, seconds=3)
     if isVisible('labels/lab', retry=3):
+        # Check for Swept
+        if isVisible('labels/labswept', retry=3, confidence=0.8, seconds=3) or isVisible('labels/labfloor3', retry=3, confidence=0.8, seconds=3):
+            printGreen('Lab already ran! Continuing..')
+            clickXY(50, 1800, seconds=2)  # Exit Lab Menu
+            return
         # Check for Sweep
-        # TODO Check for 'Swept' text
         if isVisible('buttons/labsweep', retry=3, confidence=0.8, click=True, seconds=3):
             printGreen('    Sweep Available!')
             if isVisible('buttons/labsweepbattle', retry=3, confidence=0.8, click=True, seconds=3):
                 clickXY(720, 1450, seconds=3) # Click Confirm
                 clickXY(550, 1550, seconds=3) # Clear Rewards
-                if isVisible('labels/notice', retry=3, seconds=2):  # And again for safe measure
+                if isVisible('labels/notice', retry=3, seconds=3):  # And again for safe measure
                     clickXY(550, 1250)
                 clickXY(550, 1550, seconds=5) # Clear Roamer Deals, long wait for the Limited Offer to pop up for Lab completion
                 clickXY(550, 1650) # Clear Limited Offer
@@ -829,9 +836,8 @@ def handleLab():
             clickXY(750, 1100, seconds=2) # Center of Dismal
             clickXY(550, 1475, seconds=2) # Challenge
             clickXY(550, 1600, seconds=2) # Begin Adventure
-            clickXY(700, 1250, seconds=8) # Confirm
+            clickXY(700, 1250, seconds=6) # Confirm
             clickXY(550, 1600, seconds=3) # Clear Debuff
-            clickXY(550, 1600, seconds=3) # safety Clear Debuff
             # TODO Check Dismal Floor 1 text
             printGreen('    Sweeping to 2rd Floor')
             clickXY(950, 1600, seconds=2) # Level Sweep
@@ -1000,6 +1006,7 @@ def handleLab():
                 return
             clickXY(750, 1725, seconds=4) # Continue to second battle
             if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                configureLabTeams(2, pet=False)  # We've lost heroes to Thoran etc by now, so lets re-pick 5 strongest heroes
                 clickXY(550, 1850, seconds=4) # Battle
             else:
                 printError('Battle Screen not found! Exiting')
@@ -1031,12 +1038,12 @@ def handleLab():
             if labBattleResults() is False:
                 return
 
-            wait(5) # Long pause for Value Bundle to pop up
-            clickXY(550, 1600, seconds=3) # Clear Value Bundle for completing lab
+            wait(6) # Long pause for Value Bundle to pop up
+            clickXY(550, 1650, seconds=3) # Clear Value Bundle for completing lab
             clickXY(550, 550, seconds=3) # Loot Chest
-            clickXY(550, 1600, seconds=2) # Clear Loot
-            clickXY(550, 1600, seconds=2) # Clear Notice
-            clickXY(550, 1600, seconds=2) # One more for safe measure
+            clickXY(550, 1650, seconds=2) # Clear Loot
+            clickXY(550, 1650, seconds=2) # Clear Notice
+            clickXY(550, 1650, seconds=2) # One more for safe measure
             clickXY(50, 1800, seconds=2) # Click Back to Exit
             printGreen("    Manual Lab run complete!")
     else:
@@ -1053,8 +1060,7 @@ def configureLabTeams(team, pet=True):
         clickXY(330, 1300)  # Slot 2
         clickXY(130, 1300)  # Slot 1
         if pet is True:
-            if isVisible('buttons/pet_empty', retry=3):
-                clickXY(80, 250, seconds=3) # Pet Selection
+            if isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True):
                 clickXY(150, 1250, seconds=2) # First Pet
                 clickXY(750, 1800, seconds=4) # Confirm
     if team == 2:
@@ -1066,9 +1072,8 @@ def configureLabTeams(team, pet=True):
         clickXY(730, 1550)  # Slot 4
         clickXY(930, 1550)  # Slot 5
         if pet is True:
-            if isVisible('buttons/pet_empty', retry=3):
-                clickXY(80, 250, seconds=3) # Pet Selection
-                clickXY(350, 1250, seconds=2) # First Pet
+            if isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True):
+                clickXY(350, 1250, seconds=2) # Second Pet
                 clickXY(750, 1800, seconds=4) # Confirm
 
 # Will select the correct Lab tile and take us to the battle screen
@@ -1076,10 +1081,10 @@ def configureLabTeams(team, pet=True):
 # Side is left or right, we choose once at the start and once after scrolling up to get both multi fights
 # Tile is the row of the tile we're aiming for, from 1 at the bottom to 10 at the final boss
 def handleLabTile(elevation, side, tile):
-    if tile != '4' or tile != '6' or tile != '10':
-        printBlue('    Battling ' + elevation.capitalize() + ' ' + side.capitalize() + ' Tile ' + tile)
-    else:
+    if tile == '4' or tile == '6' or tile == '10':
         printBlue('    Battling ' + elevation.capitalize() + ' Tile ' + tile)
+    else:
+        printBlue('    Battling ' + elevation.capitalize() + ' ' + side.capitalize() + ' Tile ' + tile)
     wait(1)
     if elevation == 'lower':
         if side == 'left':

@@ -41,7 +41,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.13.5b"
+version = "0.13.6"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -257,24 +257,29 @@ class activityWindow(customtkinter.CTkToplevel):
         # self.fastrewardsEntry.place(x=200, y=160)
         # Attempt Campaign battle
         self.attemptCampaignLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Attempt Campaign', fg_color=("gray86", "gray17"))
-        self.attemptCampaignLabel.place(x=10, y=190)
+        self.attemptCampaignLabel.place(x=10, y=160)
         self.attemptCampaignCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
-        self.attemptCampaignCheckbox.place(x=200, y=190)
+        self.attemptCampaignCheckbox.place(x=200, y=160)
         # Handle Team Bounties
         self.teamBountiesLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Dispatch Team Bounties', fg_color=("gray86", "gray17"))
-        self.teamBountiesLabel.place(x=10, y=220)
+        self.teamBountiesLabel.place(x=10, y=190)
         self.teamBountiesCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
-        self.teamBountiesCheckbox.place(x=200, y=220)
+        self.teamBountiesCheckbox.place(x=200, y=190)
         # Handle Solo Bounties Dust
         self.dispatchDustLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Dispatch Solo Dust Bounties', fg_color=("gray86", "gray17"))
-        self.dispatchDustLabel.place(x=10, y=250)
+        self.dispatchDustLabel.place(x=10, y=220)
         self.dispatchDustCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
-        self.dispatchDustCheckbox.place(x=200, y=250)
+        self.dispatchDustCheckbox.place(x=200, y=220)
         # Handle Solo Bounties Diamonds
         self.dispatchDiamondsLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Dispatch Solo Diamond Bounties', fg_color=("gray86", "gray17"))
-        self.dispatchDiamondsLabel.place(x=10, y=280)
+        self.dispatchDiamondsLabel.place(x=10, y=250)
         self.dispatchDiamondsCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
-        self.dispatchDiamondsCheckbox.place(x=200, y=280)
+        self.dispatchDiamondsCheckbox.place(x=200, y=250)
+        # Handle Lab
+        self.runLabLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Run Lab', fg_color=("gray86", "gray17"))
+        self.runLabLabel.place(x=10, y=280)
+        self.runLabCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
+        self.runLabCheckbox.place(x=200, y=280)
         # Collect Gladiator Coins
         self.gladiatorCollectLabel = customtkinter.CTkLabel(master=self.activityFrame, text='Collect Gladiator Coins', fg_color=("gray86", "gray17"))
         self.gladiatorCollectLabel.place(x=10, y=310)
@@ -341,7 +346,7 @@ class activityWindow(customtkinter.CTkToplevel):
 
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties',
                       'gladiatorCollect', 'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
-                         'collectQuests', 'collectMerchants', 'fightOfFates', 'circusTour', 'dispatchDust', 'dispatchDiamonds' ]
+                         'collectQuests', 'collectMerchants', 'fightOfFates', 'circusTour', 'dispatchDust', 'dispatchDiamonds', 'runLab']
         for activity in activityBoxes:
             if activity == 'dispatchDust' or activity == 'dispatchDiamonds':
                 if config.getboolean('BOUNTIES', activity):
@@ -353,7 +358,7 @@ class activityWindow(customtkinter.CTkToplevel):
     def activityUpdate(self):
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties',
                       'gladiatorCollect', 'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
-                         'collectQuests', 'collectMerchants', 'fightOfFates', 'circusTour', 'dispatchDust', 'dispatchDiamonds' ]
+                         'collectQuests', 'collectMerchants', 'fightOfFates', 'circusTour', 'dispatchDust', 'dispatchDiamonds', 'runLab']
         for activity in activityBoxes:
             if activity == 'dispatchDust' or activity == 'dispatchDiamonds':
                 if self.__getattribute__(activity + 'Checkbox').get() == 1:
@@ -742,6 +747,8 @@ def dailies():
         handleFightOfFates()
     if bool(config.getboolean('DAILIES', 'circusTour')) is True:
         handleCircusTour()
+    if bool(config.getboolean('DAILIES', 'runLab')) is True:
+        handleLab()
     if bool(config.getboolean('DAILIES', 'collectquests')) is True:
         collectQuests()
     if bool(config.getboolean('DAILIES', 'collectmerchants')) is True:

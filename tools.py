@@ -10,7 +10,7 @@ from PIL import Image
 from numpy import asarray
 from shutil import which
 from platform import system
-import cv2 as cv2
+import pyscreenshot
 
 # Configs/settings
 config = configparser.ConfigParser()
@@ -194,11 +194,11 @@ def resolutionCheck(device):
     dpi = dpi_lines[0].split(' ')
     if override_resolution[0] != '':
         if not str(override_resolution[2]).strip() == '1920x1080' and not str(override_resolution[2]).strip() == '1080x1920':
-            printError('Unsupported Override Resolution! (' + str(override_resolution[2]).strip() + '). Please change your resolution to 1920x1080')
+            printWarning('Unsupported Override Resolution! (' + str(override_resolution[2]).strip() + '). Please change your resolution to 1920x1080')
             printWarning('We will try and scale the image but non-16:9 formats will likely have issues with image detection')
     else:
         if not str(physical_resolution[2]).strip() == '1920x1080' and not str(physical_resolution[2]).strip() == '1080x1920':
-            printError('Unsupported Physical Resolution! (' + str(physical_resolution[2]).strip() + '). Please change your resolution to 1920x1080')
+            printWarning('Unsupported Physical Resolution! (' + str(physical_resolution[2]).strip() + '). Please change your resolution to 1920x1080')
             printWarning('We will try and scale the image but non-16:9 formats will likely have issues with image detection')
 
     if str(dpi[2]).strip() != '240':
