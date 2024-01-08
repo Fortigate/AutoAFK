@@ -1,6 +1,5 @@
 # Imports
 import io
-
 from ppadb.client import Client
 from AutoAFK import printGreen, printError, printWarning, printBlue, settings, args
 from pyscreeze import locate, locateAll
@@ -10,7 +9,6 @@ from PIL import Image
 from numpy import asarray
 from shutil import which
 from platform import system
-import pyscreenshot
 
 # Configs/settings
 config = configparser.ConfigParser()

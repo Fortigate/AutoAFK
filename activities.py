@@ -1,10 +1,8 @@
-import math
-
+from math import ceil
 from tools import *
 from AutoAFK import printGreen, printError, printWarning, printBlue, printPurple, settings
 import datetime
 import configparser
-import random
 
 config = configparser.ConfigParser()
 config.read(settings)
@@ -712,6 +710,9 @@ def infiniteSummons(woke, celehypo, x6mode=False):
     printBlue('Attempting to run Unlimited Summons')
     counter = 0 # Pull amount counter
     starttime = time.time() # Pull duration counter
+    if not isVisible('buttons/summons/summons_sidebar'):
+        printWarning('Can\'t see the summons event button, scrolling the side menu down..')
+        swipe(50, 800, 50, 500, duration=500, seconds=1)  # scroll down
     if isVisible('buttons/summons/summons_sidebar', retry=3, click=True):
         # List to match the dropdown name to the image file name
         wokes = {'Awakened Talene': 'aTalene', 'Gavus': 'Gavus', 'Maetria': 'Maetria', 'Awakened Ezizh': 'aEzizh',
@@ -768,8 +769,8 @@ def infiniteSummons(woke, celehypo, x6mode=False):
                 printBlue('Rare found')
         # Funky math for duration calculation, ceiling is used to roundup else it returns with a decimal place
         duration = time.time() - starttime
-        hours = str(math.ceil(duration // 3600))
-        minutes = str((math.ceil(duration // 60)) - (int(hours) * 60))
+        hours = str(ceil(duration // 3600))
+        minutes = str((ceil(duration // 60)) - (int(hours) * 60))
         printGreen('Unlimited Summons finished!')
         printGreen('In just ' + str(counter) + ' pulls and ' + hours + ' hours ' + minutes + ' minutes. Hooray!')
     else:
@@ -1094,6 +1095,9 @@ def handleLabTile(elevation, side, tile):
             if tile == '2': # Multi
                 clickXY(250, 1250, seconds=2) # Tile
                 clickXY(550, 1500, seconds=4) # Click Go
+                if isVisible('labels/notice', confidence=0.8, retry=3): # 'High Difficulty popup at first multi'
+                    clickXY(450, 1150, seconds=2)  # Don't show this again
+                    clickXY(725, 1250, seconds=4)  # Go
                 clickXY(750, 1500, seconds=4) # Click Begin Battle
             if tile == '3': # Single
                 clickXY(400, 1050, seconds =2) # Tile
@@ -1115,6 +1119,9 @@ def handleLabTile(elevation, side, tile):
             if tile == '2': # Multi
                 clickXY(800, 1225, seconds=2) # Tile
                 clickXY(550, 1500, seconds=4) # Click Go
+                if isVisible('labels/notice', confidence=0.8, retry=3): # 'High Difficulty popup at first multi'
+                    clickXY(450, 1150, seconds=2)  # Don't show this again
+                    clickXY(725, 1250, seconds=4)  # Go
                 clickXY(750, 1500, seconds=4) # Click Begin Battle
             if tile == '3': # Single
                 clickXY(700, 1050, seconds=2) # Tile

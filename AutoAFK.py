@@ -1,11 +1,10 @@
 from activities import *
-import tools
 import customtkinter
 import threading
 import sys
 import configparser
 import os
-from datetime import datetime,timezone
+from datetime import datetime, timezone
 import argparse
 import requests
 
@@ -41,7 +40,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.13.6"
+version = "0.13.7"
 
 #Main Window
 class App(customtkinter.CTk):
