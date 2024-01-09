@@ -297,9 +297,9 @@ def pushTower(formation=3, duration=1):
             clickXY(800, 1650, seconds=2) # Change to 'Popular' tab
             clickXY(850, 425 + (formation * 175))
             click('buttons/use', retry=3)
-            click('buttons/confirm_small')
-            click('buttons/autobattle')
-            click('buttons/activate')
+            click('buttons/confirm_small', retry=3)
+            click('buttons/autobattle', retry=3)
+            click('buttons/activate', retry=3)
     wait((duration * 60)-45)
     clickXY(550, 1750)
     if isVisible('labels/autobattle', retry=2):
@@ -313,7 +313,7 @@ def pushTower(formation=3, duration=1):
             click('buttons/exit', suppress=True)
             click('buttons/pause', 0.8, retry=3, suppress=True)  # 3 retries as ulting heroes can cover the button
             click('buttons/exitbattle', suppress=True)
-            click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True)
+            click('labels/taptocontinue', retry=3, confidence=0.8, suppress=True, grayscale=True)
     else:
         printError('AutoBattle screen not found, exiting..')
         sys.exit(1)

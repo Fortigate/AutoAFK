@@ -3,3 +3,5 @@ numpy==1.26.2
 pure_python_adb==0.3.0.dev0
 PyScreeze==0.1.29
 Requests==2.31.0
+scrcpy==0.0.4
+scrcpy-client==0.3.7

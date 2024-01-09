@@ -267,7 +267,7 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=F
     screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
-
+  
     if result == None and retry != 1:
         while counter < retry:
             take_screenshot(device)
@@ -300,9 +300,9 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=F
 # Choice is which image we click starting at '1', we search from top left line by line, and they will be ordered as found
 # Confidence is confidence in the found image, it needs to be tight here, or we have multiple entries for the same image
 # Seconds is how long to pause after finding the image
-def clickMultipleChoice(image, choice, confidence=0.9, seconds=1):
-    take_screenshot(device)
-    screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+def clickMultipleChoice(image, choice, retry=1, confidence=0.9, seconds=1):
+
+    screenshot = Image.fromarray(getFrame())
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
     if len(results) == 0:
@@ -314,12 +314,14 @@ def clickMultipleChoice(image, choice, confidence=0.9, seconds=1):
         y_center = round(y + h / 2)
         device.input_tap(x_center, y_center)
         wait(seconds)
+        return True
     else:
         x, y, w, h = results[choice-1] # -1 to match the array starting at 0
         x_center = round(x + w / 2)
         y_center = round(y + h / 2)
         device.input_tap(x_center, y_center)
         wait(seconds)
+        return True
 
 def returnMultiple(image, confidence=0.9, seconds=1):
     take_screenshot(device)
@@ -386,15 +388,27 @@ def returnCardPullsRarity():
 def confirmLocation(location, change=True, bool=False):
     detected = ''
     locations = {'campaign_selected': 'campaign', 'darkforest_selected': 'darkforest', 'ranhorn_selected': 'ranhorn'}
-    take_screenshot(device)
-    screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    #take_screenshot(device)
+    #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+
+ 
+
+    screenshot = Image.fromarray(getFrame())
+    #blankImg = Image.new('RGB', (1080, 1920), (0, 0, 0))
+    #mask = Image.open(cwd + '\\img\\masks\\campaign_location_mask.png')
+    #imageToSearch = Image.composite(screenshot, blankImg, mask)
+    ##imageToSearch.save('./testing.png')
+    #t0 = time.time()
     for location_button, string in locations.items():
         search = Image.open(os.path.join(cwd, 'img', 'buttons', location_button + '.png'))
+        #res = locate(search, imageToSearch, grayscale=False)
         res = locate(search, screenshot, grayscale=False)
         if res != None:
             detected = string
             break
 
+    #t1 = time.time()
+    #printGreen(str(t1-t0))
     if detected == location and bool is True:
         return True
     elif detected != location and change is True and bool is False:
