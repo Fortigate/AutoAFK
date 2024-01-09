@@ -9,6 +9,7 @@ from PIL import Image
 from numpy import asarray
 from shutil import which
 from platform import system
+import scrcpy
 
 # Configs/settings
 config = configparser.ConfigParser()
@@ -17,6 +18,7 @@ cwd = os.path.dirname(__file__) # variable for current directory of AutoAFK.exe
 os.system('color')  # So colourful text works
 connected = False
 connect_counter = 1
+max_fps = 5
 
 # Start PPADB
 adb = Client(host='127.0.0.1', port=5037)
@@ -62,6 +64,22 @@ def connect_device():
             break
     if connected is True:
         printGreen('Device: ' + str(device.serial) + ' successfully connected!')
+
+        def onFrame(client, _):
+            frame = client.last_frame
+            if frame is not None:
+                currentFrame = frame
+
+        srccpyClient = scrcpy.Client(device=device.serial)
+
+        srccpyClient.max_fps = max_fps;
+
+        srccpyClient.start(threaded=True)
+        srccpyClient.on_frame(onFrame)
+    
+        setattr(device, 'srccpy',  srccpyClient)
+
+
         connect_counter = 1 # reset counter just in case
         resolutionCheck(device) # Four start up checks, so we have an exact position/screen configuration to start with
         afkRunningCheck()
@@ -203,6 +221,16 @@ def resolutionCheck(device):
         printError('Unsupported DPI! (' + str(dpi[2]).strip() + '). Please change your DPI to 240')
         printWarning('Continuining but this may cause errors with image detection')
 
+
+def getFrame():
+
+    im = Image.fromarray(device.srccpy.last_frame[:, :, ::-1])
+
+    if not im.size == (1080, 1920) and not im.size == (1920, 1080):
+        im = im.resize((1080, 1920))
+
+    return im
+
 # Takes a screenshot and saves it locally
 def take_screenshot(device):
     global screen
@@ -240,8 +268,9 @@ def swipe(x1, y1, x2, y2, duration=100, seconds=1):
 # Retry for retrying image search
 def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
     counter = 0
-    take_screenshot(device)
-    screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    #take_screenshot(device)
+    #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     res = locate(search, screenshot, grayscale=False, confidence=confidence)
 
@@ -281,8 +310,9 @@ def clickXY(x,y, seconds=1):
 # Suppress will disable warnings, sometimes we don't need to know if a button isn't found
 def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False):
     counter = 0
-    take_screenshot(device)
-    screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    #take_screenshot(device)
+    #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
   
@@ -320,7 +350,8 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=F
 # Seconds is how long to pause after finding the image
 def clickMultipleChoice(image, choice, retry=1, confidence=0.9, seconds=1):
 
-    screenshot = Image.fromarray(getFrame())
+    #screenshot = Image.fromarray(getFrame())
+    screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
     if len(results) == 0:
@@ -342,8 +373,9 @@ def clickMultipleChoice(image, choice, retry=1, confidence=0.9, seconds=1):
         return True
 
 def returnMultiple(image, confidence=0.9, seconds=1):
-    take_screenshot(device)
-    screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    #take_screenshot(device)
+    #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+    screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
     return results
@@ -351,14 +383,16 @@ def returnMultiple(image, confidence=0.9, seconds=1):
 # Checks the pixel at the XY coordinates
 # C Variable is array from 0 to 2 for RGB value
 def pixelCheck(x, y, c, seconds=1):
-    take_screenshot(device)
-    screenshot = asarray(Image.open(os.path.join(cwd, 'screen.bin'))) # Convert PIL Image to NumPy Array for tuples
+    #take_screenshot(device)
+    #screenshot = asarray(Image.open(os.path.join(cwd, 'screen.bin'))) # Convert PIL Image to NumPy Array for tuples
+    screenshot = getFrame()
     wait(seconds)
     return screenshot[y, x, c]
 
 def returnCardPullsRarity():
-    take_screenshot(device)
-    screenshot = asarray(Image.open(os.path.join(cwd, 'screen.bin')))  # Convert PIL Image to NumPy Array for tuples
+    #take_screenshot(device)
+    #screenshot = asarray(Image.open(os.path.join(cwd, 'screen.bin')))  # Convert PIL Image to NumPy Array for tuples
+    screenshot = getFrame()
     cards = {'1': [95, 550], '2': [95, 900], '3': [95, 1350], '4': [410, 250], '5': [410, 650], '6': [410, 1100], '7': [410, 1550], '8': [729, 550], '9': [729, 900], '10': [729, 1350]}
 
     for card, location in cards.items(): # screenshot[] searchs Y first then X for reasons, so the locations[] are reversed
@@ -411,22 +445,14 @@ def confirmLocation(location, change=True, bool=False):
 
  
 
-    screenshot = Image.fromarray(getFrame())
-    #blankImg = Image.new('RGB', (1080, 1920), (0, 0, 0))
-    #mask = Image.open(cwd + '\\img\\masks\\campaign_location_mask.png')
-    #imageToSearch = Image.composite(screenshot, blankImg, mask)
-    ##imageToSearch.save('./testing.png')
-    #t0 = time.time()
+    screenshot = getFrame()
     for location_button, string in locations.items():
         search = Image.open(os.path.join(cwd, 'img', 'buttons', location_button + '.png'))
-        #res = locate(search, imageToSearch, grayscale=False)
         res = locate(search, screenshot, grayscale=False)
         if res != None:
             detected = string
             break
 
-    #t1 = time.time()
-    #printGreen(str(t1-t0))
     if detected == location and bool is True:
         return True
     elif detected != location and change is True and bool is False:
