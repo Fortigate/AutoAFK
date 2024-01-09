@@ -1,10 +1,8 @@
-import math
-
+from math import ceil
 from tools import *
 from AutoAFK import printGreen, printError, printWarning, printBlue, printPurple, settings
 import datetime
 import configparser
-import random
 
 config = configparser.ConfigParser()
 config.read(settings)
@@ -712,6 +710,9 @@ def infiniteSummons(woke, celehypo, x6mode=False):
     printBlue('Attempting to run Unlimited Summons')
     counter = 0 # Pull amount counter
     starttime = time.time() # Pull duration counter
+    if not isVisible('buttons/summons/summons_sidebar'):
+        printWarning('Can\'t see the summons event button, scrolling the side menu down..')
+        swipe(50, 800, 50, 500, duration=500, seconds=1)  # scroll down
     if isVisible('buttons/summons/summons_sidebar', retry=3, click=True):
         # List to match the dropdown name to the image file name
         wokes = {'Awakened Talene': 'aTalene', 'Gavus': 'Gavus', 'Maetria': 'Maetria', 'Awakened Ezizh': 'aEzizh',
@@ -754,7 +755,7 @@ def infiniteSummons(woke, celehypo, x6mode=False):
                         printGreen('    ' + celehypo + ' found too! Recording Summon and exiting..')
                         click('buttons/summons/record', confidence=0.85, retry=3, seconds=3)
                         click('buttons/summons/change', confidence=0.85, retry=3, seconds=3, suppress=True) # Suppress as this isn't always present
-                        click('buttons/summons/confirm', confidence=0.85, retry=3, seconds=3)
+                        click('buttons/summons/confirm', confidence=0.85, retry=3, seconds=3, suppress=True)# Suppress as this isn't always present
                         search = False
                     else:
                         printError('    ' + celehypo + ' not found, continuing..')
@@ -768,8 +769,8 @@ def infiniteSummons(woke, celehypo, x6mode=False):
                 printBlue('Rare found')
         # Funky math for duration calculation, ceiling is used to roundup else it returns with a decimal place
         duration = time.time() - starttime
-        hours = str(math.ceil(duration // 3600))
-        minutes = str(math.ceil(duration // 60))
+        hours = str(ceil(duration // 3600))
+        minutes = str((ceil(duration // 60)) - (int(hours) * 60))
         printGreen('Unlimited Summons finished!')
         printGreen('In just ' + str(counter) + ' pulls and ' + hours + ' hours ' + minutes + ' minutes. Hooray!')
     else:
@@ -798,6 +799,9 @@ def summonsCrashDetector(type):
     if rarecounter >= 10 or epiccounter >= 10 or awakenedcounter >= 10:
         printError('10 of the same type in a row, this normally means something has gone wrong, exiting..')
         recover()
+        rarecounter = 0
+        epiccounter = 0
+        awakenedcounter = 0
         return True
 
 def handleLab():
@@ -808,16 +812,19 @@ def handleLab():
     wait()
     clickXY(400, 1150, seconds=3)
     if isVisible('labels/lab', retry=3):
-    # if 1 == 1: # For debugging
+        # Check for Swept
+        if isVisible('labels/labswept', retry=3, confidence=0.8, seconds=3) or isVisible('labels/labfloor3', retry=3, confidence=0.8, seconds=3):
+            printGreen('Lab already ran! Continuing..')
+            clickXY(50, 1800, seconds=2)  # Exit Lab Menu
+            return
         # Check for Sweep
         if isVisible('buttons/labsweep', retry=3, confidence=0.8, click=True, seconds=3):
             printGreen('    Sweep Available!')
             if isVisible('buttons/labsweepbattle', retry=3, confidence=0.8, click=True, seconds=3):
                 clickXY(720, 1450, seconds=3) # Click Confirm
                 clickXY(550, 1550, seconds=3) # Clear Rewards
-                # TODO Check for notice pop up rather than guessing
-                clickXY(550, 1550, seconds=3) # Clear Notice #1
-                clickXY(550, 1550, seconds=3) # Clear Notice #2
+                if isVisible('labels/notice', retry=3, seconds=3):  # And again for safe measure
+                    clickXY(550, 1250)
                 clickXY(550, 1550, seconds=5) # Clear Roamer Deals, long wait for the Limited Offer to pop up for Lab completion
                 clickXY(550, 1650) # Clear Limited Offer
                 printGreen('    Lab Swept!')
@@ -830,17 +837,17 @@ def handleLab():
             clickXY(750, 1100, seconds=2) # Center of Dismal
             clickXY(550, 1475, seconds=2) # Challenge
             clickXY(550, 1600, seconds=2) # Begin Adventure
-            clickXY(700, 1250, seconds=5) # Confirm
+            clickXY(700, 1250, seconds=6) # Confirm
             clickXY(550, 1600, seconds=3) # Clear Debuff
+            # TODO Check Dismal Floor 1 text
             printGreen('    Sweeping to 2rd Floor')
             clickXY(950, 1600, seconds=2) # Level Sweep
             clickXY(550, 1550, seconds=8) # Confirm, long wait for animations
-            clickXY(550, 50, seconds=2) # Clear Resources Exceeded message
-            if isVisible('labels/notice'): # And again for safe measure
-                clickXY(550, 1250)
-            clickXY(550, 50, seconds=3) # Clear Loot
+            clickXY(550, 1600, seconds=2) # Clear Resources Exceeded message
+            clickXY(550, 1600, seconds=2) # And again for safe measure
+            clickXY(550, 1600, seconds=3) # Clear Loot
             clickXY(550, 1250, seconds=5) # Abandon Roamer
-            printGreen('    Choosing center relics')
+            printGreen('    Choosing relics')
             clickXY(550, 900) # Relic 1
             clickXY(550, 1325, seconds=3) # Choose
             clickXY(550, 900) # Relic 2
@@ -857,14 +864,15 @@ def handleLab():
             clickXY(550, 550, seconds=2) # Portal to 3rd Floor
             clickXY(550, 1200, seconds=5) # Enter
             clickXY(550, 1600, seconds=2) # Clear Debuff
+            # TODO Check Dismal Floor 3 text
 
             # Check which route we are taking, as to avoid the cart
             clickXY(400, 1400, seconds=2) # Open first tile on the left
             if isVisible('labels/labguard', retry=2):
-                printWarning('    Taking left route')
+                printWarning('    Loot Route: Left')
                 lowerdirection = 'left'
             else:
-                printWarning('    Taking right route')
+                printWarning('    Loot Route: Right')
                 lowerdirection = 'right'
                 clickXY(550, 50, seconds=3)  # Back to Lab screen
 
@@ -960,10 +968,10 @@ def handleLab():
             swipe(550, 200, 550, 1800, duration=1000)
             clickXY(400, 1450, seconds=2) # First tile on the left
             if isVisible('labels/labpraeguard', retry=2):
-                printWarning('    Taking left route')
+                printWarning('    Loot Route: Left')
                 upperdirection = 'left'
             else:
-                printWarning('    Taking right route')
+                printWarning('    Loot Route: Right')
                 upperdirection = 'right'
                 clickXY(550, 50, seconds=2)  # Back to Lab screen
 
@@ -999,6 +1007,7 @@ def handleLab():
                 return
             clickXY(750, 1725, seconds=4) # Continue to second battle
             if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
+                configureLabTeams(2, pet=False)  # We've lost heroes to Thoran etc by now, so lets re-pick 5 strongest heroes
                 clickXY(550, 1850, seconds=4) # Battle
             else:
                 printError('Battle Screen not found! Exiting')
@@ -1015,8 +1024,8 @@ def handleLab():
                 clickXY(300, 1600, seconds=4)  # Abandon
             if isVisible('labels/labfountain', retry=3):
                 printWarning('    Clearing Divine Fountain')
-                clickXY(550, 1250, seconds=3)  # Confirm
-                clickXY(300, 1600, seconds=4)  # Clear popup (a bit of guesswork here)
+                clickXY(725, 1250, seconds=3)  # Confirm
+                clickXY(725, 1250, seconds=2) # Go
 
             # 10th row (single boss)
             handleLabTile('upper', upperdirection, '10')
@@ -1030,12 +1039,12 @@ def handleLab():
             if labBattleResults() is False:
                 return
 
-            wait(5) # Long pause for Value Bundle to pop up
-            clickXY(550, 1600, seconds=3) # Clear Value Bundle for completing lab
+            wait(6) # Long pause for Value Bundle to pop up
+            clickXY(550, 1650, seconds=3) # Clear Value Bundle for completing lab
             clickXY(550, 550, seconds=3) # Loot Chest
-            clickXY(550, 1600, seconds=2) # Clear Loot
-            clickXY(550, 1600, seconds=2) # Clear Notice
-            clickXY(550, 1600, seconds=2) # One more for safe measure
+            clickXY(550, 1650, seconds=2) # Clear Loot
+            clickXY(550, 1650, seconds=2) # Clear Notice
+            clickXY(550, 1650, seconds=2) # One more for safe measure
             clickXY(50, 1800, seconds=2) # Click Back to Exit
             printGreen("    Manual Lab run complete!")
     else:
@@ -1052,9 +1061,9 @@ def configureLabTeams(team, pet=True):
         clickXY(330, 1300)  # Slot 2
         clickXY(130, 1300)  # Slot 1
         if pet is True:
-            clickXY(80, 250, seconds=3) # Pet Selection
-            clickXY(150, 1250, seconds=2) # First Pet
-            clickXY(750, 1800, seconds=4) # Confirm
+            if isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True):
+                clickXY(150, 1250, seconds=2) # First Pet
+                clickXY(750, 1800, seconds=4) # Confirm
     if team == 2:
         clickXY(1030, 1100, seconds=2)  # Clear Team
         clickXY(550, 1250, seconds=2)  # Confirm
@@ -1064,16 +1073,19 @@ def configureLabTeams(team, pet=True):
         clickXY(730, 1550)  # Slot 4
         clickXY(930, 1550)  # Slot 5
         if pet is True:
-            clickXY(80, 250, seconds=3) # Pet Selection
-            clickXY(350, 1250, seconds=2) # First Pet
-            clickXY(750, 1800, seconds=4) # Confirm
+            if isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True):
+                clickXY(350, 1250, seconds=2) # Second Pet
+                clickXY(750, 1800, seconds=4) # Confirm
 
 # Will select the correct Lab tile and take us to the battle screen
 # Elevation is either Upper or Lower dependon on whether we have scrolled the screen up or not for the scond half
 # Side is left or right, we choose once at the start and once after scrolling up to get both multi fights
 # Tile is the row of the tile we're aiming for, from 1 at the bottom to 10 at the final boss
 def handleLabTile(elevation, side, tile):
-    printWarning('    Battling ' + elevation + ' ' + side + ' tile ' + tile)
+    if tile == '4' or tile == '6' or tile == '10':
+        printBlue('    Battling ' + elevation.capitalize() + ' Tile ' + tile)
+    else:
+        printBlue('    Battling ' + elevation.capitalize() + ' ' + side.capitalize() + ' Tile ' + tile)
     wait(1)
     if elevation == 'lower':
         if side == 'left':
@@ -1083,6 +1095,9 @@ def handleLabTile(elevation, side, tile):
             if tile == '2': # Multi
                 clickXY(250, 1250, seconds=2) # Tile
                 clickXY(550, 1500, seconds=4) # Click Go
+                if isVisible('labels/notice', confidence=0.8, retry=3): # 'High Difficulty popup at first multi'
+                    clickXY(450, 1150, seconds=2)  # Don't show this again
+                    clickXY(725, 1250, seconds=4)  # Go
                 clickXY(750, 1500, seconds=4) # Click Begin Battle
             if tile == '3': # Single
                 clickXY(400, 1050, seconds =2) # Tile
@@ -1104,6 +1119,9 @@ def handleLabTile(elevation, side, tile):
             if tile == '2': # Multi
                 clickXY(800, 1225, seconds=2) # Tile
                 clickXY(550, 1500, seconds=4) # Click Go
+                if isVisible('labels/notice', confidence=0.8, retry=3): # 'High Difficulty popup at first multi'
+                    clickXY(450, 1150, seconds=2)  # Don't show this again
+                    clickXY(725, 1250, seconds=4)  # Go
                 clickXY(750, 1500, seconds=4) # Click Begin Battle
             if tile == '3': # Single
                 clickXY(700, 1050, seconds=2) # Tile
@@ -1136,7 +1154,7 @@ def handleLabTile(elevation, side, tile):
         if side == 'right':
             if tile == '7': # Multi
                 clickXY(700, 1450, seconds=2) # Tile
-                # No Go as we opened the tile to check direction
+                clickXY(550, 1500, seconds=4) # Go
                 clickXY(750, 1500, seconds=4) # Click Begin Battle
             if tile == '8': # Multi
                 clickXY(800, 1225, seconds=2) # Tile

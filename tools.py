@@ -1,8 +1,9 @@
 # Imports
+import io
 from ppadb.client import Client
 from AutoAFK import printGreen, printError, printWarning, printBlue, settings, args
 from pyscreeze import locate, locateAll
-from subprocess import check_output, Popen, PIPE
+from subprocess import Popen, PIPE
 import time, os, configparser, sys
 from PIL import Image
 from numpy import asarray
@@ -184,18 +185,35 @@ def waitUntilGameActive():
 
 # Checks we are running 1920x1080 (or 1080x1920 if we're in landscape mode) and 240 DPI, exits if not.
 def resolutionCheck(device):
-    resolution = device.shell('wm size').split(' ')
-    dpi = device.shell('wm density').split(' ')
-    if not str(resolution[2]).strip() == '1920x1080' and not str(resolution[2]).strip() == '1080x1920':
-        printError('Unsupported Resolution! (' + str(resolution[2]).strip() + '). Please change your Bluestacks resolution to 1080x1920')
-        exit(1)
+    resolution_lines = device.shell('wm size').split('\n')
+    physical_resolution = resolution_lines[0].split(' ')
+    override_resolution = resolution_lines[1].split(' ')
+    dpi_lines = device.shell('wm density').split('\n')
+    dpi = dpi_lines[0].split(' ')
+    if override_resolution[0] != '':
+        if not str(override_resolution[2]).strip() == '1920x1080' and not str(override_resolution[2]).strip() == '1080x1920':
+            printWarning('Unsupported Override Resolution! (' + str(override_resolution[2]).strip() + '). Please change your resolution to 1920x1080')
+            printWarning('We will try and scale the image but non-16:9 formats will likely have issues with image detection')
+    else:
+        if not str(physical_resolution[2]).strip() == '1920x1080' and not str(physical_resolution[2]).strip() == '1080x1920':
+            printWarning('Unsupported Physical Resolution! (' + str(physical_resolution[2]).strip() + '). Please change your resolution to 1920x1080')
+            printWarning('We will try and scale the image but non-16:9 formats will likely have issues with image detection')
+
     if str(dpi[2]).strip() != '240':
-        printError('Unsupported DPI! (' + str(dpi[2]).strip() + '). Please change your Bluestacks DPI to 240')
-        exit(1)
+        printError('Unsupported DPI! (' + str(dpi[2]).strip() + '). Please change your DPI to 240')
+        printWarning('Continuining but this may cause errors with image detection')
 
 # Takes a screenshot and saves it locally
 def take_screenshot(device):
+    global screen
     image = device.screencap()
+    im = Image.open(io.BytesIO(image))
+    if not im.size == (1080, 1920) and not im.size == (1920, 1080):
+        image = im.resize((1080, 1920))
+        # Convert image back to bytearray
+        byteIO = io.BytesIO()
+        image.save(byteIO, format='PNG')
+        image = byteIO.getvalue()
     with open(os.path.join(cwd, 'screen.bin'), 'wb') as f:
         f.write(image)
 
@@ -332,7 +350,7 @@ def returnMultiple(image, confidence=0.9, seconds=1):
 
 # Checks the pixel at the XY coordinates
 # C Variable is array from 0 to 2 for RGB value
-def pixelCheck(x,y,c,seconds=1):
+def pixelCheck(x, y, c, seconds=1):
     take_screenshot(device)
     screenshot = asarray(Image.open(os.path.join(cwd, 'screen.bin'))) # Convert PIL Image to NumPy Array for tuples
     wait(seconds)
