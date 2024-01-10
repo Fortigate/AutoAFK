@@ -266,17 +266,18 @@ def swipe(x1, y1, x2, y2, duration=100, seconds=1):
 # Returns True if the image is found, False if not
 # Confidence value can be reduced for images with animations
 # Retry for retrying image search
-def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False):
+def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False, region=(0, 0, 1080, 1920)):
     counter = 0
     #take_screenshot(device)
     #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
-    res = locate(search, screenshot, grayscale=False, confidence=confidence)
+    res = locate(search, screenshot, grayscale=False, confidence=confidence, region=region)
 
     if res == None and retry != 1:
         while counter < retry:
-            res = locate(search, screenshot, grayscale=False, confidence=confidence)
+            screenshot = getFrame()
+            res = locate(search, screenshot, grayscale=False, confidence=confidence, region=region)
             if res != None:
                 if click is True:
                     x, y, w, h = res
@@ -308,7 +309,7 @@ def clickXY(x,y, seconds=1):
 # Seconds is time to wait after clicking the image
 # Retry will try and find the image x number of times, useful for animated or covered buttons, or to make sure the button is not skipped
 # Suppress will disable warnings, sometimes we don't need to know if a button isn't found
-def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False):
+def click(image,confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False, region=(0, 0, 1080, 1920)):
     counter = 0
     #take_screenshot(device)
     #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
@@ -316,11 +317,13 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=F
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
   
+    search = Image.open(os.path.join(cwd, 'img', image + '.png'))
+    result = locate(search, screenshot, grayscale=grayscale, confidence=confidence, region=region)
     if result == None and retry != 1:
         while counter < retry:
-            take_screenshot(device)
+            screenshot = getFrame()
             screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
-            result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
+            result = locate(search, screenshot, grayscale=grayscale, confidence=confidence, region=region)
             if result != None:
                 x, y, w, h = result
                 x_center = round(x + w / 2)
@@ -348,12 +351,12 @@ def click(image, confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=F
 # Choice is which image we click starting at '1', we search from top left line by line, and they will be ordered as found
 # Confidence is confidence in the found image, it needs to be tight here, or we have multiple entries for the same image
 # Seconds is how long to pause after finding the image
-def clickMultipleChoice(image, choice, retry=1, confidence=0.9, seconds=1):
+def clickMultipleChoice(image, choice, retry=1, confidence=0.9, seconds=1, region=(0, 0, 1080, 1920)):
 
     #screenshot = Image.fromarray(getFrame())
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
-    results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
+    results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence, region=region))
     if len(results) == 0:
         printError('clickMultipleChoice error, image:' + str(image) + ' not found')
         return
@@ -372,12 +375,12 @@ def clickMultipleChoice(image, choice, retry=1, confidence=0.9, seconds=1):
         wait(seconds)
         return True
 
-def returnMultiple(image, confidence=0.9, seconds=1):
+def returnMultiple(image, confidence=0.9, seconds=1, region=(0, 0, 1080, 1920)):
     #take_screenshot(device)
     #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
-    results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence))
+    results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence, region=region))
     return results
 
 # Checks the pixel at the XY coordinates
@@ -437,26 +440,28 @@ def returnCardPullsRarity():
 
 # Used to confirm which game screen we're currently sitting in, and change to if we're not.
 # Optionally with 'bool' flag we can return boolean for if statements
-def confirmLocation(location, change=True, bool=False):
+def confirmLocation(location, change=True, bool=False, region=(0,0, 1080, 1920)):
     detected = ''
     locations = {'campaign_selected': 'campaign', 'darkforest_selected': 'darkforest', 'ranhorn_selected': 'ranhorn'}
+    regions =  [(424, 1750, 232, 170), (208, 1750, 226, 170), (0, 1750, 210, 160)]
     #take_screenshot(device)
     #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
 
  
 
     screenshot = getFrame()
+    idx = 0
     for location_button, string in locations.items():
         search = Image.open(os.path.join(cwd, 'img', 'buttons', location_button + '.png'))
-        res = locate(search, screenshot, grayscale=False)
+        res = locate(search, screenshot, grayscale=False, region=regions[idx])
         if res != None:
             detected = string
             break
-
+        idx += 1
     if detected == location and bool is True:
         return True
     elif detected != location and change is True and bool is False:
-        click(os.path.join('buttons', location + '_unselected'))
+        click(os.path.join('buttons', location + '_unselected'), region=region)
     elif detected != location and bool is True:
         return False
 
