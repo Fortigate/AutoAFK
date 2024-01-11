@@ -756,20 +756,16 @@ def dailies():
     return
 
 def push():
-    if app.pushFormationDropdown.get() != config.get('PUSH', 'formation'):
-        config.set('PUSH', 'formation', app.pushFormationDropdown.get())
-    updateSettings()
-
     connect_device()
     buttonState('disabled')
     formationstr = str(config.get('PUSH', 'formation'))[0:1]
 
     if app.pushLocationDropdown.get() == 'Campaign':
         printBlue('Auto-Pushing Campaign using the ' + str(config.get('PUSH', 'formation') + ' formation'))
-        confirmLocation('campaign')
-        click('buttons/begin', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
-        config.read(settings)  # to load any new values (ie formation dropdown changed and saved) into memory
-        wait(3)
+        confirmLocation('campaign', region=boundries['campaignSelect'])
+        # click('buttons/begin', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
+        updateSettings()
+        config.read(settings)
         while 1:
             pushCampaign(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
     else:

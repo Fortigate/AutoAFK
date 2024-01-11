@@ -39,13 +39,14 @@ boundries = {
     'taptocontinue': (374, 1772, 330, 62),
     'kingstowerLabel': (253, 0, 602, 100),
     'challengeTower': (356, 726, 364, 1024),
+    'heroclassselect': (5, 1620, 110, 120),
 
 
-    'collectAfk': (590, 13222, 270, 82),
+    'collectAfk': (590, 1322, 270, 82),
     
     'mailLocate': (874, 575, 190, 157),
     'collectMail': (626, 1518, 305, 102),
-    'backMenu': (0, 1700, 146, 190),
+    'backMenu': (0, 170, 146, 190),
 
     'friends': (880, 754, 178, 168),
     'sendrecieve': (750, 1560, 306, 100),
@@ -154,42 +155,46 @@ def attemptCampaign():
         recover()
 
 def pushCampaign(formation=3, duration=1):
-    click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True, region=boundries['taptocontinue'])
-    click('buttons/cancel', seconds=2, suppress=True, region=boundries['cancelAB'])
-    if (isVisible('buttons/begin_plain', 0.7, region=boundries['multiBegin'])): # If we see second Begin it's a multi so we take different actions
-        click('buttons/begin_plain', 0.7, seconds=2, retry=2, suppress=True, region=boundries['multiBegin'])
-        if isVisible('buttons/formations', click=True, seconds=3, region=boundries['formations']):
-            clickXY(800, 1650, seconds=2) # Change to 'Popular' tab
-            clickXY(850, 425 + (formation * 175))
-            click('buttons/use', suppress=True, region=boundries['useAB'])
-            click('buttons/confirm_small', suppress=True, region=boundries['confirmAB'])
-            click('buttons/autobattle', suppress=True, region=boundries['autobattle']) # So we don't hit it in the background while autobattle is active
-            click('buttons/activate', suppress=True, region=boundries['activateAB'])
-    else:
-        if isVisible('buttons/formations', click=True, seconds=3,  region=boundries['formations']):
-            clickXY(850, 425 + (formation * 175))
-            click('buttons/use', suppress=True, region=boundries['useAB'])
-            click('buttons/confirm_small', suppress=True, region=boundries['confirmAB'])
-            click('buttons/autobattle', suppress=True, region=boundries['autobattle']) # So we don't hit it in the background while autobattle is active
-            click('buttons/activate', suppress=True, region=boundries['activateAB'])
-    wait((duration * 60) - 45)
-    clickXY(550, 1750)
-    if isVisible('labels/autobattle', region=boundries['autobattleLabel']):
-        if isVisible('labels/autobattle_0', region=boundries['autobattle0']):
-            wait(2)
+    # Below we open campaign, load the selected formation and start autobattle
+    if (isVisible('buttons/begin', 0.7, retry=3, click=True)):
+        # Check for a second Begin in the case of a multibattle
+        click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundries['multiBegin'])
+        configureCampaignBattle(formation)
+    wait((duration * 60) - 30)
+    clickXY(550, 1750) # Click to prompt the AutoBattle popup
+    if isVisible('labels/autobattle', region=boundries['autobattleLabel']): # Make sure the popup is visible
+        if isVisible('labels/autobattle_0', region=boundries['autobattle0']): # If it's 0 continue
             if config.get('PUSH', 'suppressSpam') is False:
                 printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
             click('buttons/cancel', retry=3, suppress=True, region=boundries['cancelAB'])
-        else:
+        else: # If it's not 0 we have passed a stage
             printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
-            click('buttons/exit', suppress=True, region=boundries['exitAB'])
-            click('buttons/pause', 0.8, retry=3, suppress=True, region=boundries['pauseBattle'])  # 3 retries as ulting heroes can cover the button
-            click('buttons/exitbattle', suppress=True, region=boundries['exitBattle'])
+            click('buttons/exit', suppress=True, retry=3, region=boundries['exitAB'])
+            click('buttons/pause', confidence=0.8, retry=3, suppress=True, region=boundries['pauseBattle'])  # 3 retries as ulting heroes can cover the button
+            click('buttons/exitbattle', suppress=True, retry=3, region=boundries['exitBattle'])
             click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True, region=boundries['taptocontinue'])
+            if (isVisible('buttons/begin', 0.7, retry=3, click=True, seconds=2)):
+                # Check for a second Begin in the case of a multibattle
+                click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundries['multiBegin'])
+            configureCampaignBattle(formation)
     else:
+        # If we click and the AutoBattle Label isn't visible we're lost somewhere so we exit
         printError('AutoBattle screen not found, exiting..')
         sys.exit(1)
         buttonState('enabled')
+
+def configureCampaignBattle(formation):
+    if isVisible('buttons/formations', click=True, seconds=3, region=boundries['formations']):
+        clickXY(800, 1650, seconds=2)  # Change to 'Popular' tab
+        clickXY(850, 425 + (formation * 175))
+        click('buttons/use', suppress=True, retry=3, region=boundries['useAB'])
+        click('buttons/confirm_small', suppress=True, retry=3, region=boundries['confirmAB'])
+        click('buttons/autobattle', suppress=True, retry=3, region=boundries['autobattle'])  # So we don't hit it in the background while autobattle is active
+        # Sometimes Activate is reported as clicked, but it isn't so this failsafe improves stability
+        while isVisible('labels/autobattle', region=boundries['autobattleLabel']):
+            click('buttons/activate', suppress=True, retry=3, region=boundries['activateAB'])
+    else:
+        printWarning('Could not find Formations button')
 
 def handleBounties():
     printBlue('Handling Bounty Board')
@@ -273,7 +278,10 @@ def handleArenaOfHeroes(count):
         while counter < count:
             wait(1) # To avoid error when clickMultipleChoice returns no results
             clickMultipleChoice('buttons/arenafight', 4, confidence=0.98, region=boundries['attackAoH']) # Select 4th opponent
-            click('buttons/battle', 0.6, retry=3, suppress=True, region=boundries['battleAoH']) # lower confidence as it's an animated button
+            if isVisible('buttons/heroclassselect', retry=3, region=boundries['heroclassselect']):
+                clickXY(550, 1800)
+            #
+            # click('buttons/battle', 0.6, retry=3, region=boundries['battleAoH']) # lower confidence as it's an animated button
             wait(2)
             click('buttons/skip', retry=5, suppress=True, region=boundries['skipAoH']) # Retries as ulting heros can cover the button
             if (isVisible('labels/defeat', region=boundries['defeat'])):
@@ -863,9 +871,13 @@ def handleLab():
     confirmLocation('darkforest', region=boundries['darkforestSelect'])
     wait()
     clickXY(400, 1150, seconds=3)
+    if isVisible('labels/labfloor3', retry=3, confidence=0.8, seconds=3):
+        printGreen('Lab already ran! Continuing..')
+        clickXY(50, 1800, seconds=2)  # Exit Lab Menu
+        return
     if isVisible('labels/lab', retry=3):
         # Check for Swept
-        if isVisible('labels/labswept', retry=3, confidence=0.8, seconds=3) or isVisible('labels/labfloor3', retry=3, confidence=0.8, seconds=3):
+        if isVisible('labels/labswept', retry=3, confidence=0.8, seconds=3):
             printGreen('Lab already ran! Continuing..')
             clickXY(50, 1800, seconds=2)  # Exit Lab Menu
             return

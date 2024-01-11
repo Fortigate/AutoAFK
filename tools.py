@@ -1,5 +1,7 @@
 # Imports
 import io
+
+import numpy as np
 from ppadb.client import Client
 from AutoAFK import printGreen, printError, printWarning, printBlue, settings, args
 from pyscreeze import locate, locateAll
@@ -65,17 +67,17 @@ def connect_device():
     if connected is True:
         printGreen('Device: ' + str(device.serial) + ' successfully connected!')
 
-        def onFrame(client, _):
-            frame = client.last_frame
-            if frame is not None:
-                currentFrame = frame
+        # def onFrame(client, _):
+        #     frame = client.last_frame
+        #     if frame is not None:
+        #         currentFrame = frame
 
         srccpyClient = scrcpy.Client(device=device.serial)
 
         srccpyClient.max_fps = max_fps;
 
         srccpyClient.start(threaded=True)
-        srccpyClient.on_frame(onFrame)
+        # srccpyClient.on_frame(onFrame)
     
         setattr(device, 'srccpy',  srccpyClient)
 
@@ -208,6 +210,7 @@ def resolutionCheck(device):
     override_resolution = resolution_lines[1].split(' ')
     dpi_lines = device.shell('wm density').split('\n')
     dpi = dpi_lines[0].split(' ')
+
     if override_resolution[0] != '':
         if not str(override_resolution[2]).strip() == '1920x1080' and not str(override_resolution[2]).strip() == '1080x1920':
             printWarning('Unsupported Override Resolution! (' + str(override_resolution[2]).strip() + '). Please change your resolution to 1920x1080')
@@ -223,7 +226,6 @@ def resolutionCheck(device):
 
 
 def getFrame():
-
     im = Image.fromarray(device.srccpy.last_frame[:, :, ::-1])
 
     if not im.size == (1080, 1920) and not im.size == (1920, 1080):
@@ -268,8 +270,6 @@ def swipe(x1, y1, x2, y2, duration=100, seconds=1):
 # Retry for retrying image search
 def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False, region=(0, 0, 1080, 1920)):
     counter = 0
-    #take_screenshot(device)
-    #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     res = locate(search, screenshot, grayscale=False, confidence=confidence, region=region)
@@ -311,11 +311,8 @@ def clickXY(x,y, seconds=1):
 # Suppress will disable warnings, sometimes we don't need to know if a button isn't found
 def click(image,confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False, region=(0, 0, 1080, 1920)):
     counter = 0
-    #take_screenshot(device)
-    #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
-    result = locate(search, screenshot, grayscale=grayscale, confidence=confidence)
   
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     result = locate(search, screenshot, grayscale=grayscale, confidence=confidence, region=region)
@@ -352,11 +349,11 @@ def click(image,confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=Fa
 # Confidence is confidence in the found image, it needs to be tight here, or we have multiple entries for the same image
 # Seconds is how long to pause after finding the image
 def clickMultipleChoice(image, choice, retry=1, confidence=0.9, seconds=1, region=(0, 0, 1080, 1920)):
-
-    #screenshot = Image.fromarray(getFrame())
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
+
     results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence, region=region))
+
     if len(results) == 0:
         printError('clickMultipleChoice error, image:' + str(image) + ' not found')
         return
@@ -365,6 +362,7 @@ def clickMultipleChoice(image, choice, retry=1, confidence=0.9, seconds=1, regio
         x_center = round(x + w / 2)
         y_center = round(y + h / 2)
         device.input_tap(x_center, y_center)
+
         wait(seconds)
         return True
     else:
@@ -372,30 +370,31 @@ def clickMultipleChoice(image, choice, retry=1, confidence=0.9, seconds=1, regio
         x_center = round(x + w / 2)
         y_center = round(y + h / 2)
         device.input_tap(x_center, y_center)
+
         wait(seconds)
         return True
 
 def returnMultiple(image, confidence=0.9, seconds=1, region=(0, 0, 1080, 1920)):
-    #take_screenshot(device)
-    #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence, region=region))
+
+    wait(seconds)
     return results
 
 # Checks the pixel at the XY coordinates
 # C Variable is array from 0 to 2 for RGB value
 def pixelCheck(x, y, c, seconds=1):
-    #take_screenshot(device)
-    #screenshot = asarray(Image.open(os.path.join(cwd, 'screen.bin'))) # Convert PIL Image to NumPy Array for tuples
-    screenshot = getFrame()
+    im = getFrame()
+    screenshot = np.asarray(im) # Make it an array
+
     wait(seconds)
     return screenshot[y, x, c]
 
 def returnCardPullsRarity():
-    #take_screenshot(device)
-    #screenshot = asarray(Image.open(os.path.join(cwd, 'screen.bin')))  # Convert PIL Image to NumPy Array for tuples
-    screenshot = getFrame()
+    im = getFrame()
+    screenshot = np.asarray(im) # Make it an array
+
     cards = {'1': [95, 550], '2': [95, 900], '3': [95, 1350], '4': [410, 250], '5': [410, 650], '6': [410, 1100], '7': [410, 1550], '8': [729, 550], '9': [729, 900], '10': [729, 1350]}
 
     for card, location in cards.items(): # screenshot[] searchs Y first then X for reasons, so the locations[] are reversed
@@ -443,14 +442,11 @@ def returnCardPullsRarity():
 def confirmLocation(location, change=True, bool=False, region=(0,0, 1080, 1920)):
     detected = ''
     locations = {'campaign_selected': 'campaign', 'darkforest_selected': 'darkforest', 'ranhorn_selected': 'ranhorn'}
-    regions =  [(424, 1750, 232, 170), (208, 1750, 226, 170), (0, 1750, 210, 160)]
-    #take_screenshot(device)
-    #screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
-
- 
+    regions = [(424, 1750, 232, 170), (208, 1750, 226, 170), (0, 1750, 210, 160)]
 
     screenshot = getFrame()
     idx = 0
+
     for location_button, string in locations.items():
         search = Image.open(os.path.join(cwd, 'img', 'buttons', location_button + '.png'))
         res = locate(search, screenshot, grayscale=False, region=regions[idx])
@@ -461,7 +457,7 @@ def confirmLocation(location, change=True, bool=False, region=(0,0, 1080, 1920))
     if detected == location and bool is True:
         return True
     elif detected != location and change is True and bool is False:
-        click(os.path.join('buttons', location + '_unselected'), region=region)
+        click(os.path.join('buttons', location + '_unselected'), region=region, suppress=True)
     elif detected != location and bool is True:
         return False
 
