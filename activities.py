@@ -46,7 +46,7 @@ boundries = {
     
     'mailLocate': (874, 575, 190, 157),
     'collectMail': (626, 1518, 305, 102),
-    'backMenu': (0, 170, 146, 190),
+    'backMenu': (0, 1750, 146, 190),
 
     'friends': (880, 754, 178, 168),
     'sendrecieve': (750, 1560, 306, 100),
@@ -85,9 +85,9 @@ def collectMail():
     printBlue('Attempting mail collection')
     if isVisible('buttons/mail',  region=boundries['mailLocate']):
         if (pixelCheck(1012, 610, 0) > 240): # We check if the pixel where the notification sits has a red value of higher than 240
-            clickXY(960, 630)
+            clickXY(960, 630, seconds=2) # Click Mail
             click('buttons/collect_all', seconds=3, region=boundries['collectMail'])
-            clickXY(550, 1600)
+            clickXY(550, 1600) # Clear any popups
             click('buttons/back', region=boundries['backMenu'])
             printGreen('    Mail collected!')
         else:
@@ -159,7 +159,7 @@ def pushCampaign(formation=3, duration=1):
     if (isVisible('buttons/begin', 0.7, retry=3, click=True)):
         # Check for a second Begin in the case of a multibattle
         click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundries['multiBegin'])
-        configureCampaignBattle(formation)
+        configureBattleFormation(formation)
     wait((duration * 60) - 30)
     clickXY(550, 1750) # Click to prompt the AutoBattle popup
     if isVisible('labels/autobattle', region=boundries['autobattleLabel']): # Make sure the popup is visible
@@ -176,14 +176,14 @@ def pushCampaign(formation=3, duration=1):
             if (isVisible('buttons/begin', 0.7, retry=3, click=True, seconds=2)):
                 # Check for a second Begin in the case of a multibattle
                 click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundries['multiBegin'])
-            configureCampaignBattle(formation)
+            configureBattleFormation(formation)
     else:
         # If we click and the AutoBattle Label isn't visible we're lost somewhere so we exit
         printError('AutoBattle screen not found, exiting..')
         sys.exit(1)
         buttonState('enabled')
 
-def configureCampaignBattle(formation):
+def configureBattleFormation(formation):
     if isVisible('buttons/formations', click=True, seconds=3, region=boundries['formations']):
         clickXY(800, 1650, seconds=2)  # Change to 'Popular' tab
         clickXY(850, 425 + (formation * 175))
@@ -346,35 +346,28 @@ def openTower(name):
                 clickXY(location[0], location[1], seconds=3)
 
 def pushTower(formation=3, duration=1):
-    click('buttons/challenge_plain', 0.7, retry=3, suppress=True, seconds=3, region=boundries['challengeTower'])  # lower confidence and retries for animated button
-    click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True, region=boundries['taptocontinue'])
-    click('buttons/cancel', seconds=2, suppress=True, region=boundries['cancelAB'])
-    if (isVisible('buttons/autobattle', region=boundries['autobattle']) and not isVisible('buttons/exit', region=boundries['exitAB'])): # So we don't catch the button in the background
-        if isVisible('buttons/formations', region=boundries['formations']):
-            click('buttons/formations', seconds=3, region=boundries['formations'])
-            clickXY(800, 1650, seconds=2) # Change to 'Popular' tab
-            clickXY(850, 425 + (formation * 175))
-            click('buttons/use', retry=3, region=boundries['useAB'])
-            click('buttons/confirm_small', retry=3, region=boundries['confirmAB'])
-            click('buttons/autobattle', retry=3, region=boundries['autobattle'])
-            click('buttons/activate', retry=3, region=boundries['activateAB'])
-    wait((duration * 60)-45)
+    if isVisible('buttons/challenge_plain', 0.7, retry=3, seconds=3, click=True, region=boundries['challengeTower']):  # lower confidence and retries for animated button
+        configureBattleFormation(formation)
+    if isVisible('buttons/autobattle', 0.95, retry=3, seconds=2, click=True, region=boundries['autobattle']):  # higher confidence so we don't find it in the background
+        configureBattleFormation(formation)
+    wait((duration * 60)-30)
     clickXY(550, 1750)
-    if isVisible('labels/autobattle', retry=2, region=boundries['autobattleLabel']):
-        if isVisible('labels/autobattle_0', retry=3, region=boundries['autobattle0']):
-            wait(2)
+    if isVisible('labels/autobattle', retry=2, region=boundries['autobattleLabel']): # Make sure the popup is visible
+        if isVisible('labels/autobattle_0', retry=3, region=boundries['autobattle0']): # If it's 0 continue
             if config.get('PUSH', 'suppressSpam') is False:
                 printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
             click('buttons/cancel', retry=3, suppress=True, region=boundries['cancelAB'])
-        else:
+        else: # If it's not 0 we have passed a stage
             printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
             click('buttons/exit', retry=3, suppress=True, region=boundries['exitAB'])
             click('buttons/pause', 0.8, retry=3, suppress=True, region=boundries['pauseBattle'])  # 3 retries as ulting heroes can cover the button
-            click('buttons/exitbattle', retry=3, suppress=True, region=boundries['exitBattle'])
-            click('labels/taptocontinue', retry=3, confidence=0.8, suppress=True, grayscale=True, region=boundries['taptocontinue'])
+            click('buttons/exitbattle', retry=2, suppress=True, region=boundries['exitBattle'])
+            click('labels/taptocontinue', retry=2, confidence=0.8, suppress=True, grayscale=True, region=boundries['taptocontinue'])
     else:
         printError('AutoBattle screen not found, exiting..')
         sys.exit(1)
+        buttonState('enabled')
+
 
 def handleKingsTower():
     printBlue('Attempting Kings Tower battle')

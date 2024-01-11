@@ -40,7 +40,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.13.7"
+version = "0.14.2"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -758,21 +758,24 @@ def dailies():
 def push():
     connect_device()
     buttonState('disabled')
-    formationstr = str(config.get('PUSH', 'formation'))[0:1]
+    formationstr = str(app.pushFormationDropdown.get())[0:1]
 
     if app.pushLocationDropdown.get() == 'Campaign':
         printBlue('Auto-Pushing Campaign using the ' + str(config.get('PUSH', 'formation') + ' formation'))
         confirmLocation('campaign', region=boundries['campaignSelect'])
-        # click('buttons/begin', 0.7, retry=3, suppress=True, seconds=3)  # lower confidence and retries for animated button
+        if str(app.pushFormationDropdown.get()) != config.get('PUSH', 'formation'):
+            config.set('PUSH', 'formation', app.fastrewardsEntry.get())
         updateSettings()
         config.read(settings)
         while 1:
             pushCampaign(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
     else:
-        printBlue('Auto-Pushing ' + str(app.pushLocationDropdown.get()) + ' using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
+        printBlue('Auto-Pushing ' + str(app.pushLocationDropdown.get()) + ' using using the ' + str(app.pushFormationDropdown.get()) + ' formation')
         openTower(app.pushLocationDropdown.get())
-        config.read(settings)  # to load any new values (ie formation downdown changed and saved) into memory
-        wait(3)
+        if str(app.pushFormationDropdown.get()) != config.get('PUSH', 'formation'):
+            config.set('PUSH', 'formation', app.fastrewardsEntry.get())
+        updateSettings()
+        config.read(settings)
         while 1:
             pushTower(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
 
