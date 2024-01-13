@@ -218,7 +218,7 @@ class App(customtkinter.CTk):
 class activityWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.geometry("500x600")
+        self.geometry("500x640")
         self.title('Activity Selection')
         self.attributes("-topmost", True)
 
@@ -343,6 +343,10 @@ class activityWindow(customtkinter.CTkToplevel):
         self.circusTourCheckbox = customtkinter.CTkCheckBox(master=self.eventsFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
         self.circusTourCheckbox.place(x=200, y=70)
 
+        # Save button
+        self.activitySaveButton = customtkinter.CTkButton(master=self, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.activitySave)
+        self.activitySaveButton.place(x=190, y=600)
+
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties',
                       'gladiatorCollect', 'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
                          'collectQuests', 'collectMerchants', 'fightOfFates', 'circusTour', 'dispatchDust', 'dispatchDiamonds', 'runLab']
@@ -371,23 +375,27 @@ class activityWindow(customtkinter.CTkToplevel):
                     config.set('DAILIES', activity, 'False')
         updateSettings()
 
+    def activitySave(self):
+        self.activityUpdate()
+        advancedWindow.destroy(self)
+
 
 # Shop Window
 class shopWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.geometry("400x400")
+        self.geometry("400x440")
         self.title('Shop Options')
         self.attributes("-topmost", True)
 
         # Shop Frame
-        self.shopGoldFrame = customtkinter.CTkFrame(master=self, width=180, height=380)
+        self.shopGoldFrame = customtkinter.CTkFrame(master=self, width=185, height=380)
         self.shopGoldFrame.place(x=10, y=10)
         self.label = customtkinter.CTkLabel(master=self.shopGoldFrame, text="Gold Purchases:", font=("Arial", 15, 'bold'))
         self.label.place(x=20, y=5)
         # Dim Frame
-        self.shopDiamondFrame = customtkinter.CTkFrame(master=self, width=180, height=380)
-        self.shopDiamondFrame.place(x=210, y=10)
+        self.shopDiamondFrame = customtkinter.CTkFrame(master=self, width=185, height=380)
+        self.shopDiamondFrame.place(x=205, y=10)
         self.label = customtkinter.CTkLabel(master=self.shopDiamondFrame, text="Diamond Purchases:", font=("Arial", 15, 'bold'))
         self.label.place(x=20, y=5)
 
@@ -457,6 +465,10 @@ class shopWindow(customtkinter.CTkToplevel):
         self.superb_soulstoneCheckbox = customtkinter.CTkCheckBox(master=self.shopDiamondFrame, text=None, onvalue=True, offvalue=False, command=self.shopUpdate)
         self.superb_soulstoneCheckbox.place(x=130, y=220)
 
+        # Save button
+        self.shopSaveButton = customtkinter.CTkButton(master=self, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.shopSave)
+        self.shopSaveButton.place(x=140, y=400)
+
         checkboxes = ['arcanestaffs', 'shards_gold', 'cores', 'timegazer', 'baits', 'dust_gold', 'dust_diamond', 'elite_soulstone',
                       'superb_soulstone', 'silver_emblem', 'gold_emblem', 'poe']
         for box in checkboxes:
@@ -474,15 +486,19 @@ class shopWindow(customtkinter.CTkToplevel):
         with open(settings, 'w') as configfile:
             config.write(configfile)
 
+    def shopSave(self):
+        self.shopUpdate()
+        shopWindow.destroy(self)
+
 class advancedWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.geometry("250x300")
+        self.geometry("250x230")
         self.title('Advanced Options')
         self.attributes("-topmost", True)
 
         # Activity Frame
-        self.advancedFrame = customtkinter.CTkFrame(master=self, width=230, height=280)
+        self.advancedFrame = customtkinter.CTkFrame(master=self, width=230, height=170)
         self.advancedFrame.place(x=10, y=10)
         self.label = customtkinter.CTkLabel(master=self.advancedFrame, text="Advanced Options:", font=("Arial", 15, 'bold'))
         self.label.place(x=20, y=5)
@@ -515,8 +531,8 @@ class advancedWindow(customtkinter.CTkToplevel):
         self.supressCheckbox.place(x=190, y=130)
 
         # Save button
-        self.advanceSaveButton = customtkinter.CTkButton(master=self.advancedFrame, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.advancedSave)
-        self.advanceSaveButton.place(x=60, y=180)
+        self.advanceSaveButton = customtkinter.CTkButton(master=self, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.advancedSave)
+        self.advanceSaveButton.place(x=60, y=190)
 
         # # Resolution/DPI button
         # self.advanceSaveButton = customtkinter.CTkButton(master=self.advancedFrame, text="Force Resolution/DPI", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=lambda: threading.Thread(target=self.forceResolution).start())

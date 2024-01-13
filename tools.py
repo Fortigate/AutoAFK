@@ -67,17 +67,11 @@ def connect_device():
     if connected is True:
         printGreen('Device: ' + str(device.serial) + ' successfully connected!')
 
-        # def onFrame(client, _):
-        #     frame = client.last_frame
-        #     if frame is not None:
-        #         currentFrame = frame
-
         srccpyClient = scrcpy.Client(device=device.serial)
-
-        srccpyClient.max_fps = max_fps;
-
-        srccpyClient.start(threaded=True)
-        # srccpyClient.on_frame(onFrame)
+        srccpyClient.max_fps = max_fps
+        print(device.serial)
+        print(str(srccpyClient))
+        srccpyClient.start(daemon_threaded=True)
     
         setattr(device, 'srccpy',  srccpyClient)
 
@@ -449,11 +443,12 @@ def confirmLocation(location, change=True, bool=False, region=(0,0, 1080, 1920))
 
     for location_button, string in locations.items():
         search = Image.open(os.path.join(cwd, 'img', 'buttons', location_button + '.png'))
-        res = locate(search, screenshot, grayscale=False, region=regions[idx])
+        res = locate(search, screenshot, grayscale=False, confidence=0.8, region=regions[idx])
         if res != None:
             detected = string
             break
         idx += 1
+
     if detected == location and bool is True:
         return True
     elif detected != location and change is True and bool is False:

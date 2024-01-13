@@ -22,7 +22,7 @@ boundries = {
     'begin': (322, 1590, 442, 144),
     'multiBegin': (309, 1408, 467, 129),
     'autobattle': (214, 1774, 256, 112),
-    'battle': (574, 1779, 260, 110),
+    'battle': (574, 1779, 300, 110),
     'battleLarge': (310, 1758, 464, 144),
     'formations': (914, 1762, 102, 134),
     'useAB': (604, 1754, 242, 84),
@@ -119,7 +119,6 @@ def collectFastRewards(count):
     confirmLocation('campaign', region=boundries['campaignSelect'])
     if isVisible('buttons/fastrewards', region=boundries['fastrewards']):
         if (pixelCheck(980, 1620, 0) > 220):  # We check if the pixel where the notification sits has a red value of higher than 240
-            #todo add isVisible 'collect' button verification
             clickXY(950, 1660)
             while counter < count:
                 clickXY(710, 1260)
@@ -133,21 +132,23 @@ def collectFastRewards(count):
     else:
         printError('    Fast Rewards icon not found!')
 
+# Loads and exits a campaign abttle for dailies quest
 def attemptCampaign():
     printBlue('Attempting Campaign battle')
     confirmLocation('campaign', region=boundries['campaignSelect'])
     click('buttons/begin', seconds=2, region=boundries['begin'])
-    if (isVisible('buttons/begin', 0.7, region=boundries['multiBegin'])): # If we see second Begin it's a multi so we take different actions
-        click('buttons/begin', 0.7, seconds=2, region=boundries['multiBegin'])
-        click('buttons/beginbattle', seconds=4, region=boundries['battle'])
+
+    # Multi Battle
+    if isVisible('buttons/begin', 0.7, retry=3, seconds=2, click=True, region=boundries['multiBegin']): # If we see second Begin it's a multi so we take different actions
+        click('buttons/beginbattle', retry=3, seconds=3, region=boundries['battle'])
         click('buttons/pause', retry=3, region=boundries['pauseBattle']) # 3 retries as ulting heroes can cover the button
-        click('buttons/exitbattle',retry=3, region=boundries['exitBattle'])
-        click('buttons/back', region=boundries['backMenu'])
-    else: # else it's a single battle
+        click('buttons/exitbattle', retry=3, region=boundries['exitBattle'])
+        click('buttons/back', retry=3, seconds=4, region=boundries['backMenu'])
+    else: # Single Battle
         click('buttons/battle', 0.8, retry=3, seconds=3, region=boundries['battle'])
-        click('buttons/battle_large', 0.8, suppress=True, region=boundries['battleLarge']) #If you have no autobattle button its larger
         click('buttons/pause', 0.8, retry=3, region=boundries['pauseBattle']) # 3 retries as ulting heroes can cover the button
-        click('buttons/exitbattle', region=boundries['exitBattle'])
+        click('buttons/exitbattle', seconds=4, region=boundries['exitBattle'])
+
     if confirmLocation('campaign', bool=True, region=boundries['campaignSelect']):
         printGreen('    Campaign attempted successfully')
     else:
@@ -160,9 +161,12 @@ def pushCampaign(formation=3, duration=1):
         # Check for a second Begin in the case of a multibattle
         click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundries['multiBegin'])
         configureBattleFormation(formation)
-    wait((duration * 60) - 30)
+    else:
+        printError('Can\t find the begin button!')
+        return
+    wait((duration * 60) - 30) # Sleep for the wait duration
     clickXY(550, 1750) # Click to prompt the AutoBattle popup
-    if isVisible('labels/autobattle', region=boundries['autobattleLabel']): # Make sure the popup is visible
+    if isVisible('labels/autobattle', region=boundries['autobattleLabel']): # Make sure the popup is visible (else we've crashed and quit)
         if isVisible('labels/autobattle_0', region=boundries['autobattle0']): # If it's 0 continue
             if config.get('PUSH', 'suppressSpam') is False:
                 printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
@@ -196,6 +200,7 @@ def configureBattleFormation(formation):
     else:
         printWarning('Could not find Formations button')
 
+# Handles the Bounty Board, calls dispatchSoloBounties() to handle solo dust/diamond recognition and dispatching
 def handleBounties():
     printBlue('Handling Bounty Board')
     confirmLocation('darkforest', region=boundries['darkforestSelect'])
@@ -216,15 +221,16 @@ def handleBounties():
         printError('    Bounty Board not found, attempting to recover')
         recover()
 
+# Returns all found instances of the `Dispatch` button then checks pixel colour at an offset to see which resource it is
 def dispatchSoloBounties(remaining=2, maxRefreshes=3):
     refreshes = 0
     while refreshes <= maxRefreshes:
         if refreshes > 0:
             printWarning('   Board refreshed (#' + str(refreshes) + ')')
-        dispatches = returnMultiple('buttons/dispatch_bounties', confidence=0.97)
+        dispatches = returnMultiple('buttons/dispatch_bounties', confidence=0.97) # Confidence lower than this returns duplicate instances of the button
         dispatcher(dispatches) # Send the list to the function to dispatch
         swipe(550, 800, 550, 500, duration=200, seconds=2) # scroll down
-        dispatches = returnMultiple('buttons/dispatch_bounties', confidence=0.97)
+        dispatches = returnMultiple('buttons/dispatch_bounties', confidence=0.97)# Confidence lower than this returns duplicate instances of the button
         if len(dispatches) <= remaining: # if <=remaining bounties left we just dispatch all and continue
             printWarning('  ' + str(remaining) + ' or less bounties remaining, dispatching..')
             click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
@@ -239,6 +245,7 @@ def dispatchSoloBounties(remaining=2, maxRefreshes=3):
     click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
     click('buttons/confirm', suppress=True)
 
+# Recieves a list of Dispatch buttons and checks/dispatches the resource
 def dispatcher(dispatches):
     # print(str(len(dispatches)) + ' Dispatches found.') # Debugging
     for button in dispatches:
@@ -254,12 +261,14 @@ def dispatcher(dispatches):
             # Soulstone
             continue
         elif blue_value > 190 and red_value < 155:
+            # Dust
             if config.getboolean('BOUNTIES', 'dispatchDust'):
                 printGreen('    Dispatching Dust')
                 clickXY(900, y_center)
                 clickXY(350, 1150)
                 clickXY(750, 1150)
         elif blue_value > 230 and red_value > 230:
+            # Diamonds
             if config.getboolean('BOUNTIES', 'dispatchDiamonds'):
                 printGreen('    Dispatching Diamonds')
                 clickXY(900, y_center)
@@ -280,8 +289,6 @@ def handleArenaOfHeroes(count):
             clickMultipleChoice('buttons/arenafight', 4, confidence=0.98, region=boundries['attackAoH']) # Select 4th opponent
             if isVisible('buttons/heroclassselect', retry=3, region=boundries['heroclassselect']):
                 clickXY(550, 1800)
-            #
-            # click('buttons/battle', 0.6, retry=3, region=boundries['battleAoH']) # lower confidence as it's an animated button
             wait(2)
             click('buttons/skip', retry=5, suppress=True, region=boundries['skipAoH']) # Retries as ulting heros can cover the button
             if (isVisible('labels/defeat', region=boundries['defeat'])):
@@ -1236,6 +1243,7 @@ def labBattleResults(firstOfMulti=False):
                 clickXY(550, 1850, seconds=5)  # Clear loot popup and wait for Lab to load again
             return
         if isVisible('labels/defeat'):
+            # TODO Use Duras Tears so we can continue
             printError('    Lab Battle  Defeat! Exiting..')
             recover()
             return False
