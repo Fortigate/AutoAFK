@@ -40,7 +40,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.14.2"
+version = "0.14.2b"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -377,6 +377,7 @@ class activityWindow(customtkinter.CTkToplevel):
 
     def activitySave(self):
         self.activityUpdate()
+        updateSettings()
         advancedWindow.destroy(self)
 
 
@@ -488,6 +489,7 @@ class shopWindow(customtkinter.CTkToplevel):
 
     def shopSave(self):
         self.shopUpdate()
+        updateSettings()
         shopWindow.destroy(self)
 
 class advancedWindow(customtkinter.CTkToplevel):
@@ -561,9 +563,7 @@ class advancedWindow(customtkinter.CTkToplevel):
             else:
                 config.set('PUSH', 'suppressSpam', 'False')
 
-        with open(settings, 'w') as configfile:
-            config.write(configfile)
-        config.read(settings)  # to load the new value into memory
+        updateSettings()
         advancedWindow.destroy(self)
 
 class summonsWindow(customtkinter.CTkToplevel):
@@ -644,6 +644,7 @@ def headlessArgs():
 def updateSettings():
     with open(settings, 'w') as configfile:
         config.write(configfile)
+    config.read(settings)  # to load the new value into memory
 
 def buttonState(state):
     app.dailiesButton.configure(state=state)
@@ -782,7 +783,6 @@ def push():
         if str(app.pushFormationDropdown.get()) != config.get('PUSH', 'formation'):
             config.set('PUSH', 'formation', app.fastrewardsEntry.get())
         updateSettings()
-        config.read(settings)
         while 1:
             pushCampaign(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
     else:
@@ -791,7 +791,6 @@ def push():
         if str(app.pushFormationDropdown.get()) != config.get('PUSH', 'formation'):
             config.set('PUSH', 'formation', app.fastrewardsEntry.get())
         updateSettings()
-        config.read(settings)
         while 1:
             pushTower(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
 
