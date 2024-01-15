@@ -21,62 +21,70 @@ os.system('color')  # So colourful text works
 connected = False
 connect_counter = 1
 max_fps = 5
+bitrate = 8000000
 
 # Start PPADB
 adb = Client(host='127.0.0.1', port=5037)
 
 # Connects to the ADB device using PPADB, allowing us to send commands via Python
+# Then connects scrcpy for screen reading
 # On success we go through our startup checks to make sure we are starting from the same point each time, and can recognise the template images
 def connect_device():
     global device
     global connect_counter
-
-    # Break after 3 retries
-    if connect_counter >= 4:
-        printError('No ADB device found, often due to ADB errors. Please try manually connecting your client.')
-        printWarning('Debug:')
-        print(device.decode())
-        sys.exit(1)
-
-    printGreen('Attempting to connect, make sure that BlueStacks is running!')
-
-    config.read(settings) # To update any new values before we run activities
-
     global connected  # So we don't reconnect with every new activity in the same session
-    if connected is True:
+
+    printGreen('Attempting to connect..')
+
+    if connected is True: # Skip if we've ran through and connected succesfully already this session
         return
 
     # Run through the various methods to find the ADB device of the emulator, and point PPADB to the found device
     device = configureADB()
 
     # PPADB can throw errors occasionally for no good reason, here we try and catch them and retry for stability
-    while connect_counter <= 4:
+    while connect_counter <= 3:
         try:
             device.shell('echo Hello World!') # Arbitrary test command
         except Exception as e:
-            if str(e) != 'ERROR: \'FAIL\' 000edevice offline': # Skip common device offline error as it still runs after that
+            if str(e) == 'ERROR: \'FAIL\' 000edevice offline':
                 printError('PPADB Error: ' + str(e) + ', retrying ' + str(connect_counter) + '/3')
-                if str(e) == '\'NoneType\' object has no attribute \'shell\'':
-                    printBlue('This usually means the port is wrong as there is no device present')
-                wait(3)
-                connect_counter += 1
-                connect_device()
+                printBlue('Device present, but connection failed, this is usually a temporary error')
+            elif str(e) == '\'NoneType\' object has no attribute \'shell\'':
+                printError('PPADB Error: ' + str(e) + ', retrying ' + str(connect_counter) + '/3')
+                printBlue('This usually means the port is wrong as there is no device present')
+            elif str(e) == 'ERROR: \'FAIL\' 0006closed':
+                printError('PPADB Error: ' + str(e) + ', retrying ' + str(connect_counter) + '/3')
+                printBlue('The selected port is not responding, is ADB enabled? Retrying..')
+            else:
+                printError('PPADB Error: ' + str(e) + ', retrying ' + str(connect_counter) + '/3')
+            wait(3)
+            connect_counter += 1
+            device = configureADB()
         else:
             connected = True
             break
+
+    # Break after 3 retries
+    if connect_counter >= 3:
+        printError('No ADB device found, often due to ADB errors. Please try manually connecting your client. Debug lines:')
+        print('Available devices:')
+        if device != '':
+            for device in adb.devices():
+                print('    ' + device.serial)
+            print('Defined device')
+            print('    ' + device.serial)
+        sys.exit(1)
+
     if connected is True:
         printGreen('Device: ' + str(device.serial) + ' successfully connected!')
 
         srccpyClient = scrcpy.Client(device=device.serial)
         srccpyClient.max_fps = max_fps
-        print(device.serial)
-        print(str(srccpyClient))
+        srccpyClient.bitrate = bitrate
         srccpyClient.start(daemon_threaded=True)
-    
         setattr(device, 'srccpy',  srccpyClient)
 
-
-        connect_counter = 1 # reset counter just in case
         resolutionCheck(device) # Four start up checks, so we have an exact position/screen configuration to start with
         afkRunningCheck()
         waitUntilGameActive()
