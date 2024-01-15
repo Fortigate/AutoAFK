@@ -313,15 +313,15 @@ def clickXY(x,y, seconds=1):
 # Suppress will disable warnings, sometimes we don't need to know if a button isn't found
 def click(image,confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False, region=(0, 0, 1080, 1920)):
     counter = 0
+    
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
-  
-    search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     result = locate(search, screenshot, grayscale=grayscale, confidence=confidence, region=region)
+    
     if result == None and retry != 1:
         while counter < retry:
             screenshot = getFrame()
-            screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
+   
             result = locate(search, screenshot, grayscale=grayscale, confidence=confidence, region=region)
             if result != None:
                 x, y, w, h = result
