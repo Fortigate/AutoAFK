@@ -143,7 +143,7 @@ def attemptCampaign():
         click('buttons/beginbattle', retry=3, seconds=3, region=boundries['battle'])
         click('buttons/pause', retry=3, region=boundries['pauseBattle']) # 3 retries as ulting heroes can cover the button
         click('buttons/exitbattle', retry=3, region=boundries['exitBattle'])
-        click('buttons/back', retry=3, seconds=4, region=boundries['backMenu'])
+        click('buttons/back', retry=3, seconds=4, suppress=True, region=boundries['backMenu'])
     else: # Single Battle
         click('buttons/battle', 0.8, retry=3, seconds=3, region=boundries['battle'])
         click('buttons/pause', 0.8, retry=3, region=boundries['pauseBattle']) # 3 retries as ulting heroes can cover the button
@@ -387,7 +387,7 @@ def handleKingsTower():
         # For reasons sometimes this button is 'beginbattle' and sometimes it is 'begin', so we use clickXY
         clickXY(700, 1850, seconds=2)
         # click('buttons/beginbattle', 0.8, seconds=3, retry=5)
-        click('buttons/pause', 0.8, retry=5)
+        click('buttons/pause', 0.8, retry=5, suppress=True)
         click('buttons/exitbattle')
         click('buttons/back', retry=3, region=boundries['backMenu'])
         click('buttons/back', retry=3, region=boundries['backMenu'])
@@ -446,6 +446,7 @@ def handleShopPurchasing(counter):
             click(button, 0.95, suppress=True)
             click('buttons/shop/purchase', suppress=True)
             clickXY(550, 1220)
+    wait(3) # Else we can't find TR after
 
 def shopPurchases(shoprefreshes):
     printBlue('Attempting store purchases (Refreshes: ' + str(shoprefreshes) + ')')
@@ -600,20 +601,20 @@ def clearMerchant():
             printPurple('    Collecting Daily Deal')
             swipe(550, 1400, 550, 1200, 500, seconds=3)
             click('buttons/dailydeals')
-            clickXY(400, 1675)
+            clickXY(400, 1675, seconds=2)
         # Biweeklies
         if d.isoweekday() == 3: # Wednesday
             if isVisible('buttons/merchant_biweekly', confidence=0.8, click=True):
                 printPurple('    Collecting Biweekly Deal')
                 swipe(300, 1400, 200, 1200, 500, seconds=3)
                 clickXY(200, 1200)
-                clickXY(550, 1625)
+                clickXY(550, 1625, seconds=2)
         # Yuexi
         if d.isoweekday() == 1: # Monday
             print('    Collecting Yuexi')
             clickXY(200, 1825)
             clickXY(240, 880)
-            clickXY(150, 1625)
+            clickXY(150, 1625, seconds=2)
         # Clear Rhapsody bundles
         printPurple('    Clearing Rhapsody notification')
         clickXY(200, 1825)
@@ -635,7 +636,7 @@ def handleTwistedRealm():
     clickXY(550, 600, seconds=3)
     if isVisible('buttons/nextboss'):
         printGreen('    Twisted Realm found, battling')
-        if isVisible('buttons/challenge_tr'):
+        if isVisible('buttons/challenge_tr', retry=3, confidence=0.8):
             clickXY(550, 1850, seconds=2)
             click('buttons/autobattle')
             if not (isVisible('labels/skipbattle_Active')):
