@@ -33,6 +33,7 @@ def connect_device():
     global device
     global connect_counter
     global connected  # So we don't reconnect with every new activity in the same session
+    config.read(settings) # Load settings
 
     printGreen('Attempting to connect..')
 
@@ -60,7 +61,8 @@ def connect_device():
                 printError('PPADB Error: ' + str(e) + ', retrying ' + str(connect_counter) + '/3')
             wait(3)
             connect_counter += 1
-            device = configureADB()
+            if connect_counter <= 3:
+                device = configureADB()
         else:
             connected = True
             break
@@ -314,14 +316,12 @@ def clickXY(x,y, seconds=1):
 def click(image,confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False, region=(0, 0, 1080, 1920)):
     counter = 0
     screenshot = getFrame()
-    search = Image.open(os.path.join(cwd, 'img', image + '.png'))
-  
+
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     result = locate(search, screenshot, grayscale=grayscale, confidence=confidence, region=region)
     if result == None and retry != 1:
         while counter < retry:
             screenshot = getFrame()
-            screenshot = Image.open(os.path.join(cwd, 'screen.bin'))
             result = locate(search, screenshot, grayscale=grayscale, confidence=confidence, region=region)
             if result != None:
                 x, y, w, h = result
@@ -345,44 +345,51 @@ def click(image,confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=Fa
             printWarning('Image:' + image + ' not found!')
         wait(seconds)
 
-# Searchs for all matchs of the found image and stores them in a list, from there we select which one we want to click with 'choice'
-# If choice is higher than the found image we default to last found Image in the list
-# Choice is which image we click starting at '1', we search from top left line by line, and they will be ordered as found
-# Confidence is confidence in the found image, it needs to be tight here, or we have multiple entries for the same image
-# Seconds is how long to pause after finding the image
-def clickMultipleChoice(image, choice, retry=1, confidence=0.9, seconds=1, region=(0, 0, 1080, 1920)):
+# Checks the 5 locations we find arena battle buttons in and selects the based on choice parameter
+def selectArenaOpponent(choice, seconds=1):
     screenshot = getFrame()
-    search = Image.open(os.path.join(cwd, 'img', image + '.png'))
+    search = Image.open(os.path.join(cwd, 'img', 'buttons', 'arenafight.png'))
+    locations = {(715, 650, 230, 130), (715, 830, 230, 130), (715, 1000, 230, 130), (715, 1180, 230, 130), (715, 1360, 230, 130)} # 5 regions for the buttons
+    battleButtons = []
 
-    results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence, region=region))
+    # Check each location and add Y coordinate to array (as X doesnt change we don't need it)
+    for loc in locations:
+        res = locate(search, screenshot, grayscale=False, confidence=0.9, region=loc)
+        if res != None:
+            battleButtons.append(loc[1] + (loc[3]/2)) # Half the height so we have the middle of the button
+    battleButtons.sort() # sort results from top to bottom
 
-    if len(results) == 0:
-        printError('clickMultipleChoice error, image:' + str(image) + ' not found')
+    if len(battleButtons) == 0:
+        printError('No Arena opponents found!')
         return
-    if choice > len(results): # If the choice is higher than the amount of results we take the last result
-        x, y, w, h = results[len(results)-1]
-        x_center = round(x + w / 2)
-        y_center = round(y + h / 2)
-        device.input_tap(x_center, y_center)
 
+    if choice > len(battleButtons): # If the choice is higher than the amount of results we take the last result in the list
+        clickXY(820, battleButtons[len(battleButtons)-1])
         wait(seconds)
         return True
     else:
-        x, y, w, h = results[choice-1] # -1 to match the array starting at 0
-        x_center = round(x + w / 2)
-        y_center = round(y + h / 2)
-        device.input_tap(x_center, y_center)
-
+        clickXY(820, battleButtons[choice-1])
         wait(seconds)
         return True
 
-def returnMultiple(image, confidence=0.9, seconds=1, region=(0, 0, 1080, 1920)):
+def returnDispatchButtons(scrolled=False):
     screenshot = getFrame()
-    search = Image.open(os.path.join(cwd, 'img', image + '.png'))
-    results = list(locateAll(search, screenshot, grayscale=False, confidence=confidence, region=region))
+    search = Image.open(os.path.join(cwd, 'img', 'buttons', 'dispatch_bounties.png'))
+    locations = {(820, 430, 170, 70), (820, 650, 170, 70), (820, 860, 170, 70), (820, 1070, 170, 70), (820, 1280, 170, 70)} # Location of the first 5 buttons
+    locations_scrolled = {(820, 510, 170, 70), (820, 720, 170, 70), (820, 930, 170, 70), (820, 1140, 170, 70), (820, 1350, 170, 70)} # Location of the first 5 buttons after scrolling down
+    dispatchButtons = []
 
-    wait(seconds)
-    return results
+    # Different locations if we scrolled down
+    if scrolled is True:
+        locations = locations_scrolled
+    # Check each location and add Y coordinate to array (as X doesnt change we don't need it)
+    for loc in locations:
+        res = locate(search, screenshot, grayscale=False, confidence=0.9, region=loc)
+        if res != None:
+            dispatchButtons.append(round(loc[1] + (loc[3]/2))) # Half the height so we have the middle of the button
+
+    dispatchButtons.sort()
+    return dispatchButtons
 
 # Checks the pixel at the XY coordinates
 # C Variable is array from 0 to 2 for RGB value
@@ -408,36 +415,6 @@ def returnCardPullsRarity():
             return 'Epic'
 
     return 'Rare'
-
-# def returnAwakened():
-#     take_screenshot(device)
-#     screenshot = Image.open(cwd + 'screen.bin')
-#     wokes = {'Awakened Talene': 'aTalene', 'Gavus': 'Gavus', 'Maetria': 'Maetria', 'Awakened Ezizh': 'aEzizh',
-#              'Awakened Thane': 'aThane', 'Awakened Belinda': 'aBelinda', 'Awakened Brutus': 'aBrutus',
-#              'Awakened Safiya': 'aSafiya', 'Awakened Lyca': 'aLyca', 'Awakened Solise': 'aSolise',
-#              'Awakened Baden': 'aBaden', 'Awakened Shemira': 'aShemira', 'Awakened Athalia': 'aAthalia'}
-#
-#     for awakened, imageloc in wokes.items():
-#         search = Image.open(cwd + 'img\\summons\\awakeneds\\' + imageloc + '.png')
-#         res = locate(search, screenshot, grayscale=False, confidence=0.85)
-#         if res != None:
-#             return awakened
-#     return 'Unknown'
-#
-# def returnCeleHypo():
-#     take_screenshot(device)
-#     screenshot = Image.open(cwd + 'screen.bin')
-#     celehypos = {'Awakened Talene': 'aTalene', 'Gavus': 'Gavus', 'Maetria': 'Maetria', 'Awakened Ezizh': 'aEzizh',
-#              'Awakened Thane': 'aThane', 'Awakened Belinda': 'aBelinda', 'Awakened Brutus': 'aBrutus',
-#              'Awakened Safiya': 'aSafiya', 'Awakened Lyca': 'aLyca', 'Awakened Solise': 'aSolise',
-#              'Awakened Baden': 'aBaden', 'Awakened Shemira': 'aShemira', 'Awakened Athalia': 'aAthalia'}
-#
-#     for celehypo, imageloc in celehypos.items():
-#         search = Image.open(cwd + 'img\\summons\\awakeneds\\' + imageloc + '.png')
-#         res = locate(search, screenshot, grayscale=False, confidence=0.85)
-#         if res != None:
-#             return celehypo
-#     return "Unknown or 4F Epic"
 
 # Used to confirm which game screen we're currently sitting in, and change to if we're not.
 # Optionally with 'bool' flag we can return boolean for if statements

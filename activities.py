@@ -46,7 +46,7 @@ boundries = {
     
     'mailLocate': (874, 575, 190, 157),
     'collectMail': (626, 1518, 305, 102),
-    'backMenu': (0, 1750, 146, 190),
+    'backMenu': (0, 1720, 150, 200),
 
     'friends': (880, 754, 178, 168),
     'sendrecieve': (750, 1560, 306, 100),
@@ -60,7 +60,7 @@ boundries = {
     'challengeAoH': (294, 1738, 486, 140),
     'attackAoH': (714, 654, 180, 606),
     'battleAoH': (294, 1760, 494, 148),
-    'skipAoH': (702, 1416, 118, 98),
+    'skipAoH': (650, 1350, 200, 200),
     'defeat': (116, 720, 832, 212),
 
     'exitAoH': (930, 318, 126, 132),
@@ -136,7 +136,7 @@ def collectFastRewards(count):
 def attemptCampaign():
     printBlue('Attempting Campaign battle')
     confirmLocation('campaign', region=boundries['campaignSelect'])
-    click('buttons/begin', seconds=2, region=boundries['begin'])
+    click('buttons/begin', seconds=2, retry=3, region=boundries['begin'])
 
     # Multi Battle
     if isVisible('buttons/begin', 0.7, retry=3, seconds=2, click=True, region=boundries['multiBegin']): # If we see second Begin it's a multi so we take different actions
@@ -227,10 +227,10 @@ def dispatchSoloBounties(remaining=2, maxRefreshes=3):
     while refreshes <= maxRefreshes:
         if refreshes > 0:
             printWarning('   Board refreshed (#' + str(refreshes) + ')')
-        dispatches = returnMultiple('buttons/dispatch_bounties', confidence=0.97) # Confidence lower than this returns duplicate instances of the button
+        dispatches = returnDispatchButtons()
         dispatcher(dispatches) # Send the list to the function to dispatch
         swipe(550, 800, 550, 500, duration=200, seconds=2) # scroll down
-        dispatches = returnMultiple('buttons/dispatch_bounties', confidence=0.97)# Confidence lower than this returns duplicate instances of the button
+        dispatches = returnDispatchButtons(scrolled=True)
         if len(dispatches) <= remaining: # if <=remaining bounties left we just dispatch all and continue
             printWarning('  ' + str(remaining) + ' or less bounties remaining, dispatching..')
             click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
@@ -249,31 +249,32 @@ def dispatchSoloBounties(remaining=2, maxRefreshes=3):
 def dispatcher(dispatches):
     # print(str(len(dispatches)) + ' Dispatches found.') # Debugging
     for button in dispatches:
-        y_center = round(
-            button[1] + button[3] / 2)  # Return left + half the height to get the center Y coord of the image
-        blue_value = pixelCheck(120, y_center, 2, seconds=0) # Take a reading from the middle of the icon
-        red_value = pixelCheck(120, y_center, 0, seconds=0) # Take a reading from the middle of the icon
-        # printWarning('Red: ' + str(red_value) + '. Blue: ' + str(blue_value) + '.') # Debugging
-        if blue_value < 100 and red_value > 200:
+        blue_value = pixelCheck(190, button, 2, seconds=0) # Take a reading from the border of the icon
+        # green_value = pixelCheck(190, y_center, 1, seconds=0) # Take a reading from the middle of the icon
+        red_value = pixelCheck(190, button, 0, seconds=0) # Take a reading from the border of the icon
+        # printWarning('Blue: ' + str(blue_value) + '. Red: ' + str(red_value) + '.') # Debugging
+        if blue_value < 100 and red_value > 100:
+            # printGreen('    Skipping Gold')
             # Gold
             continue
-        elif blue_value > 220 and red_value > 155 and red_value < 200:
+        elif blue_value > 215 and red_value > 100 and red_value < 120:
+            # printGreen('    Skipping Soulstone')
             # Soulstone
             continue
-        elif blue_value > 190 and red_value < 155:
+        elif blue_value >= 205 and red_value >= 150 and red_value <= 165:
             # Dust
             if config.getboolean('BOUNTIES', 'dispatchDust'):
                 printGreen('    Dispatching Dust')
-                clickXY(900, y_center)
+                clickXY(900, button)
                 clickXY(350, 1150)
                 clickXY(750, 1150)
-        elif blue_value > 230 and red_value > 230:
+        elif blue_value >= 200 and red_value >= 200:
             # Diamonds
-            if config.getboolean('BOUNTIES', 'dispatchDiamonds'):
-                printGreen('    Dispatching Diamonds')
-                clickXY(900, y_center)
-                clickXY(350, 1150)
-                clickXY(750, 1150)
+            # if config.getboolean('BOUNTIES', 'dispatchDiamonds'):
+            printGreen('    Dispatching Diamonds')
+            clickXY(900, button)
+            clickXY(350, 1150)
+            clickXY(750, 1150)
 
 def handleArenaOfHeroes(count):
     counter = 0
@@ -286,21 +287,21 @@ def handleArenaOfHeroes(count):
         click('buttons/challenge', retry=3, region=boundries['challengeAoH']) # retries for animated button
         while counter < count:
             wait(1) # To avoid error when clickMultipleChoice returns no results
-            clickMultipleChoice('buttons/arenafight', 4, confidence=0.98, region=boundries['attackAoH']) # Select 4th opponent
-            if isVisible('buttons/heroclassselect', retry=3, region=boundries['heroclassselect']):
-                clickXY(550, 1800)
-            wait(2)
-            click('buttons/skip', retry=5, suppress=True, region=boundries['skipAoH']) # Retries as ulting heros can cover the button
-            if (isVisible('labels/defeat', region=boundries['defeat'])):
-                printError('    Battle #' + str(counter+1) + ' Defeat!')
-            else:
+            selectArenaOpponent(choice=4)
+            # clickMultipleChoice('buttons/arenafight', count=4, confidence=0.98, region=boundries['attackAoH'], seconds=3) # Select 4th opponent
+            if isVisible('buttons/heroclassselect', retry=3, region=boundries['heroclassselect']): # This is rather than Battle button as that is animated and hard to read
+                clickXY(550, 1800, seconds=3)
+            click('buttons/skip', retry=5, confidence=0.8, suppress=True, region=boundries['skipAoH']) # Retries as ulting heros can cover the button
+            if returnBattleResults(type='arena'):
                 printGreen('    Battle #' + str(counter+1) + ' Victory!')
                 clickXY(600, 550) # Clear loot popup
-            clickXY(600, 550)
+            else:
+                printError('    Battle #' + str(counter + 1) + ' Defeat!')
+            clickXY(600, 550)  # Back to opponent selection
             counter = counter+1
         click('buttons/exitmenu', region=boundries['exitAoH'])
-        click('buttons/back', region=boundries['backMenu'])
-        click('buttons/back', region=boundries['backMenu'])
+        click('buttons/back', retry=3, region=boundries['backMenu'])
+        click('buttons/back', retry=3, region=boundries['backMenu'])
         printGreen('    Arena battles complete')
     else:
         printError('Arena of Heroes not found, attempting to recover')
@@ -388,9 +389,9 @@ def handleKingsTower():
         # click('buttons/beginbattle', 0.8, seconds=3, retry=5)
         click('buttons/pause', 0.8, retry=5)
         click('buttons/exitbattle')
-        click('buttons/back', region=boundries['backMenu'])
-        click('buttons/back', region=boundries['backMenu'])
-        if isVisible('buttons/back', region=boundries['backMenu']):
+        click('buttons/back', retry=3, region=boundries['backMenu'])
+        click('buttons/back', retry=3, region=boundries['backMenu'])
+        if isVisible('buttons/back', retry=3, region=boundries['backMenu']):
             click('buttons/back', region=boundries['backMenu']) # Last one only needed for multifights
         printGreen('    Tower attempted successfully')
     else:
@@ -416,6 +417,7 @@ def collectInnGifts():
         recover()
 
 def handleShopPurchasing(counter):
+    config.read(settings)  # re-load for any updated values
     toprow = {'arcanestaffs': [180, 920], 'cores': [425, 920], 'timegazer': [650, 920], 'baits': [875, 920]}
     bottomrow = {'dust_gold': 'buttons/shop/dust', 'shards_gold': 'buttons/shop/shards_gold', 'dust_diamond': 'buttons/shop/dust_diamonds', 'elite_soulstone': 'buttons/shop/soulstone',
                   'superb_soulstone': 'buttons/shop/superstone', 'silver_emblem': 'buttons/shop/silver_emblems', 'gold_emblem': 'buttons/shop/gold_emblems', 'poe': 'buttons/shop/poe'}
@@ -533,7 +535,7 @@ def collectQuests():
             click('buttons/fullquestchest', seconds=3, retry=3, suppress=True)
             clickXY(600, 1650, seconds=2)
             clickXY(600, 1650)  # Second in case we get Limited Rewards popup
-        click('buttons/back')
+        click('buttons/back', retry=3)
         printGreen('    Quests collected')
     else:
         printError('    Quests screen not found, attempting to recover')
@@ -949,7 +951,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults() is False:
+            if returnBattleResults(type='lab') is False:
                 return
 
             # 2nd Row (multi)
@@ -960,7 +962,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults(firstOfMulti=True) is False:
+            if returnBattleResults(type='lab', firstOfMulti=True) is False:
                 return
             clickXY(750, 1725, seconds=4) # Continue to second battle
             if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
@@ -970,7 +972,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults() is False:
+            if returnBattleResults(type='lab') is False:
                 return
 
             # 3rd Row (single relic)
@@ -981,7 +983,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults() is False:
+            if returnBattleResults(type='lab') is False:
                 return
             clickXY(550, 1350, seconds=2) # Clear Relic reward
 
@@ -993,7 +995,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults(firstOfMulti=True) is False:
+            if returnBattleResults(type='lab', firstOfMulti=True) is False:
                 return
             clickXY(750, 1725, seconds=4) # Continue to second battle
             if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
@@ -1002,7 +1004,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults() is False:
+            if returnBattleResults(type='lab') is False:
                 return
 
             # 5th Row (single)
@@ -1013,7 +1015,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults() is False:
+            if returnBattleResults(type='lab') is False:
                 return
 
             # 6th Row (single relic)
@@ -1024,7 +1026,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults() is False:
+            if returnBattleResults(type='lab') is False:
                 return
             clickXY(550, 1350, seconds=2) # Clear Relic reward
 
@@ -1047,7 +1049,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults(firstOfMulti=True) is False:
+            if returnBattleResults(type='lab', firstOfMulti=True) is False:
                 return
             clickXY(750, 1725, seconds=4) # Continue to second battle
             if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
@@ -1056,7 +1058,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults() is False:
+            if returnBattleResults(type='lab') is False:
                 return
 
             # 8th Row (multi)
@@ -1067,7 +1069,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults(firstOfMulti=True) is False:
+            if returnBattleResults(type='lab', firstOfMulti=True) is False:
                 return
             clickXY(750, 1725, seconds=4) # Continue to second battle
             if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
@@ -1077,7 +1079,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults() is False:
+            if returnBattleResults(type='lab') is False:
                 return
 
             # 9th Row (witches den or fountain)
@@ -1100,7 +1102,7 @@ def handleLab():
                 printError('Battle Screen not found! Exiting')
                 recover()
                 return
-            if labBattleResults() is False:
+            if returnBattleResults(type='lab') is False:
                 return
 
             wait(6) # Long pause for Value Bundle to pop up
@@ -1124,10 +1126,9 @@ def configureLabTeams(team, pet=True):
         clickXY(530, 1300)  # Slot 3
         clickXY(330, 1300)  # Slot 2
         clickXY(130, 1300)  # Slot 1
-        if pet is True:
-            if isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True):
-                clickXY(150, 1250, seconds=2) # First Pet
-                clickXY(750, 1800, seconds=4) # Confirm
+        if pet is True and isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True):
+            clickXY(150, 1250, seconds=2) # First Pet
+            clickXY(750, 1800, seconds=4) # Confirm
     if team == 2:
         clickXY(1030, 1100, seconds=2)  # Clear Team
         clickXY(550, 1250, seconds=2)  # Confirm
@@ -1136,10 +1137,9 @@ def configureLabTeams(team, pet=True):
         clickXY(530, 1550)  # Slot 3
         clickXY(730, 1550)  # Slot 4
         clickXY(930, 1550)  # Slot 5
-        if pet is True:
-            if isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True):
-                clickXY(350, 1250, seconds=2) # Second Pet
-                clickXY(750, 1800, seconds=4) # Confirm
+        if pet is True and isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True):
+            clickXY(350, 1250, seconds=2) # Second Pet
+            clickXY(750, 1800, seconds=4) # Confirm
 
 # Will select the correct Lab tile and take us to the battle screen
 # Elevation is either Upper or Lower dependon on whether we have scrolled the screen up or not for the scond half
@@ -1230,27 +1230,41 @@ def handleLabTile(elevation, side, tile):
                 clickXY(550, 850, seconds=2) # Tile
                 clickXY(550, 1500, seconds=4)  # Go
 
-# Returns result of a battle, not lab specific just the first time I've needed it
-def labBattleResults(firstOfMulti=False):
+# Returns result of a battle, diferent types for the different types of post-battle screens, count for number of battles in Arena
+# firstOfMulti is so we don't click to clear loot after a lab battle, which would exit us from the battle screen for the second fight
+def returnBattleResults(type, firstOfMulti=False):
     counter = 0
-    while counter < 10:
-        # For 'resources exceeded' message
-        if isVisible('labels/notice'):
-            clickXY(550, 1250)
-        if isVisible('labels/victory'):
-            printGreen('    Lab Battle Victory!')
-            if firstOfMulti is False:  # Else we exit before second battle while trying to collect loot
-                clickXY(550, 1850, seconds=5)  # Clear loot popup and wait for Lab to load again
-            return
-        if isVisible('labels/defeat'):
-            # TODO Use Duras Tears so we can continue
-            printError('    Lab Battle  Defeat! Exiting..')
-            recover()
-            return False
-        counter += 1
-    printError('Battletimer expired')
-    recover()
-    return False
+
+    if type == 'lab':
+        while counter < 10:
+            # For 'resources exceeded' message
+            if isVisible('labels/notice'):
+                clickXY(550, 1250)
+            if isVisible('labels/victory'):
+                printGreen('    Lab Battle Victory!')
+                if firstOfMulti is False:  # Else we exit before second battle while trying to collect loot
+                    clickXY(550, 1850, seconds=5)  # Clear loot popup and wait for Lab to load again
+                return
+            if isVisible('labels/defeat'):
+                # TODO Use Duras Tears so we can continue
+                printError('    Lab Battle  Defeat! Exiting..')
+                recover()
+                return False
+            counter += 1
+        printError('Battletimer expired')
+        recover()
+        return False
+
+    if type == 'arena':
+        while counter < 10:
+            if isVisible('labels/rewards'):
+                return True
+            if isVisible('labels/defeat'):
+                return False
+            wait(1)
+            counter += 1
+        printError('Arena battle timed out!')
+        return False
 
 # Old TS screenshot farming code
 def TS_Battle_Statistics():
