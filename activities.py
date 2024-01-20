@@ -288,7 +288,7 @@ def handleArenaOfHeroes(count):
             wait(1) # To avoid error when clickMultipleChoice returns no results
             selectArenaOpponent(choice=4)
             # clickMultipleChoice('buttons/arenafight', count=4, confidence=0.98, region=boundries['attackAoH'], seconds=3) # Select 4th opponent
-            if isVisible('buttons/heroclassselect', retry=3, region=boundries['heroclassselect']): # This is rather than Battle button as that is animated and hard to read
+            while isVisible('buttons/heroclassselect', retry=3, region=boundries['heroclassselect']): # This is rather than Battle button as that is animated and hard to read
                 clickXY(550, 1800, seconds=3)
             click('buttons/skip', retry=5, confidence=0.8, suppress=True, region=boundries['skipAoH']) # Retries as ulting heros can cover the button
             if returnBattleResults(type='arena'):
