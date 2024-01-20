@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 import argparse
 import requests
 
+global settings
+
 currenttime = datetime.now()
 currenttimeutc = datetime.now(timezone.utc)
 cwd = os.path.dirname(__file__) # We prefix all file calls with cwd so we can call from other directories (I.E via batch or cron)
@@ -25,7 +27,6 @@ parser.add_argument("-t", "--test", action = 'store_true', help = "Auto-launch T
 parser.add_argument("-l", "--logging", action = 'store_true', help = "Log output to text file")
 args = vars(parser.parse_args())
 
-global settings
 if args['config']:
     settings = os.path.join(cwd, args['config'])
 else:
@@ -40,7 +41,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.14.5"
+version = "0.14.6"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -119,7 +120,7 @@ class App(customtkinter.CTk):
         self.arenaButton = customtkinter.CTkButton(master=self.arenaFrame, text="Run Activity", command=lambda: threading.Thread(target=activityManager).start())
         self.arenaButton.place(x=20, y=15)
         # Activities Dropdown
-        self.activityFormationDropdown = customtkinter.CTkComboBox(master=self.arenaFrame, values=['Unlimited Summons', "Arena of Heroes", "Arcane Labyrinth", "Fight of Fates"], width=160)
+        self.activityFormationDropdown = customtkinter.CTkComboBox(master=self.arenaFrame, values=['Unlimited Summons', "Arena of Heroes", "Arcane Labyrinth", "Fight of Fates", "Battle of Blood"], width=160)
         self.activityFormationDropdown.place(x=10, y=55)
         # Activities Entry
         self.pvpLabel = customtkinter.CTkLabel(master=self.arenaFrame, text='How many battles', fg_color=("gray86", "gray17"))
@@ -144,7 +145,7 @@ class App(customtkinter.CTk):
         self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Which formation?', fg_color=("gray86", "gray17"))
         self.pushLabel.place(x=10, y=80)
         self.pushFormationDropdown = customtkinter.CTkComboBox(master=self.pushFrame, values=["1st", "2nd", "3rd", "4th", "5th"], width=80)
-        self.pushFormationDropdown.set(config.get('PUSH', 'formation'))
+        self.pushFormationDropdown.set('3rd')
         self.pushFormationDropdown.place(x=10, y=110)
         # Push Duration
         # self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Check for Victory every:', fg_color=("gray86", "gray17"))
@@ -174,7 +175,8 @@ class App(customtkinter.CTk):
         self.textbox.insert('end', 'Discord Server: ', 'purple')
         self.textbox.insert('end',  'discord.gg/floofpire in #auto-afk\n\n')
         if latest_release.split(' ')[1] != version and latest_release.split(' ')[1] != 'retrieve!':
-            self.textbox.insert('end', 'Newer version available (' + latest_release.split(' ')[1] + '), please update!\n\n', 'yellow')
+            if not version.split('.')[1] > latest_release.split('.')[1]: # If minor version is above release don't display (suppress for pre-releases generally)
+                self.textbox.insert('end', 'Newer version available (' + latest_release.split(' ')[1] + '), please update!\n\n', 'yellow')
         if (args['config']) != 'settings.ini':
             self.textbox.insert('end', (args['config']) + ' loaded\n\n', 'yellow')
         if not args['dailies']:
@@ -337,11 +339,17 @@ class activityWindow(customtkinter.CTkToplevel):
         self.fightOfFatesCheckbox = customtkinter.CTkCheckBox(master=self.eventsFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
         self.fightOfFatesCheckbox.place(x=200, y=40)
 
+        # Battle of Blood
+        self.battleOfBloodLabel = customtkinter.CTkLabel(master=self.eventsFrame, text='Battle of Blood', fg_color=("gray86", "gray17"))
+        self.battleOfBloodLabel.place(x=10, y=70)
+        self.battleOfBloodCheckbox = customtkinter.CTkCheckBox(master=self.eventsFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
+        self.battleOfBloodCheckbox.place(x=200, y=70)
+
         # Circus Tour
         self.circusTourLabel = customtkinter.CTkLabel(master=self.eventsFrame, text='Circus Tour', fg_color=("gray86", "gray17"))
-        self.circusTourLabel.place(x=10, y=70)
+        self.circusTourLabel.place(x=10, y=100)
         self.circusTourCheckbox = customtkinter.CTkCheckBox(master=self.eventsFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
-        self.circusTourCheckbox.place(x=200, y=70)
+        self.circusTourCheckbox.place(x=200, y=100)
 
         # Save button
         self.activitySaveButton = customtkinter.CTkButton(master=self, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.activitySave)
@@ -349,7 +357,7 @@ class activityWindow(customtkinter.CTkToplevel):
 
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties',
                       'gladiatorCollect', 'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
-                         'collectQuests', 'collectMerchants', 'fightOfFates', 'circusTour', 'dispatchDust', 'dispatchDiamonds', 'runLab']
+                         'collectQuests', 'collectMerchants', 'fightOfFates', 'battleOfBlood', 'circusTour', 'dispatchDust', 'dispatchDiamonds', 'runLab']
         for activity in activityBoxes:
             if activity == 'dispatchDust' or activity == 'dispatchDiamonds':
                 if config.getboolean('BOUNTIES', activity):
@@ -361,7 +369,7 @@ class activityWindow(customtkinter.CTkToplevel):
     def activityUpdate(self):
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'teamBounties',
                       'gladiatorCollect', 'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
-                         'collectQuests', 'collectMerchants', 'fightOfFates', 'circusTour', 'dispatchDust', 'dispatchDiamonds', 'runLab']
+                         'collectQuests', 'collectMerchants', 'fightOfFates', 'battleOfBlood', 'circusTour', 'dispatchDust', 'dispatchDiamonds', 'runLab']
         for activity in activityBoxes:
             if activity == 'dispatchDust' or activity == 'dispatchDiamonds':
                 if self.__getattribute__(activity + 'Checkbox').get() == 1:
@@ -378,7 +386,7 @@ class activityWindow(customtkinter.CTkToplevel):
     def activitySave(self):
         self.activityUpdate()
         updateSettings()
-        advancedWindow.destroy(self)
+        activityWindow.destroy(self)
 
 
 # Shop Window
@@ -495,12 +503,12 @@ class shopWindow(customtkinter.CTkToplevel):
 class advancedWindow(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.geometry("250x230")
+        self.geometry("250x260")
         self.title('Advanced Options')
         self.attributes("-topmost", True)
 
         # Activity Frame
-        self.advancedFrame = customtkinter.CTkFrame(master=self, width=230, height=170)
+        self.advancedFrame = customtkinter.CTkFrame(master=self, width=230, height=200)
         self.advancedFrame.place(x=10, y=10)
         self.label = customtkinter.CTkLabel(master=self.advancedFrame, text="Advanced Options:", font=("Arial", 15, 'bold'))
         self.label.place(x=20, y=5)
@@ -529,26 +537,39 @@ class advancedWindow(customtkinter.CTkToplevel):
         # Victory check suppress non-victory
         self.supressLabel = customtkinter.CTkLabel(master=self.advancedFrame, text='Suppress victory check spam?', fg_color=("gray86", "gray17"))
         self.supressLabel.place(x=10, y=130)
-        self.supressCheckbox = customtkinter.CTkCheckBox(master=self.advancedFrame, text=None, onvalue=True, offvalue=False, command=self.advancedSave)
+        self.supressCheckbox = customtkinter.CTkCheckBox(master=self.advancedFrame, text=None, onvalue=True, offvalue=False)
         self.supressCheckbox.place(x=190, y=130)
 
+        # Debug Mode
+        self.debugLabel = customtkinter.CTkLabel(master=self.advancedFrame, text='Debug Mode', fg_color=("gray86", "gray17"))
+        self.debugLabel.place(x=10, y=160)
+        self.debugCheckbox = customtkinter.CTkCheckBox(master=self.advancedFrame, text=None, onvalue=True, offvalue=False)
+        self.debugCheckbox.place(x=190, y=160)
+
         # Save button
-        self.advanceSaveButton = customtkinter.CTkButton(master=self, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.advancedSave)
-        self.advanceSaveButton.place(x=60, y=190)
+        self.advanceSaveButton = customtkinter.CTkButton(master=self, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.advancedSaveButton)
+        self.advanceSaveButton.place(x=60, y=220)
 
-        # # Resolution/DPI button
-        # self.advanceSaveButton = customtkinter.CTkButton(master=self.advancedFrame, text="Force Resolution/DPI", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=lambda: threading.Thread(target=self.forceResolution).start())
-        # self.advanceSaveButton.place(x=60, y=210)
+        self.advancedLoadSettings()
 
-        # Update button state when we open the window
+
+    def advancedLoadSettings(self):
+        if self.portEntry.get() != config.get('ADVANCED', 'port'):
+            self.portEntry.insert(config.get('ADVANCED', 'port'))
+        if self.delayEntry.get() != config.get('ADVANCED', 'loadingMuliplier'):
+            self.delayEntry.insert(config.get('ADVANCED', 'loadingMuliplier'))
+        if self.victoryCheckEntry.get() != config.get('PUSH', 'victorycheck'):
+            self.victoryCheckEntry.insert(config.get('PUSH', 'victorycheck'))
+
         if config.getboolean('PUSH', 'suppressSpam'):
             self.supressCheckbox.select()
+        else:
+            self.supressCheckbox.deselect()
 
-    # def forceResolution(self):
-    #     connect_device()
-    #     printGreen('Setting Resolution and DPI')
-    #     tools.device.shell('wm density 240')
-    #     tools.device.shell('wm size 1920x1080')
+        if config.getboolean('ADVANCED', 'debug'):
+            self.debugCheckbox.select()
+        else:
+            self.debugCheckbox.deselect()
 
     def advancedSave(self):
         if self.portEntry.get() != config.get('ADVANCED', 'port'):
@@ -557,12 +578,21 @@ class advancedWindow(customtkinter.CTkToplevel):
             config.set('ADVANCED', 'loadingMuliplier', self.delayEntry.get())
         if self.victoryCheckEntry.get() != config.get('PUSH', 'victorycheck'):
             config.set('PUSH', 'victorycheck', self.victoryCheckEntry.get())
-        if self.supressCheckbox.get() != config.get('PUSH', 'suppressSpam'):
+
+        if self.supressCheckbox.get() != config.getboolean('PUSH', 'suppressSpam'):
             if self.supressCheckbox.get() == 1:
                 config.set('PUSH', 'suppressSpam', 'True')
             else:
                 config.set('PUSH', 'suppressSpam', 'False')
 
+        if self.debugCheckbox.get() != config.getboolean('ADVANCED', 'debug'):
+            if self.debugCheckbox.get() == 1:
+                config.set('ADVANCED', 'debug', 'True')
+            else:
+                config.set('ADVANCED', 'debug', 'False')
+
+    def advancedSaveButton(self):
+        self.advancedSave()
         updateSettings()
         advancedWindow.destroy(self)
 
@@ -664,6 +694,14 @@ def activityManager():
         print('')
         return
 
+    if app.activityFormationDropdown.get() == "Battle of Blood":
+        buttonState('disabled')
+        connect_device()
+        handleBattleofBlood(config.getint('ACTIVITY', 'activitybattles'))
+        buttonState('normal')
+        print('')
+        return
+
     if app.activityFormationDropdown.get() == "Arena of Heroes":
         buttonState('disabled')
         connect_device()
@@ -761,6 +799,8 @@ def dailies():
         handleTwistedRealm()
     if bool(config.getboolean('DAILIES', 'fightoffates')) is True:
         handleFightOfFates()
+    if bool(config.getboolean('DAILIES', 'battleofblood')) is True:
+        handleBattleofBlood()
     if bool(config.getboolean('DAILIES', 'circusTour')) is True:
         handleCircusTour()
     if bool(config.getboolean('DAILIES', 'runLab')) is True:

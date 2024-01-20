@@ -3,12 +3,12 @@ import io
 
 import numpy as np
 from ppadb.client import Client
-from AutoAFK import printGreen, printError, printWarning, printBlue, settings, args
+from AutoAFK import printGreen, printError, printWarning, printBlue, printPurple, settings, args
 from pyscreeze import locate, locateAll
 from subprocess import Popen, PIPE
 import time, os, configparser, sys
 from PIL import Image
-from numpy import asarray
+from io import BytesIO
 from shutil import which
 from platform import system
 import scrcpy
@@ -38,6 +38,7 @@ def connect_device():
     printGreen('Attempting to connect..')
 
     if connected is True: # Skip if we've ran through and connected succesfully already this session
+        waitUntilGameActive() # but still confirm we start from the right place
         return
 
     # Run through the various methods to find the ADB device of the emulator, and point PPADB to the found device
@@ -69,7 +70,7 @@ def connect_device():
 
     # Break after 3 retries
     if connect_counter >= 3:
-        printError('No ADB device found, often due to ADB errors. Please try manually connecting your client. Debug lines:')
+        printError('No ADB device found, often due to ADB errors. Please try manually connecting your client. \nDebug lines:')
         print('Available devices:')
         if device != '':
             for device in adb.devices():
@@ -86,6 +87,13 @@ def connect_device():
         srccpyClient.bitrate = bitrate
         srccpyClient.start(daemon_threaded=True)
         setattr(device, 'srccpy',  srccpyClient)
+
+        if config.getboolean('ADVANCED', 'debug'):
+            print('\nDevice: ' + device.serial)
+            print('scrcpy device: ' + str(srccpyClient))
+            print('Resolution: ' + device.shell('wm size'))
+            print('DPI: ' + device.shell('wm density'))
+            save_scrcpy_screenshot('debug')
 
         resolutionCheck(device) # Four start up checks, so we have an exact position/screen configuration to start with
         afkRunningCheck()
@@ -167,7 +175,7 @@ def portScan():
                     printGreen(connectmessage.decode().rstrip())
                     return port
     else:
-        printError('No ports found! Exiting..')
+        printError('No ports found!')
 
 # Expands the left and right button menus
 def expandMenus():
@@ -182,6 +190,8 @@ def afkRunningCheck():
     elif not args['test']:
         # printError('AFK Arena is not running, launching..')
         device.shell('monkey -p com.lilithgame.hgame.gp 1')
+    if config.getboolean('ADVANCED', 'debug'):
+        print('Game check passed\n')
 
 # Confirms that the game has loaded by checking for the campaign_selected button. Also presses exitmenu.png to clear any new hero popups
 # May also require a ClickXY over Campaign to clear Time Limited Deals that appear
@@ -228,6 +238,9 @@ def resolutionCheck(device):
         printError('Unsupported DPI! (' + str(dpi[2]).strip() + '). Please change your DPI to 240')
         printWarning('Continuining but this may cause errors with image detection')
 
+    if config.getboolean('ADVANCED', 'debug'):
+        print('Resolution check passed')
+
 
 def getFrame():
     im = Image.fromarray(device.srccpy.last_frame[:, :, ::-1])
@@ -237,22 +250,13 @@ def getFrame():
 
     return im
 
-# Takes a screenshot and saves it locally
-def take_screenshot(device):
-    global screen
-    image = device.screencap()
-    im = Image.open(io.BytesIO(image))
-    if not im.size == (1080, 1920) and not im.size == (1920, 1080):
-        image = im.resize((1080, 1920))
-        # Convert image back to bytearray
-        byteIO = io.BytesIO()
-        image.save(byteIO, format='PNG')
-        image = byteIO.getvalue()
-    with open(os.path.join(cwd, 'screen.bin'), 'wb') as f:
-        f.write(image)
-
-def save_screenshot(name):
-    image = device.screencap()
+# Saves screenshot locally
+def save_scrcpy_screenshot(name):
+    image = getFrame()
+    # Convert image back to bytearray
+    byteIO = io.BytesIO()
+    image.save(byteIO, format='PNG')
+    image = byteIO.getvalue()
     with open(name + '.png', 'wb') as f:
         f.write(image)
 
@@ -316,6 +320,9 @@ def clickXY(x,y, seconds=1):
 def click(image,confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=False, region=(0, 0, 1080, 1920)):
     counter = 0
     screenshot = getFrame()
+
+    if config.getboolean('ADVANCED', 'debug'):
+        suppress = False
 
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
     result = locate(search, screenshot, grayscale=grayscale, confidence=confidence, region=region)

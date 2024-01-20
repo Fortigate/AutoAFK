@@ -8,3 +8,6 @@
 /.idea/
 venv
 *.pyc
+/AutoAFK/
+/build/AutoAFK/
+/dist/AutoAFK/

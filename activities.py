@@ -122,9 +122,9 @@ def collectFastRewards(count):
             clickXY(950, 1660)
             while counter < count:
                 clickXY(710, 1260)
-                wait(2)
+                wait(1)
                 clickXY(550, 1800)
-                counter = counter+1
+                counter = counter + 1
             click('buttons/close', region=boundries['closeFR'])
             printGreen('    Fast Rewards Done')
         else:
@@ -163,7 +163,7 @@ def pushCampaign(formation=3, duration=1):
         configureBattleFormation(formation)
     else:
         printError('Can\t find the begin button!')
-        return
+        sys.exit(1)
     wait((duration * 60) - 30) # Sleep for the wait duration
     clickXY(550, 1750) # Click to prompt the AutoBattle popup
     if isVisible('labels/autobattle', region=boundries['autobattleLabel']): # Make sure the popup is visible (else we've crashed and quit)
@@ -185,7 +185,6 @@ def pushCampaign(formation=3, duration=1):
         # If we click and the AutoBattle Label isn't visible we're lost somewhere so we exit
         printError('AutoBattle screen not found, exiting..')
         sys.exit(1)
-        buttonState('enabled')
 
 def configureBattleFormation(formation):
     if isVisible('buttons/formations', click=True, seconds=3, region=boundries['formations']):
@@ -270,11 +269,11 @@ def dispatcher(dispatches):
                 clickXY(750, 1150)
         elif blue_value >= 200 and red_value >= 200:
             # Diamonds
-            # if config.getboolean('BOUNTIES', 'dispatchDiamonds'):
-            printGreen('    Dispatching Diamonds')
-            clickXY(900, button)
-            clickXY(350, 1150)
-            clickXY(750, 1150)
+            if config.getboolean('BOUNTIES', 'dispatchDiamonds'):
+                printGreen('    Dispatching Diamonds')
+                clickXY(900, button)
+                clickXY(350, 1150)
+                clickXY(750, 1150)
 
 def handleArenaOfHeroes(count):
     counter = 0
@@ -354,7 +353,8 @@ def openTower(name):
                 clickXY(location[0], location[1], seconds=3)
 
 def pushTower(formation=3, duration=1):
-    if isVisible('buttons/challenge_plain', 0.7, retry=3, seconds=3, click=True, region=boundries['challengeTower']):  # lower confidence and retries for animated button
+    # TODO Add another icon here
+    if isVisible('buttons/challenge_plain', 0.8, retry=3, seconds=3, click=True, region=boundries['challengeTower']):  # lower confidence and retries for animated button
         configureBattleFormation(formation)
     if isVisible('buttons/autobattle', 0.95, retry=3, seconds=2, click=True, region=boundries['autobattle']):  # higher confidence so we don't find it in the background
         configureBattleFormation(formation)
@@ -362,7 +362,7 @@ def pushTower(formation=3, duration=1):
     clickXY(550, 1750)
     if isVisible('labels/autobattle', retry=2, region=boundries['autobattleLabel']): # Make sure the popup is visible
         if isVisible('labels/autobattle_0', retry=3, region=boundries['autobattle0']): # If it's 0 continue
-            if config.get('PUSH', 'suppressSpam') is False:
+            if bool(config.get('PUSH', 'suppressspam')) is False:
                 printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
             click('buttons/cancel', retry=3, suppress=True, region=boundries['cancelAB'])
         else: # If it's not 0 we have passed a stage
@@ -695,42 +695,80 @@ def handleFightOfFates(battles=3):
         printWarning('Fight of Fates not found, recovering..')
         recover()
 
-# Whole things needs alot of refinement, the event is too dynamic for static wait times
+# Basic support for dailies quests, we simply choose the 5 cards from the top row of our hand
+# Ater starting a battle we read the Stage 1/2/3 text at the top to determine when our opponent has placed their cards and to continue with placing ours
+# Timeout is probably 10 seconds longer than the stage timer so if we exceed that something has gone wrong
+# A round can take between 40 seconds or over 2 minutes depending on if our opponent is afk or not, at the end we collect daily quests
 def handleBattleofBlood(battles=3):
     printBlue('Attempting to run Battle of Blood ' + str(battles) + ' times')
-    counter = 0
+    battlecounter = 0 # Number of battles we want to run
+    bob_timeout = 0 # Timer for tracking if something has gone wrong with placing cards
     click('buttons/events', confidence=0.8, retry=3, seconds=3)
     if isVisible('labels/battleofblood_event_banner', click=True):
-        while counter < battles:
-            click('buttons/challenge_tr', confidence=0.8, suppress=True, retry=3, seconds=20)
-            # Cards 1-2, ready
-            clickXY(550, 1250, seconds=1)
-            clickXY(350, 1250, seconds=1)
-            clickXY(550, 1850, seconds=10)
-            # Cards 3-4, ready
-            clickXY(550, 1250, seconds=1)
-            clickXY(350, 1250, seconds=1)
-            clickXY(550, 1850, seconds=10)
-            # Card 5, ready
-            clickXY(550, 1250, seconds=1)
-            clickXY(550, 1850, seconds=30)
-            # Clear Battle Report
-            clickXY(550, 1850, seconds=3)
-            counter = counter + 1
-            printGreen('    Battle of Blood Battle #' + str(counter) + ' complete')
+        while battlecounter < battles:
+            click('buttons/challenge_tr', confidence=0.8, suppress=True, retry=3, seconds=7)
+            # Place cards 1-2, click ready
+            while not isVisible('labels/battleofblood_stage1', region=(465, 20, 150, 55)):
+                wait(1)
+                bob_timeout += 1
+                if bob_timeout > 30:
+                    printError('Battle of Blood timeout!')
+                    return
+            else:
+                wait(4) # For the card animations
+                bob_timeout = 0 # reset timer
+                clickXY(550, 1250, seconds=1)
+                clickXY(350, 1250, seconds=1)
+                clickXY(550, 1850, seconds=1)
+            if isVisible('buttons/confirm_small', retry=3, region=(600, 1220, 200, 80)):
+                clickXY(325, 1200)
+                clickXY(700, 1270)
+            # Place cards 3-4, click ready
+            while not isVisible('labels/battleofblood_stage2', region=(465, 20, 150, 55)):
+                wait(1)
+                bob_timeout += 1
+                if bob_timeout > 30:
+                    printError('Battle of Blood timeout!')
+                    return
+            else:
+                wait(4) # For the card animations
+                bob_timeout = 0 # reset timer
+                clickXY(550, 1250, seconds=1)
+                clickXY(350, 1250, seconds=1)
+                clickXY(550, 1850, seconds=1)
+            # Place card 5, click ready
+            while not isVisible('labels/battleofblood_stage3', region=(465, 20, 150, 55), confidence=0.95): # higher confidence so we don't get confused with battleofblood_stage2.png
+                wait(1)
+                bob_timeout += 1
+                if bob_timeout > 30:
+                    printError('Battle of Blood timeout!')
+                    return
+            else:
+                wait(4) # For the card animations
+                bob_timeout = 0 # reset timer
+                clickXY(550, 1250, seconds=1)
+                clickXY(550, 1850, seconds=8)
+                # Return Battle Report
+                battlecounter += 1
+                result = returnBattleResults('BoB')
+                if result is True:
+                    printGreen('    Victory! Battle of Blood Battle #' + str(battlecounter) + ' complete')
+                else:
+                    printError('    Defeat! Battle of Blood Battle #' + str(battlecounter) + ' complete')
         # Click quests
         clickXY(150, 230, seconds=2)
         # select dailies tab
         clickXY(650, 1720, seconds=1)
         # Collect Dailies
-        clickXY(850, 720, seconds=2)
+        clickXY(850, 720, seconds=3)
         clickXY(920, 525, seconds=2)
         clickXY(920, 525, seconds=2)
         # clear loot
         clickXY(550, 250, seconds=2)
         # Back twice to exit
-        clickXY(70, 1650, seconds=1)
-        clickXY(70, 1810, seconds=1)
+        clickXY(70, 1810, seconds=1) # Exit Quests
+        clickXY(70, 1810, seconds=1) # Exit BoB
+        clickXY(70, 1810, seconds=1) # Exit Events screen
         printGreen('    Battle of Blood attempted successfully')
     else:
         printWarning('Battle of Blood not found, recovering..')
@@ -1236,8 +1274,23 @@ def handleLabTile(elevation, side, tile):
 def returnBattleResults(type, firstOfMulti=False):
     counter = 0
 
+    if type == 'BoB':
+        while counter < 20:
+            if isVisible('labels/victory'):
+                # printGreen('    Battle of Blood Victory!')
+                clickXY(550, 1850, seconds=3)  # Clear window
+                return True
+            if isVisible('labels/defeat'):
+                # printError('    Battle of Blood Defeat!')
+                clickXY(550, 1850, seconds=3)  # Clear window
+                return False
+            counter += 1
+        printError('Battletimer expired')
+        recover()
+        return False
+
     if type == 'lab':
-        while counter < 10:
+        while counter < 15:
             # For 'resources exceeded' message
             if isVisible('labels/notice'):
                 clickXY(550, 1250)
@@ -1266,142 +1319,3 @@ def returnBattleResults(type, firstOfMulti=False):
             counter += 1
         printError('Arena battle timed out!')
         return False
-
-# Old TS screenshot farming code
-def TS_Battle_Statistics():
-    region = 10
-    position = 80
-    battle = 1
-    team = 1
-    while position < 100:
-        # Open User
-        clickXY(250, 560) # Click Portrait
-        clickXY(450, 1800) # Follow
-        wait(2)
-        clickXY(550, 110) # Close player window
-        clickXY(1000, 560) # Battle History
-        # Open result 1
-        clickXY(800, 600) # Battle History
-        # open battle 1
-        clickXY(550, 700) # team 1
-        swipe(550, 800, 550, 600, duration=500)
-        save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        click('buttons/exitmenu')
-        team += 1
-        clickXY(550, 1000) # team 2
-        swipe(550, 800, 550, 600, duration=500)
-        save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        click('buttons/exitmenu')
-        team += 1
-        clickXY(550, 1300) # team 3
-        swipe(550, 800, 550, 600, duration=500)
-        save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        click('buttons/exitmenu')
-        click('buttons/exitmenu')
-        # # open battle 2
-        # clickXY(800, 800)
-        # clickXY(550, 700) # team 1
-        # swipe(550, 800, 550, 600, duration=500)
-        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        # click('buttons/exitmenu')
-        # team += 1
-        # clickXY(550, 1000) # team 2
-        # swipe(550, 800, 550, 600, duration=500)
-        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        # click('buttons/exitmenu')
-        # click('buttons/exitmenu')
-        # team = 1
-        # battle += 1
-        # # open battle 3
-        # clickXY(800, 1000)
-        # clickXY(550, 700) # team 1
-        # swipe(550, 800, 550, 600, duration=500)
-        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        # click('buttons/exitmenu')
-        # team += 1
-        # clickXY(550, 1000) # team 2
-        # swipe(550, 800, 550, 600, duration=500)
-        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        # click('buttons/exitmenu')
-        # click('buttons/exitmenu')
-        # team = 1
-        # battle += 1
-        # # open battle 4
-        # clickXY(800, 1200)
-        # clickXY(550, 700) # team 1
-        # swipe(550, 800, 550, 600, duration=500)
-        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        # click('buttons/exitmenu')
-        # team += 1
-        # clickXY(550, 1000) # team 2
-        # swipe(550, 800, 550, 600, duration=500)
-        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        # click('buttons/exitmenu')
-        # click('buttons/exitmenu')
-        # team = 1
-        # battle += 1
-        # # open battle 5
-        # clickXY(800, 1400)
-        # clickXY(550, 700) # team 1
-        # swipe(550, 800, 550, 600, duration=500)
-        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        # click('buttons/exitmenu')
-        # team += 1
-        # clickXY(550, 1000) # team 2
-        # swipe(550, 800, 550, 600, duration=500)
-        # save_screenshot('ts_region' + region + ' + _rank' + str(position) + '_battle' + str(battle) + '_team' + str(team))
-        # click('buttons/exitmenu')
-        click('buttons/exitmenu')
-        click('buttons/exitmenu')
-        clickXY(250, 550) # Click Portrait
-        clickXY(450, 1800) # Unfollow
-        clickXY(650, 1250) # Confirm Unfollow
-        clickXY(550, 110) # Close player window
-        team = 1
-        battle = 1
-        position += 1
-        swipe(550, 800, 550, 635, duration=8000)
-
-def TS_Battle_Report():
-    region = 22
-    position = 80
-    battle = 1
-    while position < 100:
-        # Open User
-        clickXY(250, 550, seconds=2) # Click Portrait
-        clickXY(450, 1800, seconds=2) # Follow
-        wait(2)
-        clickXY(550, 110, seconds=2) # Close player window
-        clickXY(1000, 550, seconds=2) # Battle History
-        # Open battle 1
-        clickXY(800, 600, seconds=2)
-        save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle))
-        click('buttons/exitmenu')
-        battle += 1
-        # # open battle 2
-        # clickXY(800, 800, seconds=2)
-        # save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle))
-        # click('buttons/exitmenu')
-        # battle += 1
-        # # open battle 3
-        # clickXY(800, 1000, seconds=2)
-        # save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle))
-        # click('buttons/exitmenu')
-        # battle += 1
-        # # open battle 4
-        # clickXY(800, 1200, seconds=2)
-        # save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle))
-        # click('buttons/exitmenu')
-        # battle += 1
-        # # open battle 5
-        # clickXY(800, 1400, seconds=2)
-        # save_screenshot('ts_region' + str(region) + '_rank' + str(position) + '_battle' + str(battle))
-        # click('buttons/exitmenu')
-        click('buttons/exitmenu')
-        clickXY(250, 550, seconds=2) # Click Portrait
-        clickXY(450, 1800, seconds=2) # Unfollow
-        clickXY(650, 1250, seconds=2) # Confirm Unfollow
-        clickXY(550, 110, seconds=2) # Close player window
-        battle = 1
-        position += 1
-        swipe(550, 800, 550, 635, duration=8000)
