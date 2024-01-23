@@ -4,11 +4,10 @@ import io
 import numpy as np
 from ppadb.client import Client
 from AutoAFK import printGreen, printError, printWarning, printBlue, printPurple, settings, args
-from pyscreeze import locate, locateAll
+from pyscreeze import locate
 from subprocess import Popen, PIPE
 import time, os, configparser, sys
 from PIL import Image
-from io import BytesIO
 from shutil import which
 from platform import system
 import scrcpy
@@ -82,15 +81,15 @@ def connect_device():
     if connected is True:
         printGreen('Device: ' + str(device.serial) + ' successfully connected!')
 
-        srccpyClient = scrcpy.Client(device=device.serial)
-        srccpyClient.max_fps = max_fps
-        srccpyClient.bitrate = bitrate
-        srccpyClient.start(daemon_threaded=True)
-        setattr(device, 'srccpy',  srccpyClient)
+        scrcpyClient = scrcpy.Client(device=device.serial)
+        scrcpyClient.max_fps = max_fps
+        scrcpyClient.bitrate = bitrate
+        scrcpyClient.start(daemon_threaded=True)
+        setattr(device, 'srccpy',  scrcpyClient)
 
         if config.getboolean('ADVANCED', 'debug'):
             print('\nDevice: ' + device.serial)
-            print('scrcpy device: ' + str(srccpyClient))
+            print('scrcpy device: ' + str(scrcpyClient))
             print('Resolution: ' + device.shell('wm size'))
             print('DPI: ' + device.shell('wm density'))
             save_scrcpy_screenshot('debug')

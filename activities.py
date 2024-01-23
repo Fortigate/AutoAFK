@@ -18,6 +18,7 @@ boundries = {
     'campaignSelect': (424, 1750, 232, 170),
     'darkforestSelect': (208, 1750, 226, 170),
     'ranhornSelect': (0, 1750, 210, 160),
+
     #campaign/auto battle
     'begin': (322, 1590, 442, 144),
     'multiBegin': (309, 1408, 467, 129),
@@ -65,6 +66,9 @@ boundries = {
 
     'exitAoH': (930, 318, 126, 132),
 
+    # Misc
+    'inngiftarea': (160, 1210, 500, 100)
+
 }
 
 def collectAFKRewards():
@@ -84,6 +88,7 @@ def collectAFKRewards():
 def collectMail():
     printBlue('Attempting mail collection')
     if isVisible('buttons/mail',  region=boundries['mailLocate']):
+        wait()
         if (pixelCheck(1012, 610, 0) > 240): # We check if the pixel where the notification sits has a red value of higher than 240
             clickXY(960, 630, seconds=2) # Click Mail
             click('buttons/collect_all', seconds=3, region=boundries['collectMail'])
@@ -121,8 +126,7 @@ def collectFastRewards(count):
         if (pixelCheck(980, 1620, 0) > 220):  # We check if the pixel where the notification sits has a red value of higher than 240
             clickXY(950, 1660)
             while counter < count:
-                clickXY(710, 1260)
-                wait(1)
+                clickXY(710, 1260, seconds=3)
                 clickXY(550, 1800)
                 counter = counter + 1
             click('buttons/close', region=boundries['closeFR'])
@@ -160,10 +164,9 @@ def pushCampaign(formation=3, duration=1):
     if (isVisible('buttons/begin', 0.7, retry=3, click=True)):
         # Check for a second Begin in the case of a multibattle
         click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundries['multiBegin'])
+    # Simple check for Auto Battle button
+    if isVisible('buttons/autobattle', 0.95, retry=3, seconds=2, region=boundries['autobattle']):  # higher confidence so we don't find it in the background
         configureBattleFormation(formation)
-    else:
-        printError('Can\t find the begin button!')
-        sys.exit(1)
     wait((duration * 60) - 30) # Sleep for the wait duration
     clickXY(550, 1750) # Click to prompt the AutoBattle popup
     if isVisible('labels/autobattle', region=boundries['autobattleLabel']): # Make sure the popup is visible (else we've crashed and quit)
@@ -177,10 +180,10 @@ def pushCampaign(formation=3, duration=1):
             click('buttons/pause', confidence=0.8, retry=3, suppress=True, region=boundries['pauseBattle'])  # 3 retries as ulting heroes can cover the button
             click('buttons/exitbattle', suppress=True, retry=3, region=boundries['exitBattle'])
             click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True, region=boundries['taptocontinue'])
-            if (isVisible('buttons/begin', 0.7, retry=3, click=True, seconds=2)):
-                # Check for a second Begin in the case of a multibattle
-                click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundries['multiBegin'])
-            configureBattleFormation(formation)
+            # if (isVisible('buttons/begin', 0.7, retry=3, click=True, seconds=2)):
+            #     # Check for a second Begin in the case of a multibattle
+            #     click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundries['multiBegin'])
+            # configureBattleFormation(formation)
     else:
         # If we click and the AutoBattle Label isn't visible we're lost somewhere so we exit
         printError('AutoBattle screen not found, exiting..')
@@ -202,6 +205,7 @@ def configureBattleFormation(formation):
 # Handles the Bounty Board, calls dispatchSoloBounties() to handle solo dust/diamond recognition and dispatching
 def handleBounties():
     printBlue('Handling Bounty Board')
+    config.read(settings) # Has to be read here again to update
     confirmLocation('darkforest', region=boundries['darkforestSelect'])
     clickXY(600, 1320)
     if (isVisible('labels/bountyboard')):
@@ -225,22 +229,24 @@ def dispatchSoloBounties(remaining=2, maxRefreshes=3):
     refreshes = 0
     while refreshes <= maxRefreshes:
         if refreshes > 0:
-            printWarning('   Board refreshed (#' + str(refreshes) + ')')
+            printWarning('    Board refreshed (#' + str(refreshes) + ')')
         dispatches = returnDispatchButtons()
         dispatcher(dispatches) # Send the list to the function to dispatch
         swipe(550, 800, 550, 500, duration=200, seconds=2) # scroll down
         dispatches = returnDispatchButtons(scrolled=True)
-        if len(dispatches) <= remaining: # if <=remaining bounties left we just dispatch all and continue
-            printWarning('  ' + str(remaining) + ' or less bounties remaining, dispatching..')
-            click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
-            click('buttons/confirm', suppress=True)
-            return
         dispatcher(dispatches) # Send the list to the function to dispatch
+        if refreshes >= 1: # quick read to see how many are left after the last dispatch, else we refresh the board needlessly before we do it
+            dispatches = returnDispatchButtons(scrolled=True)
+            if len(dispatches) <= remaining: # if <=remaining bounties left we just dispatch all and continue
+                printWarning('  ' + str(remaining) + ' or less bounties remaining, dispatching..')
+                click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
+                click('buttons/confirm', suppress=True)
+                return
         if refreshes < maxRefreshes:
             clickXY(90, 250)
             clickXY(700, 1250)
         refreshes += 1
-    print(str(maxRefreshes) + ' refreshes done, dispatching remaining..')
+    printGreen('    ' + str(maxRefreshes) + ' refreshes done, dispatching remaining..')
     click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
     click('buttons/confirm', suppress=True)
 
@@ -249,7 +255,6 @@ def dispatcher(dispatches):
     # print(str(len(dispatches)) + ' Dispatches found.') # Debugging
     for button in dispatches:
         blue_value = pixelCheck(190, button, 2, seconds=0) # Take a reading from the border of the icon
-        # green_value = pixelCheck(190, y_center, 1, seconds=0) # Take a reading from the middle of the icon
         red_value = pixelCheck(190, button, 0, seconds=0) # Take a reading from the border of the icon
         # printWarning('Blue: ' + str(blue_value) + '. Red: ' + str(red_value) + '.') # Debugging
         if blue_value < 100 and red_value > 100:
@@ -260,7 +265,7 @@ def dispatcher(dispatches):
             # printGreen('    Skipping Soulstone')
             # Soulstone
             continue
-        elif blue_value >= 205 and red_value >= 150 and red_value <= 165:
+        elif blue_value >= 205 and red_value >= 150 and red_value <= 170:
             # Dust
             if config.getboolean('BOUNTIES', 'dispatchDust'):
                 printGreen('    Dispatching Dust')
@@ -352,14 +357,24 @@ def openTower(name):
             if tower == name:
                 clickXY(location[0], location[1], seconds=3)
 
+# Loads selected formation, enabled auto-battle and periodically checks for victory
 def pushTower(formation=3, duration=1):
-    # TODO Add another icon here
-    if isVisible('buttons/challenge_plain', 0.8, retry=3, seconds=3, click=True, region=boundries['challengeTower']):  # lower confidence and retries for animated button
+    # First makes two checks, one robust check for the Challenge button and one for the Auto Battle button, if either are found we load chosen formation
+    challengetimer = 0
+    while isVisible('buttons/challenge_plain', confidence=0.8, retry=3, seconds=3, region=boundries['challengeTower']):
+        challengetimer += 1
+        # We run 2 consecutive checks in a row here to ensure it's stopped on the stage select screen and not in the background as we pass from one stage to the next
+        if challengetimer >= 2:
+            click('buttons/challenge_plain', confidence=0.8, retry=3, seconds=3, region=boundries['challengeTower'])
+            configureBattleFormation(formation)
+            challengetimer = 0
+    # Simple check for Auto Battle button
+    if isVisible('buttons/autobattle', 0.95, retry=3, seconds=2, region=boundries['autobattle']):  # higher confidence so we don't find it in the background
         configureBattleFormation(formation)
-    if isVisible('buttons/autobattle', 0.95, retry=3, seconds=2, click=True, region=boundries['autobattle']):  # higher confidence so we don't find it in the background
-        configureBattleFormation(formation)
+    # Every duration we click to prompt Auto Battle report and check is stages passed is not 0 to detect victory
     wait((duration * 60)-30)
     clickXY(550, 1750)
+    # If no victory continue
     if isVisible('labels/autobattle', retry=2, region=boundries['autobattleLabel']): # Make sure the popup is visible
         if isVisible('labels/autobattle_0', retry=3, region=boundries['autobattle0']): # If it's 0 continue
             if bool(config.get('PUSH', 'suppressspam')) is False:
@@ -371,7 +386,10 @@ def pushTower(formation=3, duration=1):
             click('buttons/pause', 0.8, retry=3, suppress=True, region=boundries['pauseBattle'])  # 3 retries as ulting heroes can cover the button
             click('buttons/exitbattle', retry=2, suppress=True, region=boundries['exitBattle'])
             click('labels/taptocontinue', retry=2, confidence=0.8, suppress=True, grayscale=True, region=boundries['taptocontinue'])
+            wait(3)
+            clickXY(550, 1750) # To clear the Limited Rewards pop up every 20 stages
     else:
+        # If after clicking we don't get the Auto Battle report pop up we've likely crashed so we exit
         printError('AutoBattle screen not found, exiting..')
         sys.exit(1)
         buttonState('enabled')
@@ -399,16 +417,12 @@ def handleKingsTower():
         recover()
 
 def collectInnGifts():
-    clicks = 0
-    x_axis = 250
     printBlue('Attempting daily Inn gift collection')
     confirmLocation('ranhorn', region=boundries['ranhornSelect'])
     clickXY(800,290, seconds=4)
     if isVisible('buttons/manage'):
-        while clicks < 10: # We spam clicks in the right area and pray
-            clickXY(x_axis, 1300, seconds=0.5)
-            x_axis = x_axis + 50
-            clicks = clicks + 1
+        while isVisible('buttons/inn_gift', confidence=0.8, click=True, region=boundries['inngiftarea'], seconds=2):
+            clickXY(550, 1400, seconds=0.5) # Clear loot
             clickXY(550, 1400, seconds=0.5) # Clear loot
         click('buttons/back', region=boundries['backMenu'])
         printGreen('    Inn Gifts collected.')
@@ -422,6 +436,16 @@ def handleShopPurchasing(counter):
     bottomrow = {'dust_gold': 'buttons/shop/dust', 'shards_gold': 'buttons/shop/shards_gold', 'dust_diamond': 'buttons/shop/dust_diamonds', 'elite_soulstone': 'buttons/shop/soulstone',
                   'superb_soulstone': 'buttons/shop/superstone', 'silver_emblem': 'buttons/shop/silver_emblems', 'gold_emblem': 'buttons/shop/gold_emblems', 'poe': 'buttons/shop/poe'}
 
+    # Prettify the names were outputting into console
+    def nameTranslator(name):
+        names = {'dust_gold': 'Dust (Gold)', 'shards_gold': 'Shards', 'dust_diamond': 'Dust (Diamonds)', 'elite_soulstone': 'Elite Soulstone',
+                  'superb_soulstone': 'Superb Timestone', 'silver_emblem': 'Silver Emblems', 'gold_emblem': 'Gold Emblems', 'poe': 'Poe Coins (Gold)',
+                 'arcanestaffs': 'Arcane Staffs', 'cores': 'Elemental Cores', 'timegazer': 'Timegazer Card', 'baits': 'Bait'}
+        for internal, external in names.items():
+            if name == internal:
+                return external
+
+
     # Purchase top row
     for item, pos in toprow.items():
         if config.getboolean('SHOP', item):
@@ -431,7 +455,7 @@ def handleShopPurchasing(counter):
                 continue
             if (item == 'cores' or item == 'arcanestaffs') and counter > 2: # only three shards/staffs
                 continue
-            printPurple('Buying: ' + item)
+            printPurple('    Buying: ' + nameTranslator(item))
             clickXY(pos[0], pos[1])
             click('buttons/shop/purchase', suppress=True)
             clickXY(550, 1220, seconds=2)
@@ -442,10 +466,10 @@ def handleShopPurchasing(counter):
     # Purchase everything else
     for item, button in bottomrow.items():
         if config.getboolean('SHOP', item):
-            printPurple('Buying: ' + item)
-            click(button, 0.95, suppress=True)
-            click('buttons/shop/purchase', suppress=True)
-            clickXY(550, 1220)
+            if isVisible(button, 0.95, click=True):
+                printPurple('    Buying: ' + nameTranslator(item))
+                click('buttons/shop/purchase', suppress=True)
+                clickXY(550, 1220)
     wait(3) # Else we can't find TR after
 
 def shopPurchases(shoprefreshes):
@@ -462,10 +486,10 @@ def shopPurchases(shoprefreshes):
             clickXY(1000, 300)
             click('buttons/confirm', suppress=True, seconds=5)
             counter += 1
-            printPurple('    Refreshed store ' + str(counter) + ' times.')
+            printGreen('    Refreshed store ' + str(counter) + ' times.')
             handleShopPurchasing(counter)
         click('buttons/back')
-        printGreen('Store purchases attempted.')
+        printGreen('    Store purchases attempted.')
     else:
         printError('Store not found, attempting to recover')
         recover()
@@ -591,20 +615,19 @@ def clearMerchant():
         # Daily Deals
         swipe(200, 1825, 450, 1825, 500, seconds=2)
         clickXY(400, 1825)
-        # Special Deal
-        # if isVisible('buttons/merchant_special', confidence=0.8, click=True):
+        # Special Deal, no check as its active daily
         printPurple('    Collecting Special Deal')
         click('buttons/dailydeals')
-        clickXY(150, 1625)
+        clickXY(150, 1625, seconds=2)
         # Daily Deal
-        if isVisible('buttons/merchant_daily', confidence=0.8, click=True):
+        if isVisible('buttons/merchant_daily', confidence=0.8, retry=2, click=True):
             printPurple('    Collecting Daily Deal')
             swipe(550, 1400, 550, 1200, 500, seconds=3)
             click('buttons/dailydeals')
             clickXY(400, 1675, seconds=2)
         # Biweeklies
         if d.isoweekday() == 3: # Wednesday
-            if isVisible('buttons/merchant_biweekly', confidence=0.8, click=True):
+            if isVisible('buttons/merchant_biweekly', confidence=0.8, retry=2, click=True):
                 printPurple('    Collecting Biweekly Deal')
                 swipe(300, 1400, 200, 1200, 500, seconds=3)
                 clickXY(200, 1200)
@@ -659,6 +682,7 @@ def handleTwistedRealm():
 def handleFightOfFates(battles=3):
     printBlue('Attempting to run Fight of Fates ' + str(battles) + ' times')
     counter = 0
+    expandMenus() # Expand left menu again as it can shut after other dailies activities
     click('buttons/fightoffates', confidence=0.8, retry=5, seconds=3)
     if isVisible('labels/fightoffates'):
         while counter < battles:
@@ -703,6 +727,7 @@ def handleBattleofBlood(battles=3):
     printBlue('Attempting to run Battle of Blood ' + str(battles) + ' times')
     battlecounter = 0 # Number of battles we want to run
     bob_timeout = 0 # Timer for tracking if something has gone wrong with placing cards
+    expandMenus() # Expand left menu again as it can shut after other dailies activities
     click('buttons/events', confidence=0.8, retry=3, seconds=3)
     if isVisible('labels/battleofblood_event_banner', click=True):
         while battlecounter < battles:
@@ -775,30 +800,35 @@ def handleBattleofBlood(battles=3):
         recover()
 
 def handleCircusTour(battles = 3):
-    counter = 1
+    battlecounter = 1
+    dialoguecounter = 1
     printBlue('Attempting to run Circus Tour battles')
     confirmLocation('ranhorn', region=boundries['ranhornSelect']) # Trying to fix 'buttons/events not found' error
-    wait()
+    expandMenus() # Expand left menu again as it can shut after other dailies activities
     click('buttons/events', confidence=0.8, retry=3, seconds=3)
     if isVisible('labels/circustour', retry=3, click=True):
-        while counter < battles:
-            printGreen('    Circus Tour battle #' + str(counter))
-            click('buttons/challenge_tr', confidence=0.8, retry=3, seconds=3)
-            if counter == 1:
-                clickXY(550, 900, seconds=1) # Clear dialogue box on new boss rotation
-                clickXY(550, 900, seconds=1) # Only need to do this on the first battle
-                clickXY(550, 900, seconds=1)
-                clickXY(550, 900, seconds=1)
-                clickXY(550, 900, seconds=1)
-                clickXY(550, 900, seconds=1)
-            click('buttons/battle_large', confidence=0.8, retry=3, seconds=5)
+        while battlecounter < battles:
+            printGreen('    Circus Tour battle #' + str(battlecounter))
+            if battlecounter == 1:
+                # If Challenge is covered by text we clear it
+                while not isVisible('buttons/challenge_tr', confidence=0.8, retry=3) and dialoguecounter <= 10:
+                    printWarning('    Clearing dialogue..')
+                    clickXY(550, 900) # Clear dialogue box on new boss rotation
+                    clickXY(550, 900) # Only need to do this on the first battle
+                    clickXY(550, 900)
+                    clickXY(550, 900)
+                    clickXY(550, 900)
+                    clickXY(550, 900, seconds=2)
+                    dialoguecounter += 1
+            click('buttons/challenge_tr', confidence=0.8, retry=3, suppress=True, seconds=3)
+            click('buttons/battle_large', confidence=0.8, retry=3, suppress=True, seconds=5)
             click('buttons/skip', confidence=0.8, retry=5, seconds=5)
-            clickXY(550, 1800)
-            counter += 1
+            clickXY(550, 1800) # Clear loot
+            battlecounter += 1
         wait(3)
-        clickXY(500, 1600)
+        clickXY(500, 1600) # First chest
         clickXY(500, 1600) # Twice to clear loot popup
-        clickXY(900, 1600)
+        clickXY(900, 1600) # Second chest
         clickXY(900, 1600) # Twice to clear loot popup
         # Back twice to exit
         clickXY(70, 1810, seconds=1)
@@ -913,13 +943,13 @@ def handleLab():
     wait()
     clickXY(400, 1150, seconds=3)
     if isVisible('labels/labfloor3', retry=3, confidence=0.8, seconds=3):
-        printGreen('Lab already ran! Continuing..')
+        printGreen('Lab already open! Continuing..')
         clickXY(50, 1800, seconds=2)  # Exit Lab Menu
         return
     if isVisible('labels/lab', retry=3):
         # Check for Swept
         if isVisible('labels/labswept', retry=3, confidence=0.8, seconds=3):
-            printGreen('Lab already ran! Continuing..')
+            printGreen('Lab already swept! Continuing..')
             clickXY(50, 1800, seconds=2)  # Exit Lab Menu
             return
         # Check for Sweep
@@ -1112,7 +1142,7 @@ def handleLab():
                 return
             clickXY(750, 1725, seconds=4) # Continue to second battle
             if isVisible('buttons/heroclassselect', retry=3):  # Check we're at the battle screen
-                configureLabTeams(2, pet=False)  # We've lost heroes to Thoran etc by now, so lets re-pick 5 strongest heroes
+                # configureLabTeams(2, pet=False)  # We've lost heroes to Thoran etc by now, so lets re-pick 5 strongest heroes
                 clickXY(550, 1850, seconds=4) # Battle
             else:
                 printError('Battle Screen not found! Exiting')
@@ -1165,9 +1195,10 @@ def configureLabTeams(team, pet=True):
         clickXY(530, 1300)  # Slot 3
         clickXY(330, 1300)  # Slot 2
         clickXY(130, 1300)  # Slot 1
-        if pet is True and isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True):
-            clickXY(150, 1250, seconds=2) # First Pet
-            clickXY(750, 1800, seconds=4) # Confirm
+        if pet is True:
+            if isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True, region=(5, 210, 140, 100)):
+                clickXY(150, 1250, seconds=2) # First Pet
+                clickXY(750, 1800, seconds=4) # Confirm
     if team == 2:
         clickXY(1030, 1100, seconds=2)  # Clear Team
         clickXY(550, 1250, seconds=2)  # Confirm
@@ -1176,9 +1207,10 @@ def configureLabTeams(team, pet=True):
         clickXY(530, 1550)  # Slot 3
         clickXY(730, 1550)  # Slot 4
         clickXY(930, 1550)  # Slot 5
-        if pet is True and isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True):
-            clickXY(350, 1250, seconds=2) # Second Pet
-            clickXY(750, 1800, seconds=4) # Confirm
+        if pet is True:
+            if isVisible('buttons/pet_empty', confidence=0.75, retry=3, click=True, region=(5, 210, 140, 100)):
+                clickXY(350, 1250, seconds=2) # Second Pet
+                clickXY(750, 1800, seconds=4) # Confirm
 
 # Will select the correct Lab tile and take us to the battle screen
 # Elevation is either Upper or Lower dependon on whether we have scrolled the screen up or not for the scond half

@@ -145,7 +145,7 @@ class App(customtkinter.CTk):
         self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Which formation?', fg_color=("gray86", "gray17"))
         self.pushLabel.place(x=10, y=80)
         self.pushFormationDropdown = customtkinter.CTkComboBox(master=self.pushFrame, values=["1st", "2nd", "3rd", "4th", "5th"], width=80)
-        self.pushFormationDropdown.set('3rd')
+        self.pushFormationDropdown.set(config.get('PUSH', 'formation'))
         self.pushFormationDropdown.place(x=10, y=110)
         # Push Duration
         # self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Check for Victory every:', fg_color=("gray86", "gray17"))
@@ -666,6 +666,8 @@ def headlessArgs():
             if currenttimeutc.isoweekday() == day:
                 printBlue('Auto-Pushing ' + str(tower) + ' using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
                 openTower(tower)
+                if isVisible('buttons/challenge_plain', 0.8, retry=3, seconds=3, click=True, region=boundries['challengeTower']):  # lower confidence and retries for animated button
+                    configureBattleFormation(config.getint('PUSH', 'formation'))[0:1]
                 config.read(settings)  # to load any new values (ie formation downdown changed and saved) into memory
                 wait(3)
                 while 1:
@@ -815,24 +817,24 @@ def dailies():
 def push():
     connect_device()
     buttonState('disabled')
-    formationstr = str(app.pushFormationDropdown.get())[0:1]
+    formation = int(str(app.pushFormationDropdown.get())[0:1]) # to str first so we can take first character, then int
 
     if app.pushLocationDropdown.get() == 'Campaign':
-        printBlue('Auto-Pushing Campaign using the ' + str(config.get('PUSH', 'formation') + ' formation'))
+        printBlue('Auto-Pushing Campaign using the ' + str(app.pushFormationDropdown.get()) + ' formation')
         confirmLocation('campaign', region=boundries['campaignSelect'])
         if str(app.pushFormationDropdown.get()) != config.get('PUSH', 'formation'):
-            config.set('PUSH', 'formation', app.fastrewardsEntry.get())
+            config.set('PUSH', 'formation', app.pushFormationDropdown.get())
         updateSettings()
         while 1:
-            pushCampaign(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
+            pushCampaign(formation=formation, duration=int(config.get('PUSH', 'victoryCheck')))
     else:
         printBlue('Auto-Pushing ' + str(app.pushLocationDropdown.get()) + ' using using the ' + str(app.pushFormationDropdown.get()) + ' formation')
         openTower(app.pushLocationDropdown.get())
         if str(app.pushFormationDropdown.get()) != config.get('PUSH', 'formation'):
-            config.set('PUSH', 'formation', app.fastrewardsEntry.get())
+            config.set('PUSH', 'formation', app.pushFormationDropdown.get())
         updateSettings()
         while 1:
-            pushTower(formation=int(formationstr), duration=int(config.get('PUSH', 'victoryCheck')))
+            pushTower(formation=formation, duration=int(config.get('PUSH', 'victoryCheck')))
 
 class IORedirector(object):
     def __init__(self, text_widget):
