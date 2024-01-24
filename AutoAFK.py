@@ -41,7 +41,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.14.6"
+version = "0.14.8"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -175,7 +175,7 @@ class App(customtkinter.CTk):
         self.textbox.insert('end', 'Discord Server: ', 'purple')
         self.textbox.insert('end',  'discord.gg/floofpire in #auto-afk\n\n')
         if latest_release.split(' ')[1] != version and latest_release.split(' ')[1] != 'retrieve!':
-            if not version.split('.')[1] > latest_release.split('.')[1]: # If minor version is above release don't display (suppress for pre-releases generally)
+            if not version.split('.')[1] >= latest_release.split('.')[1]: # If minor version is above release don't display (suppress for pre-releases generally)
                 self.textbox.insert('end', 'Newer version available (' + latest_release.split(' ')[1] + '), please update!\n\n', 'yellow')
         if (args['config']) != 'settings.ini':
             self.textbox.insert('end', (args['config']) + ' loaded\n\n', 'yellow')
@@ -666,8 +666,6 @@ def headlessArgs():
             if currenttimeutc.isoweekday() == day:
                 printBlue('Auto-Pushing ' + str(tower) + ' using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
                 openTower(tower)
-                if isVisible('buttons/challenge_plain', 0.8, retry=3, seconds=3, click=True, region=boundries['challengeTower']):  # lower confidence and retries for animated button
-                    configureBattleFormation(config.getint('PUSH', 'formation'))[0:1]
                 config.read(settings)  # to load any new values (ie formation downdown changed and saved) into memory
                 wait(3)
                 while 1:

@@ -52,7 +52,7 @@ boundries = {
     'friends': (880, 754, 178, 168),
     'sendrecieve': (750, 1560, 306, 100),
     
-    'exitMerc': (912, 420, 129, 108),
+    'exitMerc': (912, 360, 129, 108),
 
     'fastrewards': (872, 1612, 130, 106),
     'closeFR': (266, 1218, 236, 92),
@@ -67,7 +67,8 @@ boundries = {
     'exitAoH': (930, 318, 126, 132),
 
     # Misc
-    'inngiftarea': (160, 1210, 500, 100)
+    'inngiftarea': (160, 1210, 500, 100),
+    'dialogue_left': (40, 1550, 200, 300)
 
 }
 
@@ -89,14 +90,14 @@ def collectMail():
     printBlue('Attempting mail collection')
     if isVisible('buttons/mail',  region=boundries['mailLocate']):
         wait()
-        if (pixelCheck(1012, 610, 0) > 240): # We check if the pixel where the notification sits has a red value of higher than 240
-            clickXY(960, 630, seconds=2) # Click Mail
-            click('buttons/collect_all', seconds=3, region=boundries['collectMail'])
-            clickXY(550, 1600) # Clear any popups
-            click('buttons/back', region=boundries['backMenu'])
-            printGreen('    Mail collected!')
-        else:
-            printWarning('    Mail notification not found')
+        # if (pixelCheck(1012, 610, 0) > 240): # We check if the pixel where the notification sits has a red value of higher than 240
+        clickXY(960, 630, seconds=2) # Click Mail
+        click('buttons/collect_all', seconds=3, region=boundries['collectMail'])
+        clickXY(550, 1600) # Clear any popups
+        click('buttons/back', region=boundries['backMenu'])
+        printGreen('    Mail collected!')
+        # else:
+        #     printWarning('    Mail notification not found')
     else:
         printError('Mail icon not found!')
 
@@ -180,10 +181,6 @@ def pushCampaign(formation=3, duration=1):
             click('buttons/pause', confidence=0.8, retry=3, suppress=True, region=boundries['pauseBattle'])  # 3 retries as ulting heroes can cover the button
             click('buttons/exitbattle', suppress=True, retry=3, region=boundries['exitBattle'])
             click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True, region=boundries['taptocontinue'])
-            # if (isVisible('buttons/begin', 0.7, retry=3, click=True, seconds=2)):
-            #     # Check for a second Begin in the case of a multibattle
-            #     click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundries['multiBegin'])
-            # configureBattleFormation(formation)
     else:
         # If we click and the AutoBattle Label isn't visible we're lost somewhere so we exit
         printError('AutoBattle screen not found, exiting..')
@@ -369,7 +366,7 @@ def pushTower(formation=3, duration=1):
             configureBattleFormation(formation)
             challengetimer = 0
     # Simple check for Auto Battle button
-    if isVisible('buttons/autobattle', 0.95, retry=3, seconds=2, region=boundries['autobattle']):  # higher confidence so we don't find it in the background
+    if isVisible('buttons/autobattle', 0.95, retry=3, region=boundries['autobattle']):  # higher confidence so we don't find it in the background
         configureBattleFormation(formation)
     # Every duration we click to prompt Auto Battle report and check is stages passed is not 0 to detect victory
     wait((duration * 60)-30)
@@ -426,6 +423,7 @@ def collectInnGifts():
             clickXY(550, 1400, seconds=0.5) # Clear loot
         click('buttons/back', region=boundries['backMenu'])
         printGreen('    Inn Gifts collected.')
+        wait(2) # wait before next task as loading ranhorn can be slow
     else:
         printError('    Inn not found, attempting to recover')
         recover()
@@ -490,6 +488,7 @@ def shopPurchases(shoprefreshes):
             handleShopPurchasing(counter)
         click('buttons/back')
         printGreen('    Store purchases attempted.')
+        wait(2) # wait before next task as loading ranhorn can be slow
     else:
         printError('Store not found, attempting to recover')
         recover()
@@ -628,7 +627,7 @@ def clearMerchant():
         # Biweeklies
         if d.isoweekday() == 3: # Wednesday
             if isVisible('buttons/merchant_biweekly', confidence=0.8, retry=2, click=True):
-                printPurple('    Collecting Biweekly Deal')
+                printPurple('    Collecting Bi-weekly Deal')
                 swipe(300, 1400, 200, 1200, 500, seconds=3)
                 clickXY(200, 1200)
                 clickXY(550, 1625, seconds=2)
@@ -671,6 +670,7 @@ def handleTwistedRealm():
             clickXY(70, 1800)
             clickXY(70, 1800)
             printGreen('    Twisted Realm attempted successfully')
+            wait(2)  # wait before next task as loading ranhorn can be slow
         else:
             clickXY(70, 1800)
             clickXY(70, 1800)
@@ -738,6 +738,7 @@ def handleBattleofBlood(battles=3):
                 bob_timeout += 1
                 if bob_timeout > 30:
                     printError('Battle of Blood timeout!')
+                    recover()
                     return
             else:
                 wait(4) # For the card animations
@@ -754,6 +755,7 @@ def handleBattleofBlood(battles=3):
                 bob_timeout += 1
                 if bob_timeout > 30:
                     printError('Battle of Blood timeout!')
+                    recover()
                     return
             else:
                 wait(4) # For the card animations
@@ -767,6 +769,7 @@ def handleBattleofBlood(battles=3):
                 bob_timeout += 1
                 if bob_timeout > 30:
                     printError('Battle of Blood timeout!')
+                    recover()
                     return
             else:
                 wait(4) # For the card animations
@@ -781,6 +784,7 @@ def handleBattleofBlood(battles=3):
                 else:
                     printError('    Defeat! Battle of Blood Battle #' + str(battlecounter) + ' complete')
         # Click quests
+        wait(2) # wait for animations to settle from exting last battle
         clickXY(150, 230, seconds=2)
         # select dailies tab
         clickXY(650, 1720, seconds=1)
@@ -794,14 +798,17 @@ def handleBattleofBlood(battles=3):
         clickXY(70, 1810, seconds=1) # Exit Quests
         clickXY(70, 1810, seconds=1) # Exit BoB
         clickXY(70, 1810, seconds=1) # Exit Events screen
-        printGreen('    Battle of Blood attempted successfully')
+        if confirmLocation('ranhorn', bool=True, region=boundries['ranhornSelect']):
+            printGreen('    Battle of Blood attempted successfully')
+        else:
+            printWarning('Issue exiting Battle of Blood, recovering..')
+            recover()
     else:
         printWarning('Battle of Blood not found, recovering..')
         recover()
 
 def handleCircusTour(battles = 3):
     battlecounter = 1
-    dialoguecounter = 1
     printBlue('Attempting to run Circus Tour battles')
     confirmLocation('ranhorn', region=boundries['ranhornSelect']) # Trying to fix 'buttons/events not found' error
     expandMenus() # Expand left menu again as it can shut after other dailies activities
@@ -809,9 +816,10 @@ def handleCircusTour(battles = 3):
     if isVisible('labels/circustour', retry=3, click=True):
         while battlecounter < battles:
             printGreen('    Circus Tour battle #' + str(battlecounter))
+            click('buttons/challenge_tr', confidence=0.8, retry=3, suppress=True, seconds=3)
             if battlecounter == 1:
                 # If Challenge is covered by text we clear it
-                while not isVisible('buttons/challenge_tr', confidence=0.8, retry=3) and dialoguecounter <= 10:
+                while isVisible('labels/dialogue_left', retry=2, region=boundries['dialogue_left']):
                     printWarning('    Clearing dialogue..')
                     clickXY(550, 900) # Clear dialogue box on new boss rotation
                     clickXY(550, 900) # Only need to do this on the first battle
@@ -819,8 +827,7 @@ def handleCircusTour(battles = 3):
                     clickXY(550, 900)
                     clickXY(550, 900)
                     clickXY(550, 900, seconds=2)
-                    dialoguecounter += 1
-            click('buttons/challenge_tr', confidence=0.8, retry=3, suppress=True, seconds=3)
+                    click('buttons/challenge_tr', confidence=0.8, retry=3, suppress=True, seconds=3)
             click('buttons/battle_large', confidence=0.8, retry=3, suppress=True, seconds=5)
             click('buttons/skip', confidence=0.8, retry=5, seconds=5)
             clickXY(550, 1800) # Clear loot
@@ -833,6 +840,11 @@ def handleCircusTour(battles = 3):
         # Back twice to exit
         clickXY(70, 1810, seconds=1)
         clickXY(70, 1810, seconds=1)
+        if confirmLocation('ranhorn', bool=True, region=boundries['ranhornSelect']):
+            printGreen('    Circus Tour attempted successfully')
+        else:
+            printWarning('Issue exiting Circus Tour, recovering..')
+            recover()
     else:
         printWarning('Circus Tour not found, recovering..')
         recover()
@@ -1307,7 +1319,7 @@ def returnBattleResults(type, firstOfMulti=False):
     counter = 0
 
     if type == 'BoB':
-        while counter < 20:
+        while counter < 30:
             if isVisible('labels/victory'):
                 # printGreen('    Battle of Blood Victory!')
                 clickXY(550, 1850, seconds=3)  # Clear window
@@ -1351,3 +1363,13 @@ def returnBattleResults(type, firstOfMulti=False):
             counter += 1
         printError('Arena battle timed out!')
         return False
+
+    if type == 'campaign':
+        if isVisible('labels/victory', confidence=0.75, retry=2):
+            printGreen('    Victory!')
+            return True
+        elif isVisible('labels/defeat', confidence=0.8):
+            printError('    Defeat!')
+            return False
+        else:
+            return 'Unknown'
