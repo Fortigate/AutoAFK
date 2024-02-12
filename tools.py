@@ -64,7 +64,8 @@ def connect_device():
             if connect_counter <= 3:
                 device = configureADB()
         else:
-            connected = True
+            if device is not None:
+                connected = True
             break
 
     # Break after 3 retries
@@ -87,7 +88,7 @@ def connect_device():
         scrcpyClient.start(daemon_threaded=True)
         setattr(device, 'srccpy',  scrcpyClient)
 
-        if config.getboolean('ADVANCED', 'debug'):
+        if config.getboolean('ADVANCED', 'debug') is True:
             print('\nDevice: ' + device.serial)
             print('scrcpy device: ' + str(scrcpyClient))
             print('Resolution: ' + device.shell('wm size'))
@@ -112,8 +113,11 @@ def configureADB():
         adbpath = which('adb') # If we're not on Windows or can't find adb.exe in the working directory we try and find it in the PATH
 
     # Restarting the ADB server solves 90% of issues with it
-    Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0]
-    Popen([adbpath, "start-server"], stdout=PIPE).communicate()[0]
+    if config.getboolean('ADVANCED', 'adbrestart') is True:
+        Popen([adbpath, "kill-server"], stdout=PIPE).communicate()[0]
+        Popen([adbpath, "start-server"], stdout=PIPE).communicate()[0]
+    else:
+        printWarning('ADB Restart disabled')
 
     # First we check settings for a valid port and try that
     if config.getint('ADVANCED', 'port') != 0:
@@ -176,6 +180,9 @@ def portScan():
     else:
         printError('No ports found!')
 
+def closeADB():
+    adb.kill
+
 # Expands the left and right button menus
 def expandMenus():
     while isVisible('buttons/downarrow', 0.8):
@@ -189,7 +196,7 @@ def afkRunningCheck():
     elif not args['test']:
         # printError('AFK Arena is not running, launching..')
         device.shell('monkey -p com.lilithgame.hgame.gp 1')
-    if config.getboolean('ADVANCED', 'debug'):
+    if config.getboolean('ADVANCED', 'debug') is True:
         print('Game check passed\n')
 
 # Confirms that the game has loaded by checking for the campaign_selected button. Also presses exitmenu.png to clear any new hero popups
@@ -237,7 +244,7 @@ def resolutionCheck(device):
         printError('Unsupported DPI! (' + str(dpi[2]).strip() + '). Please change your DPI to 240')
         printWarning('Continuining but this may cause errors with image detection')
 
-    if config.getboolean('ADVANCED', 'debug'):
+    if config.getboolean('ADVANCED', 'debug') is True:
         print('Resolution check passed')
 
 
@@ -320,7 +327,7 @@ def click(image,confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=Fa
     counter = 0
     screenshot = getFrame()
 
-    if config.getboolean('ADVANCED', 'debug'):
+    if config.getboolean('ADVANCED', 'debug') is True:
         suppress = False
 
     search = Image.open(os.path.join(cwd, 'img', image + '.png'))
@@ -350,6 +357,56 @@ def click(image,confidence=0.9, seconds=1, retry=1, suppress=False, grayscale=Fa
         if suppress is not True:
             printWarning('Image:' + image + ' not found!')
         wait(seconds)
+
+#   This function will keep clicking `image` until `secureimage` is no longer visible
+#   This is useful as sometimes clicks are sent but not registered and can causes issues
+def clickSecure(image, secureimage, retry=5, seconds=1, confidence=0.9, region=(0, 0, 1080, 1920), secureregion=(0, 0, 1080, 1920), grayscale=False, suppress=True):
+    counter = 0
+    secureCounter = 0
+    screenshot = getFrame()
+
+    search = Image.open(os.path.join(cwd, 'img', image + '.png'))
+    searchSecure = Image.open(os.path.join(cwd, 'img', secureimage + '.png'))
+    result = locate(search, screenshot, grayscale=grayscale, confidence=confidence, region=region)
+    resultSecure = locate(searchSecure, screenshot, grayscale=grayscale, confidence=confidence, region=secureregion)
+
+    if result == None and retry != 1:
+        while counter < retry:
+            screenshot = getFrame()
+            result = locate(search, screenshot, grayscale=grayscale, confidence=confidence, region=region)
+            resultSecure = locate(searchSecure, screenshot, grayscale=grayscale, confidence=confidence, region=secureregion)
+            if result != None and resultSecure != None: # If both are found click
+                while resultSecure != None: # While resultSecure is visible click result
+                    if secureCounter > 4:
+                        break
+                    x, y, w, h = result
+                    x_center = round(x + w / 2)
+                    y_center = round(y + h / 2)
+                    device.input_tap(x_center, y_center)
+                    wait(2)
+                    screenshot = getFrame()
+                    resultSecure = locate(searchSecure, screenshot, grayscale=grayscale, confidence=confidence, region=secureregion)
+                    secureCounter += 1
+            if suppress is not True:
+                printWarning('Retrying ' + image + ' search: ' + str(counter+1) + '/' + str(retry))
+            counter = counter + 1
+            wait(1)
+    elif result != None and resultSecure != None: # If both are found click
+        while resultSecure != None : # While resultSecure is visible click result
+            if secureCounter > 4:
+                break
+            x, y, w, h = result
+            x_center = round(x + w / 2)
+            y_center = round(y + h / 2)
+            device.input_tap(x_center, y_center)
+            wait(2)
+            screenshot = getFrame()
+            resultSecure = locate(searchSecure, screenshot, grayscale=grayscale, confidence=confidence, region=secureregion)
+            secureCounter += 1
+    else:
+        printError('printsecure failed')
+        wait()
+
 
 # Checks the 5 locations we find arena battle buttons in and selects the based on choice parameter
 def selectArenaOpponent(choice, seconds=1):
@@ -381,8 +438,8 @@ def selectArenaOpponent(choice, seconds=1):
 def returnDispatchButtons(scrolled=False):
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', 'buttons', 'dispatch_bounties.png'))
-    locations = {(820, 430, 170, 70), (820, 650, 170, 70), (820, 860, 170, 70), (820, 1070, 170, 70), (820, 1280, 170, 70)} # Location of the first 5 buttons
-    locations_scrolled = {(820, 510, 170, 70), (820, 720, 170, 70), (820, 930, 170, 70), (820, 1140, 170, 70), (820, 1350, 170, 70)} # Location of the first 5 buttons after scrolling down
+    locations = {(820, 430, 170, 110), (820, 650, 170, 110), (820, 860, 170, 110), (820, 1070, 170, 110), (820, 1280, 170, 110)} # Location of the first 5 buttons
+    locations_scrolled = {(820, 510, 170, 110), (820, 720, 170, 110), (820, 930, 170, 110), (820, 1140, 170, 110), (820, 1350, 170, 110)} # Location of the first 5 buttons after scrolling down
     dispatchButtons = []
 
     # Different locations if we scrolled down

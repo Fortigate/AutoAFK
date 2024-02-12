@@ -44,19 +44,19 @@ boundries = {
 
 
     'collectAfk': (590, 1322, 270, 82),
-    
+
     'mailLocate': (874, 575, 190, 157),
     'collectMail': (626, 1518, 305, 102),
     'backMenu': (0, 1720, 150, 200),
 
     'friends': (880, 754, 178, 168),
     'sendrecieve': (750, 1560, 306, 100),
-    
+
     'exitMerc': (912, 360, 129, 108),
 
     'fastrewards': (872, 1612, 130, 106),
     'closeFR': (266, 1218, 236, 92),
-    
+
 
     'challengeAoH': (294, 1738, 486, 140),
     'attackAoH': (714, 654, 180, 606),
@@ -187,15 +187,18 @@ def pushCampaign(formation=3, duration=1):
         sys.exit(1)
 
 def configureBattleFormation(formation):
-    if isVisible('buttons/formations', click=True, seconds=3, region=boundries['formations']):
+    if config.getboolean('ADVANCED', 'ignoreformations') is True:
+        printWarning('ignoreformations enabled, skipping formation selection')
+        click('buttons/autobattle', suppress=True, retry=3, region=boundries['autobattle'])  # So we don't hit it in the background while autobattle is active
+        clickSecure('buttons/activate', 'labels/autobattle', region=boundries['activateAB'], secureregion=boundries['autobattleLabel'])
+        return
+    elif isVisible('buttons/formations', click=True, seconds=3, region=boundries['formations']):
         clickXY(800, 1650, seconds=2)  # Change to 'Popular' tab
         clickXY(850, 425 + (formation * 175))
         click('buttons/use', suppress=True, retry=3, region=boundries['useAB'])
         click('buttons/confirm_small', suppress=True, retry=3, region=boundries['confirmAB'])
         click('buttons/autobattle', suppress=True, retry=3, region=boundries['autobattle'])  # So we don't hit it in the background while autobattle is active
-        # Sometimes Activate is reported as clicked, but it isn't so this failsafe improves stability
-        while isVisible('labels/autobattle', region=boundries['autobattleLabel']):
-            click('buttons/activate', suppress=True, retry=3, region=boundries['activateAB'])
+        clickSecure('buttons/activate', 'labels/autobattle', region=boundries['activateAB'], secureregion=boundries['autobattleLabel'])
     else:
         printWarning('Could not find Formations button')
 
@@ -251,33 +254,52 @@ def dispatchSoloBounties(remaining=2, maxRefreshes=3):
 def dispatcher(dispatches):
     # print(str(len(dispatches)) + ' Dispatches found.') # Debugging
     for button in dispatches:
-        blue_value = pixelCheck(190, button, 2, seconds=0) # Take a reading from the border of the icon
-        red_value = pixelCheck(190, button, 0, seconds=0) # Take a reading from the border of the icon
-        # printWarning('Blue: ' + str(blue_value) + '. Red: ' + str(red_value) + '.') # Debugging
-        if blue_value < 100 and red_value > 100:
+        border_blue = pixelCheck(190, button, 2, seconds=0) # Take a reading from the border of the icon
+        border_red = pixelCheck(190, button, 0, seconds=0) # Take a reading from the border of the icon
+        # printWarning('Blue: ' + str(border_blue) + '. Red: ' + str(border_red) + '.') # Debugging
+
+        if border_blue < 100 and border_red > 90: # Gold Border
+            icon_blue = pixelCheck(110, button, 2, seconds=0)  # Take a reading from the border of the icon
+            if icon_blue > 200:
+                # print('Shards Found')
+                if config.getboolean('BOUNTIES', 'dispatchShards'):
+                    printGreen('    Dispatching Shards')
+                    clickXY(900, button)
+                    clickXY(350, 1150)
+                    clickXY(750, 1150)
             # printGreen('    Skipping Gold')
-            # Gold
-            continue
-        elif blue_value > 215 and red_value > 100 and red_value < 120:
+            # continue
+
+        elif border_blue > 205 and border_red > 100 and border_red < 120: # Blue Border
             # printGreen('    Skipping Soulstone')
-            # Soulstone
             continue
-        elif blue_value >= 205 and red_value >= 150 and red_value <= 170:
-            # Dust
-            if config.getboolean('BOUNTIES', 'dispatchDust'):
-                printGreen('    Dispatching Dust')
-                clickXY(900, button)
-                clickXY(350, 1150)
-                clickXY(750, 1150)
-        elif blue_value >= 200 and red_value >= 200:
-            # Diamonds
+
+        elif border_blue >= 185 and border_red >= 105 and border_red <= 135: # Purple Border
+            icon_red = pixelCheck(110, button, 0, seconds=0)  # Take a reading from the border of the icon
+            if icon_red > 200:
+                # print('Juice Found')
+                if config.getboolean('BOUNTIES', 'dispatchJuice'):
+                    printGreen('    Dispatching Juice')
+                    clickXY(900, button)
+                    clickXY(350, 1150)
+                    clickXY(750, 1150)
+            else:
+                # print('Dust Found')
+                if config.getboolean('BOUNTIES', 'dispatchDust'):
+                    printGreen('    Dispatching Dust')
+                    clickXY(900, button)
+                    clickXY(350, 1150)
+                    clickXY(750, 1150)
+
+        elif border_blue >= 200 and border_red >= 200: # White Border
+            # print('Diamonds Found')
             if config.getboolean('BOUNTIES', 'dispatchDiamonds'):
                 printGreen('    Dispatching Diamonds')
                 clickXY(900, button)
                 clickXY(350, 1150)
                 clickXY(750, 1150)
 
-def handleArenaOfHeroes(count):
+def handleArenaOfHeroes(count, opponent):
     counter = 0
     printBlue('Battling Arena of Heroes ' + str(count) + ' times')
     confirmLocation('darkforest', region=boundries['darkforestSelect'])
@@ -288,7 +310,7 @@ def handleArenaOfHeroes(count):
         click('buttons/challenge', retry=3, region=boundries['challengeAoH']) # retries for animated button
         while counter < count:
             wait(1) # To avoid error when clickMultipleChoice returns no results
-            selectArenaOpponent(choice=4)
+            selectArenaOpponent(choice=opponent)
             # clickMultipleChoice('buttons/arenafight', count=4, confidence=0.98, region=boundries['attackAoH'], seconds=3) # Select 4th opponent
             while isVisible('buttons/heroclassselect', retry=3, region=boundries['heroclassselect']): # This is rather than Battle button as that is animated and hard to read
                 clickXY(550, 1800, seconds=3)
@@ -323,6 +345,22 @@ def collectGladiatorCoins():
     else:
         printError('    Legends Tournament not found, attempting to recover')
         recover()
+
+# def collectTSRewards():
+#     printBlue('Collecting Gladiator Coins')
+#     confirmLocation('darkforest', region=boundries['darkforestSelect'])
+#     clickXY(740, 1050)
+#     clickXY(550, 50)
+#     if isVisible('labels/legendstournament_new'): # The label font changes for reasons
+#         click('labels/legendstournament_new', suppress=True)
+#         clickXY(550, 300, seconds=2)
+#         clickXY(50, 1850)
+#         click('buttons/back', region=boundries['backMenu'])
+#         click('buttons/back', region=boundries['backMenu'])
+#         printGreen('    Gladiator Coins collected')
+#     else:
+#         printError('    Legends Tournament not found, attempting to recover')
+#         recover()
 
 def collectFountainOfTime():
     printBlue('Collecting Fountain of Time')
@@ -414,13 +452,19 @@ def handleKingsTower():
         recover()
 
 def collectInnGifts():
+    checks = 0
     printBlue('Attempting daily Inn gift collection')
     confirmLocation('ranhorn', region=boundries['ranhornSelect'])
-    clickXY(800,290, seconds=4)
+    wait()
+    clickXY(800, 410, seconds=4)
     if isVisible('buttons/manage'):
-        while isVisible('buttons/inn_gift', confidence=0.8, click=True, region=boundries['inngiftarea'], seconds=2):
-            clickXY(550, 1400, seconds=0.5) # Clear loot
-            clickXY(550, 1400, seconds=0.5) # Clear loot
+        while checks < 3:
+            if isVisible('buttons/inn_gift', confidence=0.75, click=True, region=boundries['inngiftarea'], seconds=2):
+                clickXY(550, 1400, seconds=0.5) # Clear loot
+                clickXY(550, 1400, seconds=0.5) # Clear loot
+                continue
+            checks += 1
+            wait()
         click('buttons/back', region=boundries['backMenu'])
         printGreen('    Inn Gifts collected.')
         wait(2) # wait before next task as loading ranhorn can be slow
@@ -437,7 +481,7 @@ def handleShopPurchasing(counter):
     # Prettify the names were outputting into console
     def nameTranslator(name):
         names = {'dust_gold': 'Dust (Gold)', 'shards_gold': 'Shards', 'dust_diamond': 'Dust (Diamonds)', 'elite_soulstone': 'Elite Soulstone',
-                  'superb_soulstone': 'Superb Timestone', 'silver_emblem': 'Silver Emblems', 'gold_emblem': 'Gold Emblems', 'poe': 'Poe Coins (Gold)',
+                  'superb_soulstone': 'Superb Soulstone', 'silver_emblem': 'Silver Emblems', 'gold_emblem': 'Gold Emblems', 'poe': 'Poe Coins (Gold)',
                  'arcanestaffs': 'Arcane Staffs', 'cores': 'Elemental Cores', 'timegazer': 'Timegazer Card', 'baits': 'Bait'}
         for internal, external in names.items():
             if name == internal:
@@ -524,7 +568,7 @@ def handleGuildHunts():
             printWarning('    Wrizz quick battle not found')
         # Soren Check
         clickXY(970, 890)
-        if (isVisible('buttons/quickbattle')):
+        if isVisible('buttons/quickbattle'):
             printGreen('    Soren Found, collecting')
             click('buttons/quickbattle')
             clickXY(725, 1300)
@@ -568,6 +612,9 @@ def collectQuests():
 def clearMerchant():
     printBlue('Attempting to collect merchant deals')
     clickXY(120, 300, seconds=5)
+    if isVisible('buttons/funinthewild', click=True, seconds=2):
+        clickXY(250, 1820, seconds=2) # Ticket
+        clickXY(250, 1820, seconds=2) # Reward
     swipe(1000, 1825, 100, 1825, 500)
     swipe(1000, 1825, 100, 1825, 500, seconds=3)
     if isVisible('buttons/noblesociety'):
@@ -617,7 +664,8 @@ def clearMerchant():
         # Special Deal, no check as its active daily
         printPurple('    Collecting Special Deal')
         click('buttons/dailydeals')
-        clickXY(150, 1625, seconds=2)
+        clickXY(150, 1625)
+        clickXY(150, 1625)
         # Daily Deal
         if isVisible('buttons/merchant_daily', confidence=0.8, retry=2, click=True):
             printPurple('    Collecting Daily Deal')
@@ -633,7 +681,7 @@ def clearMerchant():
                 clickXY(550, 1625, seconds=2)
         # Yuexi
         if d.isoweekday() == 1: # Monday
-            print('    Collecting Yuexi')
+            printPurple('    Collecting Yuexi')
             clickXY(200, 1825)
             clickXY(240, 880)
             clickXY(150, 1625, seconds=2)
@@ -660,7 +708,7 @@ def handleTwistedRealm():
         printGreen('    Twisted Realm found, battling')
         if isVisible('buttons/challenge_tr', retry=3, confidence=0.8):
             clickXY(550, 1850, seconds=2)
-            click('buttons/autobattle')
+            click('buttons/autobattle', retry=3)
             if not (isVisible('labels/skipbattle_Active')):
                 clickXY(300, 975)  # Activate Skip Battle Animations
             clickXY(700, 1300, seconds=6)
@@ -849,104 +897,6 @@ def handleCircusTour(battles = 3):
         printWarning('Circus Tour not found, recovering..')
         recover()
 
-def infiniteSummons(woke, celehypo, x6mode=False):
-    printBlue('Attempting to run Unlimited Summons')
-    counter = 0 # Pull amount counter
-    starttime = time.time() # Pull duration counter
-    if not isVisible('buttons/summons/summons_sidebar'):
-        printWarning('Can\'t see the summons event button, scrolling the side menu down..')
-        swipe(50, 800, 50, 500, duration=500, seconds=1)  # scroll down
-    if isVisible('buttons/summons/summons_sidebar', retry=3, click=True):
-        # List to match the dropdown name to the image file name
-        wokes = {'Awakened Talene': 'aTalene', 'Gavus': 'Gavus', 'Maetria': 'Maetria', 'Awakened Ezizh': 'aEzizh',
-                 'Awakened Thane': 'aThane', 'Awakened Belinda': 'aBelinda', 'Awakened Brutus': 'aBrutus',
-                 'Awakened Safiya': 'aSafiya', 'Awakened Lyca': 'aLyca', 'Awakened Solise': 'aSolise',
-                 'Awakened Baden': 'aBaden', 'Awakened Shemira': 'aShemira', 'Awakened Athalia': 'aAthalia'}
-        # List to match the dropdown name to the image file name
-        celehypos = {'Audrae': 'audrae', 'Canisa and Ruke': 'cruke', 'Daemia': 'daemia', 'Ezizh': 'ezizh', 'Khazard': 'khazard',
-                 'Lavatune': 'lavatune', 'Liberta': 'liberta', 'Lucilla': 'lucilla', 'Lucretia': 'lucretia', 'Mehira': 'mehira',
-                 'Mezoth': 'mezoth', 'Mortas': 'mortas', 'Olgath': 'olgath', 'Talene': 'talene', 'Tarnos': 'tarnos',
-                     'Elijah and Lailah': 'twins', 'Veithael': 'vei', 'Vyloris': 'vyloris', 'Zahprael': 'zaph', 'Zikis': 'zikis'}
-
-        search = True
-        printGreen('Searching for: ' + woke + ' and ' + celehypo)
-        print('')
-        clickXY(700, 1700, seconds=2) # Click 'Summon Again'
-        while search is True:
-            if x6mode is False: # Self-explanatory, if x6 mode is enabled we click a little faster, else slower
-                clickXY(680, 1820, seconds=2)
-                clickXY(950, 1820)
-                clickXY(950, 1820)
-                wait(6)
-            else:
-                clickXY(680, 1820)
-                clickXY(950, 1820, seconds=0.5)
-                clickXY(950, 1820, seconds=0.5)
-                wait(2)
-            # return Awakened, Epic or Rare
-            found = str(returnCardPullsRarity())
-            counter += 1
-            if found == "Awakened":
-                printWarning('Awakened Found')
-                if summonsCrashDetector('awakened'):
-                    return
-                # Let's check if it's the one we want
-                if isVisible(os.path.join('summons', 'awakeneds', wokes[woke]), confidence=0.85, seconds=0.5):
-                    printGreen('    ' + woke + ' found! Checking for ' + celehypo)
-                    # If it is we then check the celeypo
-                    if isVisible(os.path.join('summons', 'celehypos', celehypos[celehypo]), confidence=0.85):
-                        printGreen('    ' + celehypo + ' found too! Recording Summon and exiting..')
-                        click('buttons/summons/record', confidence=0.85, retry=3, seconds=3)
-                        click('buttons/summons/change', confidence=0.85, retry=3, seconds=3, suppress=True) # Suppress as this isn't always present
-                        click('buttons/summons/confirm', confidence=0.85, retry=3, seconds=3, suppress=True)# Suppress as this isn't always present
-                        search = False
-                    else:
-                        printError('    ' + celehypo + ' not found, continuing..')
-            if found == 'Epic':
-                if summonsCrashDetector('epic'):
-                    return
-                printPurple('Epic Found')
-            if found == 'Rare':
-                if summonsCrashDetector('rare'):
-                    return
-                printBlue('Rare found')
-        # Funky math for duration calculation, ceiling is used to roundup else it returns with a decimal place
-        duration = time.time() - starttime
-        hours = str(ceil(duration // 3600))
-        minutes = str((ceil(duration // 60)) - (int(hours) * 60))
-        printGreen('Unlimited Summons finished!')
-        printGreen('In just ' + str(counter) + ' pulls and ' + hours + ' hours ' + minutes + ' minutes. Hooray!')
-    else:
-        # If we can't find the Unlimited Summons button we end
-        printError('Could not find Unlimited Summons button..')
-
-# Counts if we get 10 of the same type in a row, which indicates the game has crashed or frozen and exits
-def summonsCrashDetector(type):
-    global rarecounter
-    global epiccounter
-    global awakenedcounter
-
-    if type == 'rare':
-        rarecounter += 1
-        epiccounter = 0
-        awakenedcounter = 0
-    elif type == 'epic':
-        rarecounter = 0
-        epiccounter += 1
-        awakenedcounter = 0
-    elif type == 'awakened':
-        rarecounter = 0
-        epiccounter = 0
-        awakenedcounter += 1
-
-    if rarecounter >= 10 or epiccounter >= 10 or awakenedcounter >= 10:
-        printError('10 of the same type in a row, this normally means something has gone wrong, exiting..')
-        recover()
-        rarecounter = 0
-        epiccounter = 0
-        awakenedcounter = 0
-        return True
-
 def handleLab():
     printBlue('Attempting to run Arcane Labyrinth')
     lowerdirection = '' # for whether we go left or right for the first battle
@@ -956,6 +906,10 @@ def handleLab():
     clickXY(400, 1150, seconds=3)
     if isVisible('labels/labfloor3', retry=3, confidence=0.8, seconds=3):
         printGreen('Lab already open! Continuing..')
+        clickXY(50, 1800, seconds=2)  # Exit Lab Menu
+        return
+    if isVisible('labels/lablocked', confidence=0.8, seconds=3):
+        printGreen('Dismal Lab not unlocked! Continuing..')
         clickXY(50, 1800, seconds=2)  # Exit Lab Menu
         return
     if isVisible('labels/lab', retry=3):
@@ -987,7 +941,7 @@ def handleLab():
             clickXY(700, 1250, seconds=6) # Confirm
             clickXY(550, 1600, seconds=3) # Clear Debuff
             # TODO Check Dismal Floor 1 text
-            printGreen('    Sweeping to 2rd Floor')
+            printGreen('    Sweeping to 2nd Floor')
             clickXY(950, 1600, seconds=2) # Level Sweep
             clickXY(550, 1550, seconds=8) # Confirm, long wait for animations
             clickXY(550, 1600, seconds=2) # Clear Resources Exceeded message
