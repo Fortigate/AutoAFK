@@ -13,7 +13,7 @@ rarecounter = int()
 epiccounter = int()
 awakenedcounter = int()
 
-boundries = {
+boundaries = {
     #locate
     'campaignSelect': (424, 1750, 232, 170),
     'darkforestSelect': (208, 1750, 226, 170),
@@ -74,10 +74,10 @@ boundries = {
 
 def collectAFKRewards():
     printBlue('Attempting AFK Reward collection')
-    confirmLocation('campaign', region=boundries['campaignSelect'])
-    if (isVisible('buttons/campaign_selected', region=boundries['campaignSelect'])):
+    confirmLocation('campaign', region=boundaries['campaignSelect'])
+    if (isVisible('buttons/campaign_selected', region=boundaries['campaignSelect'])):
         clickXY(550, 1550)
-        click('buttons/collect', 0.8, region=boundries['collectAfk'])
+        click('buttons/collect', 0.8, region=boundaries['collectAfk'])
         clickXY(550, 1800, seconds=1) # Click campaign in case we level up
         clickXY(550, 1800, seconds=1) # again for the time limited deal popup
         clickXY(550, 1800, seconds=1) # 3rd to be safe
@@ -88,13 +88,13 @@ def collectAFKRewards():
 
 def collectMail():
     printBlue('Attempting mail collection')
-    if isVisible('buttons/mail',  region=boundries['mailLocate']):
+    if isVisible('buttons/mail', region=boundaries['mailLocate']):
         wait()
         # if (pixelCheck(1012, 610, 0) > 240): # We check if the pixel where the notification sits has a red value of higher than 240
         clickXY(960, 630, seconds=2) # Click Mail
-        click('buttons/collect_all', seconds=3, region=boundries['collectMail'])
+        click('buttons/collect_all', seconds=3, region=boundaries['collectMail'])
         clickXY(550, 1600) # Clear any popups
-        click('buttons/back', region=boundries['backMenu'])
+        click('buttons/back', region=boundaries['backMenu'])
         printGreen('    Mail collected!')
         # else:
         #     printWarning('    Mail notification not found')
@@ -103,18 +103,18 @@ def collectMail():
 
 def collectCompanionPoints(mercs=False):
     printBlue('Attempting to send/receive companion points')
-    if isVisible('buttons/friends', region=boundries['friends']):
+    if isVisible('buttons/friends', region=boundaries['friends']):
         if (pixelCheck(1012, 790, 0) > 240):  # We check if the pixel where the notification sits has a red value of higher than 240
             clickXY(960, 810)
-            click('buttons/sendandreceive', region=boundries['sendrecieve'])
+            click('buttons/sendandreceive', region=boundaries['sendrecieve'])
             if mercs is True:
                 clickXY(720, 1760) # Short term
                 clickXY(990, 190) # Manage
                 clickXY(630, 1590) # Apply
                 clickXY(750, 1410) # Auto lend
-                click('buttons/exitmenu', region=boundries['exitMerc'])
+                click('buttons/exitmenu', region=boundaries['exitMerc'])
                 printGreen('    Mercenaries lent out')
-            click('buttons/back', region=boundries['backMenu'])
+            click('buttons/back', region=boundaries['backMenu'])
             printGreen('    Friends Points Sent')
         else:
             printWarning('    Friends notification not found')
@@ -122,15 +122,15 @@ def collectCompanionPoints(mercs=False):
 def collectFastRewards(count):
     printBlue('Attempting to collecting Fast Rewards ' + str(count) + 'x times')
     counter = 0
-    confirmLocation('campaign', region=boundries['campaignSelect'])
-    if isVisible('buttons/fastrewards', region=boundries['fastrewards']):
+    confirmLocation('campaign', region=boundaries['campaignSelect'])
+    if isVisible('buttons/fastrewards', region=boundaries['fastrewards']):
         if (pixelCheck(980, 1620, 0) > 220):  # We check if the pixel where the notification sits has a red value of higher than 240
             clickXY(950, 1660)
             while counter < count:
                 clickXY(710, 1260, seconds=3)
                 clickXY(550, 1800)
                 counter = counter + 1
-            click('buttons/close', region=boundries['closeFR'])
+            click('buttons/close', region=boundaries['closeFR'])
             printGreen('    Fast Rewards Done')
         else:
             printWarning('    Fast Rewards already done')
@@ -140,21 +140,21 @@ def collectFastRewards(count):
 # Loads and exits a campaign abttle for dailies quest
 def attemptCampaign():
     printBlue('Attempting Campaign battle')
-    confirmLocation('campaign', region=boundries['campaignSelect'])
-    click('buttons/begin', seconds=2, retry=3, region=boundries['begin'])
+    confirmLocation('campaign', region=boundaries['campaignSelect'])
+    click('buttons/begin', seconds=2, retry=3, region=boundaries['begin'])
 
     # Multi Battle
-    if isVisible('buttons/begin', 0.7, retry=3, seconds=2, click=True, region=boundries['multiBegin']): # If we see second Begin it's a multi so we take different actions
-        click('buttons/beginbattle', retry=3, seconds=3, region=boundries['battle'])
-        click('buttons/pause', retry=3, region=boundries['pauseBattle']) # 3 retries as ulting heroes can cover the button
-        click('buttons/exitbattle', retry=3, region=boundries['exitBattle'])
-        click('buttons/back', retry=3, seconds=4, suppress=True, region=boundries['backMenu'])
+    if isVisible('buttons/begin', 0.7, retry=3, seconds=2, click=True, region=boundaries['multiBegin']): # If we see second Begin it's a multi so we take different actions
+        click('buttons/beginbattle', retry=3, seconds=3, region=boundaries['battle'])
+        click('buttons/pause', retry=3, region=boundaries['pauseBattle']) # 3 retries as ulting heroes can cover the button
+        click('buttons/exitbattle', retry=3, region=boundaries['exitBattle'])
+        click('buttons/back', retry=3, seconds=4, suppress=True, region=boundaries['backMenu'])
     else: # Single Battle
-        click('buttons/battle', 0.8, retry=3, seconds=3, region=boundries['battle'])
-        click('buttons/pause', 0.8, retry=3, region=boundries['pauseBattle']) # 3 retries as ulting heroes can cover the button
-        click('buttons/exitbattle', seconds=4, region=boundries['exitBattle'])
+        click('buttons/battle', 0.8, retry=3, seconds=3, region=boundaries['battle'])
+        click('buttons/pause', 0.8, retry=3, region=boundaries['pauseBattle']) # 3 retries as ulting heroes can cover the button
+        click('buttons/exitbattle', seconds=4, region=boundaries['exitBattle'])
 
-    if confirmLocation('campaign', bool=True, region=boundries['campaignSelect']):
+    if confirmLocation('campaign', bool=True, region=boundaries['campaignSelect']):
         printGreen('    Campaign attempted successfully')
     else:
         printError('    Something went wrong, attempting to recover')
@@ -164,23 +164,23 @@ def pushCampaign(formation=3, duration=1):
     # Below we open campaign, load the selected formation and start autobattle
     if (isVisible('buttons/begin', 0.7, retry=3, click=True)):
         # Check for a second Begin in the case of a multibattle
-        click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundries['multiBegin'])
+        click('buttons/begin_plain', 0.7, seconds=2, retry=3, suppress=True, region=boundaries['multiBegin'])
     # Simple check for Auto Battle button
-    if isVisible('buttons/autobattle', 0.95, retry=3, seconds=2, region=boundries['autobattle']):  # higher confidence so we don't find it in the background
+    if isVisible('buttons/autobattle', 0.95, retry=3, seconds=2, region=boundaries['autobattle']):  # higher confidence so we don't find it in the background
         configureBattleFormation(formation)
     wait((duration * 60) - 30) # Sleep for the wait duration
     clickXY(550, 1750) # Click to prompt the AutoBattle popup
-    if isVisible('labels/autobattle', region=boundries['autobattleLabel']): # Make sure the popup is visible (else we've crashed and quit)
-        if isVisible('labels/autobattle_0', region=boundries['autobattle0']): # If it's 0 continue
-            if config.get('PUSH', 'suppressSpam') is False:
+    if isVisible('labels/autobattle', region=boundaries['autobattleLabel']): # Make sure the popup is visible (else we've crashed and quit)
+        if isVisible('labels/autobattle_0', region=boundaries['autobattle0']): # If it's 0 continue
+            if config.getboolean('PUSH', 'suppressSpam') is False:
                 printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
-            click('buttons/cancel', retry=3, suppress=True, region=boundries['cancelAB'])
+            click('buttons/cancel', retry=3, suppress=True, region=boundaries['cancelAB'])
         else: # If it's not 0 we have passed a stage
             printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
-            click('buttons/exit', suppress=True, retry=3, region=boundries['exitAB'])
-            click('buttons/pause', confidence=0.8, retry=3, suppress=True, region=boundries['pauseBattle'])  # 3 retries as ulting heroes can cover the button
-            click('buttons/exitbattle', suppress=True, retry=3, region=boundries['exitBattle'])
-            click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True, region=boundries['taptocontinue'])
+            click('buttons/exit', suppress=True, retry=3, region=boundaries['exitAB'])
+            click('buttons/pause', confidence=0.8, retry=3, suppress=True, region=boundaries['pauseBattle'])  # 3 retries as ulting heroes can cover the button
+            click('buttons/exitbattle', suppress=True, retry=3, region=boundaries['exitBattle'])
+            click('labels/taptocontinue', confidence=0.8, suppress=True, grayscale=True, region=boundaries['taptocontinue'])
     else:
         # If we click and the AutoBattle Label isn't visible we're lost somewhere so we exit
         printError('AutoBattle screen not found, exiting..')
@@ -189,16 +189,17 @@ def pushCampaign(formation=3, duration=1):
 def configureBattleFormation(formation):
     if config.getboolean('ADVANCED', 'ignoreformations') is True:
         printWarning('ignoreformations enabled, skipping formation selection')
-        click('buttons/autobattle', suppress=True, retry=3, region=boundries['autobattle'])  # So we don't hit it in the background while autobattle is active
-        clickSecure('buttons/activate', 'labels/autobattle', region=boundries['activateAB'], secureregion=boundries['autobattleLabel'])
+        click('buttons/autobattle', suppress=True, retry=3, region=boundaries['autobattle'])  # So we don't hit it in the background while autobattle is active
+        clickSecure('buttons/activate', 'labels/autobattle', region=boundaries['activateAB'], secureregion=boundaries['autobattleLabel'])
         return
-    elif isVisible('buttons/formations', click=True, seconds=3, region=boundries['formations']):
+    elif isVisible('buttons/formations', region=boundaries['formations']):
+        click('buttons/formations', seconds=3, retry=3, region=boundaries['formations'])
         clickXY(800, 1650, seconds=2)  # Change to 'Popular' tab
-        clickXY(850, 425 + (formation * 175))
-        click('buttons/use', suppress=True, retry=3, region=boundries['useAB'])
-        click('buttons/confirm_small', suppress=True, retry=3, region=boundries['confirmAB'])
-        click('buttons/autobattle', suppress=True, retry=3, region=boundries['autobattle'])  # So we don't hit it in the background while autobattle is active
-        clickSecure('buttons/activate', 'labels/autobattle', region=boundries['activateAB'], secureregion=boundries['autobattleLabel'])
+        clickXY(850, 425 + (formation * 175), seconds=2)
+        click('buttons/use', retry=3, region=boundaries['useAB'])
+        click('buttons/confirm_small', retry=3, region=boundaries['confirmAB'])
+        click('buttons/autobattle', retry=3, region=boundaries['autobattle'])  # So we don't hit it in the background while autobattle is active
+        clickSecure('buttons/activate', 'labels/autobattle', region=boundaries['activateAB'], secureregion=boundaries['autobattleLabel'])
     else:
         printWarning('Could not find Formations button')
 
@@ -206,7 +207,7 @@ def configureBattleFormation(formation):
 def handleBounties():
     printBlue('Handling Bounty Board')
     config.read(settings) # Has to be read here again to update
-    confirmLocation('darkforest', region=boundries['darkforestSelect'])
+    confirmLocation('darkforest', region=boundaries['darkforestSelect'])
     clickXY(600, 1320)
     if (isVisible('labels/bountyboard')):
         clickXY(650, 1700) # Solo tab
@@ -218,7 +219,7 @@ def handleBounties():
         click('buttons/collect_all', seconds=2, suppress=True)
         click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
         click('buttons/confirm', suppress=True)
-        click('buttons/back', region=boundries['backMenu'])
+        click('buttons/back', region=boundaries['backMenu'])
         printGreen('    Bounties attempted successfully')
     else:
         printError('    Bounty Board not found, attempting to recover')
@@ -302,19 +303,19 @@ def dispatcher(dispatches):
 def handleArenaOfHeroes(count, opponent):
     counter = 0
     printBlue('Battling Arena of Heroes ' + str(count) + ' times')
-    confirmLocation('darkforest', region=boundries['darkforestSelect'])
+    confirmLocation('darkforest', region=boundaries['darkforestSelect'])
     clickXY(740, 1050)
     clickXY(550, 50)
     if isVisible('labels/arenaofheroes_new'): # The label font changes for reasons
         click('labels/arenaofheroes_new', suppress=True)
-        click('buttons/challenge', retry=3, region=boundries['challengeAoH']) # retries for animated button
+        click('buttons/challenge', retry=3, region=boundaries['challengeAoH']) # retries for animated button
         while counter < count:
             wait(1) # To avoid error when clickMultipleChoice returns no results
             selectArenaOpponent(choice=opponent)
             # clickMultipleChoice('buttons/arenafight', count=4, confidence=0.98, region=boundries['attackAoH'], seconds=3) # Select 4th opponent
-            while isVisible('buttons/heroclassselect', retry=3, region=boundries['heroclassselect']): # This is rather than Battle button as that is animated and hard to read
+            while isVisible('buttons/heroclassselect', retry=3, region=boundaries['heroclassselect']): # This is rather than Battle button as that is animated and hard to read
                 clickXY(550, 1800, seconds=3)
-            click('buttons/skip', retry=5, confidence=0.8, suppress=True, region=boundries['skipAoH']) # Retries as ulting heros can cover the button
+            click('buttons/skip', retry=5, confidence=0.8, suppress=True, region=boundaries['skipAoH']) # Retries as ulting heros can cover the button
             if returnBattleResults(type='arena'):
                 printGreen('    Battle #' + str(counter+1) + ' Victory!')
                 clickXY(600, 550) # Clear loot popup
@@ -322,9 +323,9 @@ def handleArenaOfHeroes(count, opponent):
                 printError('    Battle #' + str(counter + 1) + ' Defeat!')
             clickXY(600, 550)  # Back to opponent selection
             counter = counter+1
-        click('buttons/exitmenu', region=boundries['exitAoH'])
-        click('buttons/back', retry=3, region=boundries['backMenu'])
-        click('buttons/back', retry=3, region=boundries['backMenu'])
+        click('buttons/exitmenu', region=boundaries['exitAoH'])
+        click('buttons/back', retry=3, region=boundaries['backMenu'])
+        click('buttons/back', retry=3, region=boundaries['backMenu'])
         printGreen('    Arena battles complete')
     else:
         printError('Arena of Heroes not found, attempting to recover')
@@ -332,18 +333,44 @@ def handleArenaOfHeroes(count, opponent):
 
 def collectGladiatorCoins():
     printBlue('Collecting Gladiator Coins')
-    confirmLocation('darkforest', region=boundries['darkforestSelect'])
+    confirmLocation('darkforest', region=boundaries['darkforestSelect'])
     clickXY(740, 1050)
     clickXY(550, 50)
     if isVisible('labels/legendstournament_new'): # The label font changes for reasons
         click('labels/legendstournament_new', suppress=True)
         clickXY(550, 300, seconds=2)
         clickXY(50, 1850)
-        click('buttons/back', region=boundries['backMenu'])
-        click('buttons/back', region=boundries['backMenu'])
+        click('buttons/back', region=boundaries['backMenu'])
+        click('buttons/back', region=boundaries['backMenu'])
         printGreen('    Gladiator Coins collected')
     else:
         printError('    Legends Tournament not found, attempting to recover')
+        recover()
+
+def useBagConsumables():
+    crashcounter = 0 # So we don't get stuck forever in the Use button loop
+    printBlue('Using consumables from bag')
+    clickXY(1000, 500, seconds=3)
+    if isVisible('buttons/batchselect', click=True, retry=3):
+        if isVisible('buttons/confirm_grey'):
+            printWarning('Nothing selected! Returning..')
+            click('buttons/back', region=boundaries['backMenu'])
+            return
+        clickXY(550, 1650, seconds=2)
+        while not isVisible('buttons/use_batch'):
+            clickXY(550, 1800, seconds=0) # 1 second check above is plenty so this is 0
+            crashcounter += 1
+            if crashcounter > 30:
+                printError('Something went wrong (normally gear chests being selected), returning..')
+                click('buttons/back', region=boundaries['backMenu'])
+                click('buttons/back', region=boundaries['backMenu'])
+                return
+        clickXY(550, 1800)
+        clickXY(950, 1750)
+        click('buttons/back', region=boundaries['backMenu'])
+        printGreen('    Bag consumables used!')
+    else:
+        printError('    Bag not found, attempting to recover')
         recover()
 
 # def collectTSRewards():
@@ -364,7 +391,7 @@ def collectGladiatorCoins():
 
 def collectFountainOfTime():
     printBlue('Collecting Fountain of Time')
-    confirmLocation('darkforest', region=boundries['darkforestSelect'])
+    confirmLocation('darkforest', region=boundaries['darkforestSelect'])
     clickXY(800, 700, seconds=6)
     clickXY(800, 700, seconds=1)
     if isVisible('labels/temporalrift'):
@@ -374,7 +401,7 @@ def collectFountainOfTime():
         clickXY(550, 1800, seconds=3) # Clear level up
         clickXY(550, 1800, seconds=3) # Clear limited deal
         clickXY(550, 1800, seconds=3) # Clear newly unlocked
-        click('buttons/back', region=boundries['backMenu'])
+        click('buttons/back', region=boundaries['backMenu'])
         printGreen('    Fountain of Time collected')
     else:
         printError('    Temporal Rift not found, attempting to recover')
@@ -382,57 +409,71 @@ def collectFountainOfTime():
 
 def openTower(name):
     printBlue('Opening ' + name + '.')
-    confirmLocation('darkforest', region=boundries['darkforestSelect'])
+    confirmLocation('darkforest', region=boundaries['darkforestSelect'])
     wait(3) # Medium wait to make sure tower button is active when we click
     clickXY(500, 870, seconds=3) # Long pause for animation opening towers
-    if isVisible('labels/kingstower', region=boundries['kingstowerLabel']):
+    if isVisible('labels/kingstower', region=boundaries['kingstowerLabel']):
         towers = {"King's Tower": [500, 870], "Lightbringer Tower": [300, 1000], "Wilder Tower": [800, 600], "Mauler Tower": [400, 1200],
                   "Graveborn Tower": [800, 1200], "Hypogean Tower": [600, 1500], "Celestial Tower": [300, 500]}
         for tower, location in towers.items():
             if tower == name:
                 clickXY(location[0], location[1], seconds=3)
 
-# Loads selected formation, enabled auto-battle and periodically checks for victory
-def pushTower(formation=3, duration=1):
-    # First makes two checks, one robust check for the Challenge button and one for the Auto Battle button, if either are found we load chosen formation
-    challengetimer = 0
-    while isVisible('buttons/challenge_plain', confidence=0.8, retry=3, seconds=3, region=boundries['challengeTower']):
-        challengetimer += 1
-        # We run 2 consecutive checks in a row here to ensure it's stopped on the stage select screen and not in the background as we pass from one stage to the next
-        if challengetimer >= 2:
-            click('buttons/challenge_plain', confidence=0.8, retry=3, seconds=3, region=boundries['challengeTower'])
-            configureBattleFormation(formation)
-            challengetimer = 0
-    # Simple check for Auto Battle button
-    if isVisible('buttons/autobattle', 0.95, retry=3, region=boundries['autobattle']):  # higher confidence so we don't find it in the background
-        configureBattleFormation(formation)
-    # Every duration we click to prompt Auto Battle report and check is stages passed is not 0 to detect victory
-    wait((duration * 60)-30)
-    clickXY(550, 1750)
-    # If no victory continue
-    if isVisible('labels/autobattle', retry=2, region=boundries['autobattleLabel']): # Make sure the popup is visible
-        if isVisible('labels/autobattle_0', retry=3, region=boundries['autobattle0']): # If it's 0 continue
-            if bool(config.get('PUSH', 'suppressspam')) is False:
-                printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
-            click('buttons/cancel', retry=3, suppress=True, region=boundries['cancelAB'])
-        else: # If it's not 0 we have passed a stage
-            printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
-            click('buttons/exit', retry=3, suppress=True, region=boundries['exitAB'])
-            click('buttons/pause', 0.8, retry=3, suppress=True, region=boundries['pauseBattle'])  # 3 retries as ulting heroes can cover the button
-            click('buttons/exitbattle', retry=2, suppress=True, region=boundries['exitBattle'])
-            click('labels/taptocontinue', retry=2, confidence=0.8, suppress=True, grayscale=True, region=boundries['taptocontinue'])
-            wait(3)
-            clickXY(550, 1750) # To clear the Limited Rewards pop up every 20 stages
-    else:
-        # If after clicking we don't get the Auto Battle report pop up we've likely crashed so we exit
-        printError('AutoBattle screen not found, exiting..')
-        sys.exit(1)
-        buttonState('enabled')
+class towerPusher():
+    towerOpen = False
+
+    # Loads selected formation, enabled auto-battle and periodically checks for victory
+    def pushTower(tower, formation=3, duration=1):
+        if towerPusher.towerOpen is False:
+            openTower(tower)
+            towerPusher.towerOpen = True
+        # First makes two checks, one robust check for the Challenge button and one for the Auto Battle button, if either are found we load chosen formation
+        challengetimer = 0
+        autobattletimer = 0
+        while isVisible('buttons/challenge_plain', confidence=0.8, retry=3, seconds=2, region=boundaries['challengeTower']):
+            challengetimer += 1
+            # printPurple('Challenge found: ' + str(challengetimer))
+            # We run 2 consecutive checks in a row here to ensure it's stopped on the stage select screen and not in the background as we pass from one stage to the next
+            if challengetimer >= 2:
+                click('buttons/challenge_plain', confidence=0.8, retry=3, seconds=3, region=boundaries['challengeTower'])
+                configureBattleFormation(formation)
+                challengetimer = 0
+        # Simple check for Auto Battle button
+        while isVisible('buttons/autobattle', 0.92, retry=3, seconds=2, region=boundaries['autobattle']):  # higher confidence so we don't find it in the background
+            autobattletimer += 1
+            # printPurple('Autobattle found: ' + str(autobattletimer))
+            if autobattletimer >= 2:
+                configureBattleFormation(formation)
+                autobattletimer = 0
+        # Every duration we click to prompt Auto Battle report and check is stages passed is not 0 to detect victory
+        wait((duration * 60)-30)
+        clickXY(550, 1750)
+        # If no victory continue
+        if isVisible('labels/autobattle', retry=2, region=boundaries['autobattleLabel']): # Make sure the popup is visible
+            if isVisible('labels/autobattle_0', retry=3, region=boundaries['autobattle0']): # If it's 0 continue
+                if config.getboolean('PUSH', 'suppressspam') is False:
+                    printWarning('No victory found, checking again in ' + str(config.get('PUSH', 'victoryCheck') + ' minutes.'))
+                click('buttons/cancel', retry=3, suppress=True, region=boundaries['cancelAB'])
+            else: # If it's not 0 we have passed a stage
+                printGreen('Victory found! Loading the ' + str(config.get('PUSH', 'formation') + ' formation for the current stage..'))
+                click('buttons/exit', retry=3, suppress=True, region=boundaries['exitAB'])
+                click('buttons/pause', 0.8, retry=3, suppress=True, region=boundaries['pauseBattle'])  # 3 retries as ulting heroes can cover the button
+                click('buttons/exitbattle', retry=2, suppress=True, region=boundaries['exitBattle'])
+                click('labels/taptocontinue', retry=2, confidence=0.8, suppress=True, grayscale=True, region=boundaries['taptocontinue'])
+                wait(3)
+                clickXY(550, 1750) # To clear the Limited Rewards pop up every 20 stages
+        else:
+            # If after clicking we don't get the Auto Battle report pop up we've likely crashed so we start again
+            printWarning('AutoBattle screen not found, reloading auto-push..')
+            if recover() is True:
+                towerPusher.towerOpen = False
+                openTower(tower)
+                towerPusher.towerOpen = True
 
 
 def handleKingsTower():
     printBlue('Attempting Kings Tower battle')
-    confirmLocation('darkforest', region=boundries['darkforestSelect'])
+    confirmLocation('darkforest', region=boundaries['darkforestSelect'])
     clickXY(500, 870, seconds=3) # Long pause for animation
     if isVisible('labels/kingstower'):
         clickXY(555, 585)
@@ -442,10 +483,10 @@ def handleKingsTower():
         # click('buttons/beginbattle', 0.8, seconds=3, retry=5)
         click('buttons/pause', 0.8, retry=5, suppress=True)
         click('buttons/exitbattle')
-        click('buttons/back', retry=3, region=boundries['backMenu'])
-        click('buttons/back', retry=3, region=boundries['backMenu'])
-        if isVisible('buttons/back', retry=3, region=boundries['backMenu']):
-            click('buttons/back', region=boundries['backMenu']) # Last one only needed for multifights
+        click('buttons/back', retry=3, region=boundaries['backMenu'])
+        click('buttons/back', retry=3, region=boundaries['backMenu'])
+        if isVisible('buttons/back', retry=3, region=boundaries['backMenu']):
+            click('buttons/back', region=boundaries['backMenu']) # Last one only needed for multifights
         printGreen('    Tower attempted successfully')
     else:
         printError('Tower screen not found, attempting to recover')
@@ -454,18 +495,18 @@ def handleKingsTower():
 def collectInnGifts():
     checks = 0
     printBlue('Attempting daily Inn gift collection')
-    confirmLocation('ranhorn', region=boundries['ranhornSelect'])
+    confirmLocation('ranhorn', region=boundaries['ranhornSelect'])
     wait()
     clickXY(800, 410, seconds=4)
     if isVisible('buttons/manage'):
         while checks < 3:
-            if isVisible('buttons/inn_gift', confidence=0.75, click=True, region=boundries['inngiftarea'], seconds=2):
+            if isVisible('buttons/inn_gift', confidence=0.75, click=True, region=boundaries['inngiftarea'], seconds=2):
                 clickXY(550, 1400, seconds=0.5) # Clear loot
                 clickXY(550, 1400, seconds=0.5) # Clear loot
                 continue
             checks += 1
             wait()
-        click('buttons/back', region=boundries['backMenu'])
+        click('buttons/back', region=boundaries['backMenu'])
         printGreen('    Inn Gifts collected.')
         wait(2) # wait before next task as loading ranhorn can be slow
     else:
@@ -517,7 +558,7 @@ def handleShopPurchasing(counter):
 def shopPurchases(shoprefreshes):
     printBlue('Attempting store purchases (Refreshes: ' + str(shoprefreshes) + ')')
     counter = 0
-    confirmLocation('ranhorn', region=boundries['ranhornSelect'])
+    confirmLocation('ranhorn', region=boundaries['ranhornSelect'])
     wait(2)
     clickXY(300, 1725, seconds=5)
     if isVisible('labels/store'):
@@ -539,7 +580,7 @@ def shopPurchases(shoprefreshes):
 
 def handleGuildHunts():
     printBlue('Attempting to run Guild Hunts')
-    confirmLocation('ranhorn', region=boundries['ranhornSelect'])
+    confirmLocation('ranhorn', region=boundaries['ranhornSelect'])
     clickXY(380, 360)
     wait(6)
     clickXY(550, 1800) # Clear chests
@@ -699,7 +740,7 @@ def clearMerchant():
 
 def handleTwistedRealm():
     printBlue('Attempting to run Twisted Realm')
-    confirmLocation('ranhorn', region=boundries['ranhornSelect'])
+    confirmLocation('ranhorn', region=boundaries['ranhornSelect'])
     clickXY(380, 360, seconds=6)
     clickXY(550, 1800) # Clear chests
     clickXY(775, 875, seconds=2)
@@ -846,7 +887,7 @@ def handleBattleofBlood(battles=3):
         clickXY(70, 1810, seconds=1) # Exit Quests
         clickXY(70, 1810, seconds=1) # Exit BoB
         clickXY(70, 1810, seconds=1) # Exit Events screen
-        if confirmLocation('ranhorn', bool=True, region=boundries['ranhornSelect']):
+        if confirmLocation('ranhorn', bool=True, region=boundaries['ranhornSelect']):
             printGreen('    Battle of Blood attempted successfully')
         else:
             printWarning('Issue exiting Battle of Blood, recovering..')
@@ -858,7 +899,7 @@ def handleBattleofBlood(battles=3):
 def handleCircusTour(battles = 3):
     battlecounter = 1
     printBlue('Attempting to run Circus Tour battles')
-    confirmLocation('ranhorn', region=boundries['ranhornSelect']) # Trying to fix 'buttons/events not found' error
+    confirmLocation('ranhorn', region=boundaries['ranhornSelect']) # Trying to fix 'buttons/events not found' error
     expandMenus() # Expand left menu again as it can shut after other dailies activities
     click('buttons/events', confidence=0.8, retry=3, seconds=3)
     if isVisible('labels/circustour', retry=3, click=True):
@@ -867,7 +908,7 @@ def handleCircusTour(battles = 3):
             click('buttons/challenge_tr', confidence=0.8, retry=3, suppress=True, seconds=3)
             if battlecounter == 1:
                 # If Challenge is covered by text we clear it
-                while isVisible('labels/dialogue_left', retry=2, region=boundries['dialogue_left']):
+                while isVisible('labels/dialogue_left', retry=2, region=boundaries['dialogue_left']):
                     printWarning('    Clearing dialogue..')
                     clickXY(550, 900) # Clear dialogue box on new boss rotation
                     clickXY(550, 900) # Only need to do this on the first battle
@@ -888,7 +929,7 @@ def handleCircusTour(battles = 3):
         # Back twice to exit
         clickXY(70, 1810, seconds=1)
         clickXY(70, 1810, seconds=1)
-        if confirmLocation('ranhorn', bool=True, region=boundries['ranhornSelect']):
+        if confirmLocation('ranhorn', bool=True, region=boundaries['ranhornSelect']):
             printGreen('    Circus Tour attempted successfully')
         else:
             printWarning('Issue exiting Circus Tour, recovering..')
@@ -901,7 +942,7 @@ def handleLab():
     printBlue('Attempting to run Arcane Labyrinth')
     lowerdirection = '' # for whether we go left or right for the first battle
     upperdirection = '' # For whether we go left or right to get the double battle at the end
-    confirmLocation('darkforest', region=boundries['darkforestSelect'])
+    confirmLocation('darkforest', region=boundaries['darkforestSelect'])
     wait()
     clickXY(400, 1150, seconds=3)
     if isVisible('labels/labfloor3', retry=3, confidence=0.8, seconds=3):

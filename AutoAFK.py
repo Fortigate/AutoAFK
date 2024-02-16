@@ -43,7 +43,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.15.0"
+version = "0.15.2"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -860,6 +860,8 @@ def dailies():
         collectQuests()
     if config.getboolean('DAILIES', 'collectmerchants') is True:
         clearMerchant()
+    if config.getboolean('DAILIES', 'usebagconsumables') is True:
+        useBagConsumables()
     printGreen('Dailies done!')
     return
 
@@ -870,7 +872,7 @@ def push():
 
     if app.pushLocationDropdown.get() == 'Campaign':
         printBlue('Auto-Pushing Campaign using the ' + str(app.pushFormationDropdown.get()) + ' formation')
-        confirmLocation('campaign', region=boundries['campaignSelect'])
+        confirmLocation('campaign', region=boundaries['campaignSelect'])
         if str(app.pushFormationDropdown.get()) != config.get('PUSH', 'formation'):
             config.set('PUSH', 'formation', app.pushFormationDropdown.get())
         updateSettings()
@@ -878,12 +880,12 @@ def push():
             pushCampaign(formation=formation, duration=int(config.get('PUSH', 'victoryCheck')))
     else:
         printBlue('Auto-Pushing ' + str(app.pushLocationDropdown.get()) + ' using using the ' + str(app.pushFormationDropdown.get()) + ' formation')
-        openTower(app.pushLocationDropdown.get())
+        # openTower(app.pushLocationDropdown.get())
         if str(app.pushFormationDropdown.get()) != config.get('PUSH', 'formation'):
             config.set('PUSH', 'formation', app.pushFormationDropdown.get())
         updateSettings()
         while 1:
-            pushTower(formation=formation, duration=int(config.get('PUSH', 'victoryCheck')))
+            towerPusher.pushTower(tower=app.pushLocationDropdown.get(), formation=formation, duration=int(config.get('PUSH', 'victoryCheck')))
 
 class IORedirector(object):
     def __init__(self, text_widget):

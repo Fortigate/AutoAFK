@@ -211,8 +211,8 @@ def waitUntilGameActive():
         loaded = 1
 
     while loadingcounter < loaded:
-        clickXY(550, 1850)
-        buttons = [os.path.join('buttons', 'campaign_unselected'), os.path.join('buttons', 'exitmenu_trial')]
+        clickXY(550, 1880)
+        buttons = [os.path.join('buttons', 'campaign_unselected'), os.path.join('buttons', 'exitmenu_trial'), os.path.join('buttons', 'back')]
         for button in buttons:
             click(button, seconds=0, suppress=True)
         timeoutcounter += 1
@@ -507,12 +507,21 @@ def confirmLocation(location, change=True, bool=False, region=(0,0, 1080, 1920))
 # Last ditch effort to keep clicking the back button to return to a known location
 # TODO update to handle battle screen and screens without a back button
 def recover():
-    clickXY(70, 1810)
-    clickXY(70, 1810)
-    clickXY(70, 1810)
-    confirmLocation('campaign')
+    recoverCounter = 0
+    while not isVisible('buttons/campaign_selected'):
+        # printPurple('recovery: ' + str(recoverCounter))
+        click('buttons/back', suppress=True, seconds=0.5, region=(0, 1500, 250, 419))
+        click('buttons/exitmenu', suppress=True, seconds=0.5, region=(700, 0, 379, 500))
+        click('buttons/confirm_small', suppress=True, seconds=0.5, region=(200, 750, 600, 649))
+        click('buttons/exit', suppress=True, seconds=0.5, region=(578, 1250, 290, 88))
+        click('buttons/campaign_unselected', suppress=True, seconds=0.5, region=(424, 1750, 232, 170))
+        clickXY(400, 50)
+        recoverCounter += 1
+        if recoverCounter > 8:
+            break
     if confirmLocation('campaign', bool=True):
-        printWarning('Recovered succesfully')
+        printGreen('Recovered succesfully')
+        return True
     else:
         printError('Recovery failed, exiting')
         exit(0)
