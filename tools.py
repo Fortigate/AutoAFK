@@ -199,7 +199,7 @@ def afkRunningCheck():
     if config.getboolean('ADVANCED', 'debug') is True:
         print('Game check passed\n')
 
-# Confirms that the game has loaded by checking for the campaign_selected button. Also presses exitmenu.png to clear any new hero popups
+# Confirms that the game has loaded by checking for the campaign_selected button. We press a few buttons to navigate back if needed
 # May also require a ClickXY over Campaign to clear Time Limited Deals that appear
 def waitUntilGameActive():
     printWarning('Searching for Campaign screen..')
@@ -211,7 +211,7 @@ def waitUntilGameActive():
         loaded = 1
 
     while loadingcounter < loaded:
-        clickXY(550, 1880)
+        clickXY(400, 50) # Neutral location for closing reward pop ups etc, should never be an in game button here
         buttons = [os.path.join('buttons', 'campaign_unselected'), os.path.join('buttons', 'exitmenu_trial'), os.path.join('buttons', 'back')]
         for button in buttons:
             click(button, seconds=0, suppress=True)
@@ -223,7 +223,7 @@ def waitUntilGameActive():
             sys.exit(1)
     printGreen('Game Loaded!')
 
-# Checks we are running 1920x1080 (or 1080x1920 if we're in landscape mode) and 240 DPI, exits if not.
+# Checks we are running 1920x1080 (or 1080x1920 if we're in landscape mode) and 240 DPI.
 def resolutionCheck(device):
     resolution_lines = device.shell('wm size').split('\n')
     physical_resolution = resolution_lines[0].split(' ')
@@ -247,7 +247,7 @@ def resolutionCheck(device):
     if config.getboolean('ADVANCED', 'debug') is True:
         print('Resolution check passed')
 
-
+# Returns the last frame from scrcpy, if the resolution isn't 1080 we scale it but this will only work in 16:9 resolutions
 def getFrame():
     im = Image.fromarray(device.srccpy.last_frame[:, :, ::-1])
 
@@ -409,6 +409,7 @@ def clickSecure(image, secureimage, retry=5, seconds=1, confidence=0.9, region=(
 
 
 # Checks the 5 locations we find arena battle buttons in and selects the based on choice parameter
+# If the choice is outside the found buttons we return the last button found
 def selectArenaOpponent(choice, seconds=1):
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', 'buttons', 'arenafight.png'))
@@ -435,6 +436,8 @@ def selectArenaOpponent(choice, seconds=1):
         wait(seconds)
         return True
 
+# Scans the coordinates from the two arrays, if a 'Dispatch' button is found returns the X and Y of the center of the button as an array
+# We have two arrays as when we scroll down in the bounty list the buttons are offset compared to the unscrolled list
 def returnDispatchButtons(scrolled=False):
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', 'buttons', 'dispatch_bounties.png'))
@@ -463,6 +466,7 @@ def pixelCheck(x, y, c, seconds=1):
     wait(seconds)
     return screenshot[y, x, c]
 
+# For the Unlimited Summons but leaving it in as we could find some use for this in the future
 def returnCardPullsRarity():
     im = getFrame()
     screenshot = np.asarray(im) # Make it an array
@@ -504,8 +508,8 @@ def confirmLocation(location, change=True, bool=False, region=(0,0, 1080, 1920))
     elif detected != location and bool is True:
         return False
 
-# Last ditch effort to keep clicking the back button to return to a known location
-# TODO update to handle battle screen and screens without a back button
+# This function will cycle through known buttons to try and return us to the Campaign screen so we can start from a known location
+# It will try 8 times and if we haven't gotten back in that time we exit as we are lost
 def recover():
     recoverCounter = 0
     while not isVisible('buttons/campaign_selected'):
@@ -515,7 +519,7 @@ def recover():
         click('buttons/confirm_small', suppress=True, seconds=0.5, region=(200, 750, 600, 649))
         click('buttons/exit', suppress=True, seconds=0.5, region=(578, 1250, 290, 88))
         click('buttons/campaign_unselected', suppress=True, seconds=0.5, region=(424, 1750, 232, 170))
-        clickXY(400, 50)
+        clickXY(400, 50) # Neutral location for closing reward pop ups etc, should never be an in game button here
         recoverCounter += 1
         if recoverCounter > 8:
             break

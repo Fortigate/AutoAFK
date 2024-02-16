@@ -90,15 +90,13 @@ class App(customtkinter.CTk):
         self.pvpEntry.place(x=130, y=92)
 
         # Push Frame
-        self.pushFrame = customtkinter.CTkFrame(master=self, height=150, width=180)
+        self.pushFrame = customtkinter.CTkFrame(master=self, height=180, width=180)
         self.pushFrame.place(x=10, y=340)
 
         # Push Button
         self.pushButton = customtkinter.CTkButton(master=self.pushFrame, text="Auto Push", command=lambda: threading.Thread(target=push).start())
         self.pushButton.place(x=20, y=10)
         # Push Entry
-        # self.pushLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Where to push?', fg_color=("gray86", "gray17"))
-        # self.pushLabel.place(x=10, y=50)
         self.pushLocationDropdown = customtkinter.CTkComboBox(master=self.pushFrame,  values=["Campaign"], width=160)
         self.pushLocationDropdown.place(x=10, y=50)
         # Push Formation
@@ -107,6 +105,14 @@ class App(customtkinter.CTk):
         self.pushFormationDropdown = customtkinter.CTkComboBox(master=self.pushFrame, values=["1st", "2nd", "3rd", "4th", "5th"], width=80)
         self.pushFormationDropdown.set(config.get('PUSH', 'formation'))
         self.pushFormationDropdown.place(x=10, y=110)
+        # Push Artifacts y/n
+        self.useArtifactsLabel = customtkinter.CTkLabel(master=self.pushFrame, text='Copy Artifacts', fg_color=("gray86", "gray17"))
+        self.useArtifactsLabel.place(x=10, y=145)
+        self.useArtifactsCheckbox = customtkinter.CTkCheckBox(master=self.pushFrame, text=None, onvalue=True, offvalue=False, command=self.updateArtifacts)
+        self.useArtifactsCheckbox.place(x=150, y=145)
+        # Select useArtifacts button if enabled
+        if config.getboolean('PUSH', 'useartifacts'):
+            self.useArtifactsCheckbox.select()
 
         # Quit button
         self.quitButton = customtkinter.CTkButton(master=self, text="Close", fg_color=["#B60003", "#C03335"], width=180, command=lambda: threading.Thread(target=cleanExit).start())
@@ -141,19 +147,18 @@ class App(customtkinter.CTk):
         if not args['dailies']:
             sys.stdout = STDOutRedirector(self.textbox)
 
-
-
         # Configure windows so we can reference them
         self.shop_window = None
         self.activity_window = None
         self.advanced_window = None
         self.summons_window = None
 
-    def Update(self):
-        if self.twistedRealmCheckbox.get() == 1:
-            config.set('DAILIES', 'twistedRealm', 'True')
+    # For updating the artifact setting when the checkbox is selected/unselected
+    def updateArtifacts(self):
+        if self.useArtifactsCheckbox.get() == 1:
+            config.set('PUSH', 'useartifacts', 'True')
         else:
-            config.set('DAILIES', 'twistedRealm', 'False')
+            config.set('PUSH', 'useartifacts', 'False')
         updateSettings()
 
     def open_advancedwindow(self):
@@ -304,10 +309,10 @@ class activityWindow(customtkinter.CTkToplevel):
         self.arenaOpponentEntry.insert('end', config.get('ARENA', 'arenaopponent'))
         self.arenaOpponentEntry.place(x=198, y=100)
         # Collect Treasure Scramble Loot
-        # self.tsCollectLabel = customtkinter.CTkLabel(master=self.ArenaFrame, text='Collect Daily TS loot', fg_color=("gray86", "gray17"))
-        # self.tsCollectLabel.place(x=10, y=130)
-        # self.tsCollectCheckbox = customtkinter.CTkCheckBox(master=self.ArenaFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
-        # self.tsCollectCheckbox.place(x=200, y=130)
+        self.tsCollectLabel = customtkinter.CTkLabel(master=self.ArenaFrame, text='Collect Daily TS loot', fg_color=("gray86", "gray17"))
+        self.tsCollectLabel.place(x=10, y=130)
+        self.tsCollectCheckbox = customtkinter.CTkCheckBox(master=self.ArenaFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
+        self.tsCollectCheckbox.place(x=200, y=130)
         # Collect Gladiator Coins
         self.gladiatorCollectLabel = customtkinter.CTkLabel(master=self.ArenaFrame, text='Collect Gladiator Coins', fg_color=("gray86", "gray17"))
         self.gladiatorCollectLabel.place(x=10, y=160)
@@ -381,6 +386,18 @@ class activityWindow(customtkinter.CTkToplevel):
         # self.teamBountiesCheckbox = customtkinter.CTkCheckBox(master=self.activityFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
         # self.teamBountiesCheckbox.place(x=200, y=190)
 
+        # Misc Frame
+        self.MiscFrame = customtkinter.CTkFrame(master=self, width=235, height=210)
+        self.MiscFrame.place(x=500, y=300)
+        self.label = customtkinter.CTkLabel(master=self.MiscFrame, text="Misc:", font=("Arial", 15, 'bold'))
+        self.label.place(x=10, y=5)
+
+        # Use Bag Comsumables
+        self.useBagConsumablesLabel = customtkinter.CTkLabel(master=self.MiscFrame, text='Use Bag Consumables', fg_color=("gray86", "gray17"))
+        self.useBagConsumablesLabel.place(x=10, y=40)
+        self.useBagConsumablesCheckbox = customtkinter.CTkCheckBox(master=self.MiscFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
+        self.useBagConsumablesCheckbox.place(x=200, y=40)
+
         # Save button
         self.activitySaveButton = customtkinter.CTkButton(master=self, text="Save", fg_color=["#3B8ED0", "#1F6AA5"], width=120, command=self.activitySave)
         self.activitySaveButton.place(x=320, y=520)
@@ -388,7 +405,7 @@ class activityWindow(customtkinter.CTkToplevel):
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'gladiatorCollect',
                          'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
                          'collectQuests', 'collectMerchants', 'fightOfFates', 'battleOfBlood', 'circusTour', 'dispatchDust',
-                         'dispatchDiamonds', 'dispatchShards', 'dispatchJuice', 'runLab', 'battleArena']
+                         'dispatchDiamonds', 'dispatchShards', 'dispatchJuice', 'runLab', 'battleArena', 'tsCollect', 'useBagConsumables']
         for activity in activityBoxes:
             if activity[0:8] == 'dispatch':
                 if config.getboolean('BOUNTIES', activity):
@@ -407,7 +424,7 @@ class activityWindow(customtkinter.CTkToplevel):
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'gladiatorCollect',
                          'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
                          'collectQuests', 'collectMerchants', 'fightOfFates', 'battleOfBlood', 'circusTour', 'dispatchDust',
-                         'dispatchDiamonds', 'dispatchShards', 'dispatchJuice', 'runLab', 'battleArena']
+                         'dispatchDiamonds', 'dispatchShards', 'dispatchJuice', 'runLab', 'battleArena', 'tsCollect', 'useBagConsumables']
         for activity in activityBoxes:
             if activity[0:8] == 'dispatch':
                 if self.__getattribute__(activity + 'Checkbox').get() == 1:
@@ -820,6 +837,7 @@ def serverCheck():
 def dailies():
     connect_device()
     serverCheck() # Change server slot if defined before doing dailies
+    useBagConsumables()
     if config.getboolean('DAILIES', 'collectrewards') is True:
         collectAFKRewards()
     if config.getboolean('DAILIES', 'collectmail') is True:
@@ -834,6 +852,8 @@ def dailies():
         handleBounties()
     if config.getboolean('ARENA', 'battlearena') is True:
         handleArenaOfHeroes(config.getint('ARENA', 'arenabattles'), config.getint('ARENA', 'arenaopponent'))
+    if config.getboolean('ARENA', 'tscollect') is True:
+        collectTSRewards()
     if config.getboolean('ARENA', 'gladiatorcollect') is True:
         collectGladiatorCoins()
     if config.getboolean('DAILIES', 'fountainoftime') is True:
