@@ -43,7 +43,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.15.2"
+version = "0.15.3"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -771,7 +771,7 @@ def activityManager():
     if app.activityFormationDropdown.get() == "Fight of Fates":
         buttonState('disabled')
         connect_device()
-        handleFightOfFates(config.getint('EVENTS', 'activitybattles'))
+        handleFightOfFates(config.getint('ACTIVITY', 'activitybattles'))
         buttonState('normal')
         print('')
         return
@@ -779,7 +779,7 @@ def activityManager():
     if app.activityFormationDropdown.get() == "Battle of Blood":
         buttonState('disabled')
         connect_device()
-        handleBattleofBlood(config.getint('EVENTS', 'activitybattles'))
+        handleBattleofBlood(config.getint('ACTIVITY', 'activitybattles'))
         buttonState('normal')
         print('')
         return
@@ -787,7 +787,7 @@ def activityManager():
     if app.activityFormationDropdown.get() == "Arena of Heroes":
         buttonState('disabled')
         connect_device()
-        handleArenaOfHeroes(config.getint('EVENTS', 'activitybattles'), config.getint('ARENA', 'arenaopponent'))
+        handleArenaOfHeroes(config.getint('ACTIVITY', 'activitybattles'), config.getint('ARENA', 'arenaopponent'))
         buttonState('normal')
         print('')
         return
@@ -837,7 +837,6 @@ def serverCheck():
 def dailies():
     connect_device()
     serverCheck() # Change server slot if defined before doing dailies
-    useBagConsumables()
     if config.getboolean('DAILIES', 'collectrewards') is True:
         collectAFKRewards()
     if config.getboolean('DAILIES', 'collectmail') is True:
@@ -900,7 +899,6 @@ def push():
             pushCampaign(formation=formation, duration=int(config.get('PUSH', 'victoryCheck')))
     else:
         printBlue('Auto-Pushing ' + str(app.pushLocationDropdown.get()) + ' using using the ' + str(app.pushFormationDropdown.get()) + ' formation')
-        # openTower(app.pushLocationDropdown.get())
         if str(app.pushFormationDropdown.get()) != config.get('PUSH', 'formation'):
             config.set('PUSH', 'formation', app.pushFormationDropdown.get())
         updateSettings()

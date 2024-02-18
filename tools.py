@@ -211,7 +211,7 @@ def waitUntilGameActive():
         loaded = 1
 
     while loadingcounter < loaded:
-        clickXY(400, 50) # Neutral location for closing reward pop ups etc, should never be an in game button here
+        clickXY(420, 50) # Neutral location for closing reward pop ups etc, should never be an in game button here
         buttons = [os.path.join('buttons', 'campaign_unselected'), os.path.join('buttons', 'exitmenu_trial'), os.path.join('buttons', 'back')]
         for button in buttons:
             click(button, seconds=0, suppress=True)
@@ -517,9 +517,10 @@ def recover():
         click('buttons/back', suppress=True, seconds=0.5, region=(0, 1500, 250, 419))
         click('buttons/exitmenu', suppress=True, seconds=0.5, region=(700, 0, 379, 500))
         click('buttons/confirm_small', suppress=True, seconds=0.5, region=(200, 750, 600, 649))
+        click('buttons/confirm_stageexit', suppress=True, seconds=0.5, region=(200, 750, 600, 649))
         click('buttons/exit', suppress=True, seconds=0.5, region=(578, 1250, 290, 88))
         click('buttons/campaign_unselected', suppress=True, seconds=0.5, region=(424, 1750, 232, 170))
-        clickXY(400, 50) # Neutral location for closing reward pop ups etc, should never be an in game button here
+        clickXY(420, 50) # Neutral location for closing reward pop ups etc, should never be an in game button here
         recoverCounter += 1
         if recoverCounter > 8:
             break

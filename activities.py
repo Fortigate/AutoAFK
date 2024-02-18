@@ -322,9 +322,9 @@ def useBagConsumables():
                 click('buttons/back', region=boundaries['backMenu'])
                 click('buttons/back', region=boundaries['backMenu'])
                 return
-        clickXY(550, 1800)
-        clickXY(950, 1750)
-        click('buttons/back', region=boundaries['backMenu'])
+        clickXY(550, 1800) # Use
+        clickXY(950, 1700) # 'All' Bag button to clear loot
+        click('buttons/back', region=boundaries['backMenu'], suppress=True)
         printGreen('    Bag consumables used!')
     else:
         printError('    Bag not found, attempting to recover')
@@ -463,6 +463,8 @@ def pushCampaign(formation=3, duration=1):
         recover()
 
 def configureBattleFormation(formation):
+    artifacts = None
+    counter = 0
     if config.getboolean('ADVANCED', 'ignoreformations') is True:
         printWarning('ignoreformations enabled, skipping formation selection')
         click('buttons/autobattle', suppress=True, retry=3, region=boundaries['autobattle'])  # So we don't hit it in the background while autobattle is active
@@ -473,9 +475,20 @@ def configureBattleFormation(formation):
         clickXY(800, 1650, seconds=2)  # Change to 'Popular' tab
         clickXY(850, 425 + (formation * 175), seconds=2)
         click('buttons/use', retry=3, region=boundaries['useAB'], seconds=2)
-        artifacts = isVisible('buttons/checkbox_checked', region=(230, 1100, 80, 80), confidence=0.85) # Check checkbox status
-        if artifacts != config.getboolean('PUSH', 'useartifacts'):
+
+        # Configure Artifacts
+        while artifacts is None and counter <= 5: # loop because sometimes isVisible returns None here
+            artifacts = isVisible('buttons/checkbox_checked', region=(230, 1100, 80, 80)) # Check checkbox status
+            counter += 1
+        if counter >= 5: # If still None after 5 tries give error and contiue without configuring
+            printError('Couldn\'t read artifact status')
+        if artifacts is not config.getboolean('PUSH', 'useartifacts') and artifacts is not None:
+            if config.getboolean('PUSH', 'useartifacts'):
+                printBlue('Enabling Artifact copying')
+            else:
+                printBlue('Disabling Artifact copying')
             clickXY(275, 1150) # clickXY not ideal here but my brain is fried so it'll do for now
+
         click('buttons/confirm_small', retry=3, region=boundaries['confirmAB'])
         click('buttons/autobattle', retry=3, region=boundaries['autobattle'])  # So we don't hit it in the background while autobattle is active
         clickSecure('buttons/activate', 'labels/autobattle', region=boundaries['activateAB'], secureregion=boundaries['autobattleLabel'])
@@ -781,6 +794,7 @@ def handleTwistedRealm():
             printError('    Challenge button not found, attempting to recover')
     else:
         printError('    Error opening Twisted Realm, attempting to recover')
+        # TODO Add 'Calculating' confirmation to exit safely
         recover()
 
 # Opens a Fight of Fates battle and then cycles between dragging heroes and dragging skills until we see the battle end screen
@@ -1385,3 +1399,6 @@ def returnBattleResults(type, firstOfMulti=False):
             return False
         else:
             return 'Unknown'
+
+def handleHeroesofEsperia():
+    print('soon')
