@@ -172,12 +172,11 @@ def handleBounties():
     config.read(settings) # Has to be read here again to update
     confirmLocation('darkforest', region=boundaries['darkforestSelect'])
     clickXY(600, 1320)
-    if (isVisible('labels/bountyboard')):
+    if isVisible('labels/bountyboard', retry=3):
         clickXY(650, 1700) # Solo tab
-        click('buttons/collect_all', seconds=2, suppress=True)
-        wait(2)
-        if config.getboolean('BOUNTIES', 'dispatchDust') is True or config.getboolean('BOUNTIES', 'dispatchDiamonds') is True:
-            dispatchSoloBounties(remaining=config.getint('BOUNTIES', 'remaining'), maxRefreshes=config.getint('BOUNTIES', 'refreshes'))
+        isVisible('buttons/collect_all', seconds=3, click=True)
+        if config.getboolean('BOUNTIES', 'solobounties'):
+            dispatchSoloBounties(remaining=config.getint('BOUNTIES', 'remaining'), maxrefreshes=config.getint('BOUNTIES', 'refreshes'))
         clickXY(950, 1700) # Team tab
         click('buttons/collect_all', seconds=2, suppress=True)
         click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
@@ -188,80 +187,49 @@ def handleBounties():
         printError('    Bounty Board not found, attempting to recover')
         recover()
 
-# Returns all found instances of the `Dispatch` button then checks pixel colour at an offset to see which resource it is
-def dispatchSoloBounties(remaining=2, maxRefreshes=3):
+# Loops through the bounty board returning found Dispatch buttons for dispatcher() to handle
+# maxrefreshes is how many times to refresh before hitting dispatch all
+# remaining is how many leftover bounties we should use dispatch all on rather than refresh again
+def dispatchSoloBounties(remaining=2, maxrefreshes=3):
     refreshes = 0
-    while refreshes <= maxRefreshes:
+    while refreshes <= maxrefreshes:
         if refreshes > 0:
             printWarning('    Board refreshed (#' + str(refreshes) + ')')
-        dispatches = returnDispatchButtons()
-        dispatcher(dispatches) # Send the list to the function to dispatch
+        dispatcher(returnDispatchButtons()) # Send the list to the function to dispatch
         swipe(550, 800, 550, 500, duration=200, seconds=2) # scroll down
-        dispatches = returnDispatchButtons(scrolled=True)
-        dispatcher(dispatches) # Send the list to the function to dispatch
+        dispatcher(returnDispatchButtons(scrolled=True)) # Send the list to the function to dispatch
         if refreshes >= 1: # quick read to see how many are left after the last dispatch, else we refresh the board needlessly before we do it
-            dispatches = returnDispatchButtons(scrolled=True)
-            if len(dispatches) <= remaining: # if <=remaining bounties left we just dispatch all and continue
+            if len(returnDispatchButtons(scrolled=True)) <= remaining: # if <=remaining bounties left we just dispatch all and continue
                 printWarning('  ' + str(remaining) + ' or less bounties remaining, dispatching..')
                 click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
                 click('buttons/confirm', suppress=True)
                 return
-        if refreshes < maxRefreshes:
+        if refreshes < maxrefreshes:
             clickXY(90, 250)
             clickXY(700, 1250)
         refreshes += 1
-    printGreen('    ' + str(maxRefreshes) + ' refreshes done, dispatching remaining..')
+    printGreen('    ' + str(maxrefreshes) + ' refreshes done, dispatching remaining..')
     click('buttons/dispatch', confidence=0.8, suppress=True, grayscale=True)
     click('buttons/confirm', suppress=True)
 
-# Recieves a list of Dispatch buttons and checks/dispatches the resource
+# Recieves a list of Dispatch buttons Y coordinates and checks/dispatches the resource
 def dispatcher(dispatches):
-    # print(str(len(dispatches)) + ' Dispatches found.') # Debugging
+    # For loop over each button passed to the function
     for button in dispatches:
-        border_blue = pixelCheck(190, button, 2, seconds=0) # Take a reading from the border of the icon
-        border_red = pixelCheck(190, button, 0, seconds=0) # Take a reading from the border of the icon
-        # printWarning('Blue: ' + str(border_blue) + '. Red: ' + str(border_red) + '.') # Debugging
+        # Names and Buttons
+        bounty_types = {'dust': 'labels/bounties/dust', 'diamonds': 'labels/bounties/diamonds', 'juice': 'labels/bounties/juice',
+            'shards': 'labels/bounties/shards', 'gold': 'labels/bounties/gold', 'soulstone': 'labels/bounties/soulstone'}
+        # For each button we use `region=` to only check the resource in bounds to the left of it
+        for resource, image in bounty_types.items():
+            if isVisible(image, region=(30, button-100, 140, 160), seconds=0):
+                if resource != 'gold' and resource != 'soulstone': # because there's no config setting for these
+                    if config.getboolean('BOUNTIES', 'dispatch' + resource): # If it's enabled dispatch
+                        printBlue('Dispatching ' + resource.title())
+                        clickXY(900, button)
+                        clickXY(350, 1150)
+                        clickXY(750, 1150)
+                break # Once resource is found and actions taken move onto the next button to save unnecessary checks
 
-        if border_blue < 100 and border_red > 90: # Gold Border
-            icon_blue = pixelCheck(110, button, 2, seconds=0)  # Take a reading from the border of the icon
-            if icon_blue > 200:
-                # print('Shards Found')
-                if config.getboolean('BOUNTIES', 'dispatchShards'):
-                    printGreen('    Dispatching Shards')
-                    clickXY(900, button)
-                    clickXY(350, 1150)
-                    clickXY(750, 1150)
-            # printGreen('    Skipping Gold')
-            # continue
-
-        elif border_blue > 205 and border_red > 100 and border_red < 120: # Blue Border
-            # printGreen('    Skipping Soulstone')
-            continue
-
-        elif border_blue >= 185 and border_red >= 105 and border_red <= 135: # Purple Border
-            icon_red = pixelCheck(110, button, 0, seconds=0)  # Take a reading from the border of the icon
-            if icon_red > 200:
-                # print('Juice Found')
-                if config.getboolean('BOUNTIES', 'dispatchJuice'):
-                    printGreen('    Dispatching Juice')
-                    clickXY(900, button)
-                    clickXY(350, 1150)
-                    clickXY(750, 1150)
-            else:
-                # print('Dust Found')
-                if config.getboolean('BOUNTIES', 'dispatchDust'):
-                    printGreen('    Dispatching Dust')
-                    clickXY(900, button)
-                    clickXY(350, 1150)
-                    clickXY(750, 1150)
-
-        elif border_blue >= 200 and border_red >= 200: # White Border
-            # print('Diamonds Found')
-            if config.getboolean('BOUNTIES', 'dispatchDiamonds'):
-                printGreen('    Dispatching Diamonds')
-                clickXY(900, button)
-                clickXY(350, 1150)
-                clickXY(750, 1150)
 
 def handleArenaOfHeroes(count, opponent):
     counter = 0

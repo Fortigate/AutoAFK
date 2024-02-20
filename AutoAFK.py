@@ -43,7 +43,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.15.5"
+version = "0.15.6"
 
 #Main Window
 class App(customtkinter.CTk):

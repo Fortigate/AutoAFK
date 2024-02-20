@@ -463,9 +463,10 @@ def selectOpponent(choice, seconds=1, hoe=False):
 def returnDispatchButtons(scrolled=False):
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', 'buttons', 'dispatch_bounties.png'))
-    locations = {(820, 430, 170, 110), (820, 650, 170, 110), (820, 860, 170, 110), (820, 1070, 170, 110), (820, 1280, 170, 110)} # Location of the first 5 buttons
-    locations_scrolled = {(820, 510, 170, 110), (820, 720, 170, 110), (820, 930, 170, 110), (820, 1140, 170, 110), (820, 1350, 170, 110)} # Location of the first 5 buttons after scrolling down
+    locations = {(820, 430, 170, 120), (820, 650, 170, 120), (820, 860, 170, 120), (820, 1070, 170, 120), (820, 1280, 170, 120)} # Location of the first 5 buttons
+    locations_scrolled = {(820, 460, 170, 160), (820, 670, 170, 160), (820, 880, 170, 160), (820, 1090, 170, 160), (820, 1300, 170, 160)} # Location of the first 5 buttons after scrolling down
     dispatchButtons = []
+    wait()
 
     # Different locations if we scrolled down
     if scrolled is True:
