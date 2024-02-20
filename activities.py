@@ -142,20 +142,26 @@ def attemptCampaign():
     printBlue('Attempting Campaign battle')
     confirmLocation('campaign', region=boundaries['campaignSelect'])
     click('buttons/begin', seconds=2, retry=3, region=boundaries['begin'])
-
-    # Multi Battle
-    if isVisible('buttons/begin', 0.7, retry=3, seconds=2, click=True, region=boundaries['multiBegin']): # If we see second Begin it's a multi so we take different actions
-        click('buttons/beginbattle', retry=3, seconds=3, region=boundaries['battle'])
+    # Check if we're multi or single stage
+    multi = isVisible('buttons/begin', 0.7, retry=3, region=boundaries['multiBegin'])
+    if multi:
+        printGreen('    Multi stage detected')
+        click('buttons/begin', 0.7, retry=5, seconds=2, region=boundaries['multiBegin']) # Second button to enter multi
+    else:
+        printGreen('    Single stage detected')
+    # Start and exit battle
+    # Weird amount of retries as when loading the game for the first time this screen can take a while to load, so it acts as a counter
+    if isVisible('buttons/heroclassselect', retry=20, region=boundaries['heroclassselect']): # Confirm we're on the hero selection screen
+        if multi: # Multi has different button for reasons
+            click('buttons/beginbattle', 0.7, retry=3, seconds=3, region=boundaries['battle'])
+        else:
+            click('buttons/battle', 0.8, retry=3, seconds=3, region=boundaries['battle'])
+        # Actions to exit an active fight and back out to the Campaign screen
         click('buttons/pause', retry=3, region=boundaries['pauseBattle']) # 3 retries as ulting heroes can cover the button
         click('buttons/exitbattle', retry=3, region=boundaries['exitBattle'])
-        click('buttons/back', retry=3, seconds=4, suppress=True, region=boundaries['backMenu'])
-    else: # Single Battle
-        click('buttons/battle', 0.8, retry=3, seconds=3, region=boundaries['battle'])
-        click('buttons/pause', 0.8, retry=3, region=boundaries['pauseBattle']) # 3 retries as ulting heroes can cover the button
-        click('buttons/exitbattle', seconds=4, region=boundaries['exitBattle'])
-
-    if confirmLocation('campaign', bool=True, region=boundaries['campaignSelect']):
-        printGreen('    Campaign attempted successfully')
+        click('buttons/back', retry=3, seconds=3, suppress=True, region=boundaries['backMenu'])
+        if confirmLocation('campaign', bool=True, region=boundaries['campaignSelect']):
+            printGreen('    Campaign attempted successfully')
     else:
         printError('    Something went wrong, attempting to recover')
         recover()
@@ -268,7 +274,7 @@ def handleArenaOfHeroes(count, opponent):
         click('buttons/challenge', retry=3, region=boundaries['challengeAoH']) # retries for animated button
         while counter < count:
             wait(1) # To avoid error when clickMultipleChoice returns no results
-            selectArenaOpponent(choice=opponent)
+            selectOpponent(choice=opponent)
             # clickMultipleChoice('buttons/arenafight', count=4, confidence=0.98, region=boundries['attackAoH'], seconds=3) # Select 4th opponent
             while isVisible('buttons/heroclassselect', retry=3, region=boundaries['heroclassselect']): # This is rather than Battle button as that is animated and hard to read
                 clickXY(550, 1800, seconds=3)
@@ -372,12 +378,15 @@ def openTower(name):
     confirmLocation('darkforest', region=boundaries['darkforestSelect'])
     wait(3) # Medium wait to make sure tower button is active when we click
     clickXY(500, 870, seconds=3) # Long pause for animation opening towers
-    if isVisible('labels/kingstower', region=boundaries['kingstowerLabel']):
+    if isVisible('labels/kingstower', region=boundaries['kingstowerLabel'], retry=3, confidence=0.85):
         towers = {"King's Tower": [500, 870], "Lightbringer Tower": [300, 1000], "Wilder Tower": [800, 600], "Mauler Tower": [400, 1200],
                   "Graveborn Tower": [800, 1200], "Hypogean Tower": [600, 1500], "Celestial Tower": [300, 500]}
         for tower, location in towers.items():
             if tower == name:
                 clickXY(location[0], location[1], seconds=3)
+    else:
+        printError('Tower selection screen not found.')
+        recover()
 
 # This is a long one, we have a whole host of fail safes because we want it to be as stable as possible
 class towerPusher():
@@ -1359,6 +1368,24 @@ def returnBattleResults(type, firstOfMulti=False):
         recover()
         return False
 
+    # Here we don't clear the result by clicking at the bottom as there is the battle report there
+    if type == 'HoE':
+        while counter < 10:
+            # Clear Rank Up message
+            if isVisible('labels/hoe_ranktrophy', retry=5, region=(150, 900, 350, 250)):
+                clickXY(550, 1200)
+            if isVisible('labels/victory'):
+                # printGreen('    Battle of Blood Victory!')
+                clickXY(550, 700, seconds=3)  # Clear window
+                return True
+            if isVisible('labels/defeat'):
+                # printError('    Battle of Blood Defeat!')
+                clickXY(550, 700, seconds=3)  # Clear window
+                return False
+            counter += 1
+        printError('Battletimer expired')
+        return False
+
     if type == 'lab':
         while counter < 15:
             # For 'resources exceeded' message
@@ -1400,5 +1427,74 @@ def returnBattleResults(type, firstOfMulti=False):
         else:
             return 'Unknown'
 
-def handleHeroesofEsperia():
-    print('soon')
+def handleHeroesofEsperia(count=3, opponent=4):
+    counter = 0
+    errorcounter = 0
+    printBlue('Battling Heroes of Esperia ' + str(count) + ' times')
+    printWarning('Note: this currently won\'t work in the Legends Tower')
+    confirmLocation('darkforest', region=boundaries['darkforestSelect'])
+    clickXY(740, 1050) # Open Arena of Heroes
+    clickXY(550, 50) # Clear Tickets Popup
+    if isVisible('labels/heroesofesperia', click=True, seconds=3):
+        # Check if we've opened it yet
+        if isVisible('buttons/join_hoe', 0.8, retry=3, region=(420, 1780, 250, 150)):
+            printWarning('Heroes of Esperia not opened! Entering..')
+            clickXY(550, 1850) # Clear Info
+            clickXY(550, 1850, seconds=6) # Click join
+            clickXY(550, 1140, seconds=3) # Clear Placement
+            clickXY(1000, 1650, seconds=8) # Collect all and wait for scroll
+            clickXY(550, 260, seconds=5) # Character portrait to clear Loot
+            clickXY(550, 260, seconds=5) # Character portrait to scroll back up
+        # Start battles
+        if isVisible('buttons/fight_hoe', retry=10, seconds=3, click=True, region=(400, 200, 400, 1500)):
+            while counter < count:
+                selectOpponent(choice=opponent, hoe=True)
+                if isVisible('labels/hoe_buytickets', region=(243, 618, 600, 120)): # Check for ticket icon pixel
+                    printError('Ticket Purchase screen found, exiting')
+                    recover()
+                    return
+                while isVisible('buttons/heroclassselect', region=boundaries['heroclassselect']): # This is rather than Battle button as that is animated and hard to read
+                    clickXY(550, 1800, seconds=0)
+                clickWhileVisible('buttons/skip', confidence=0.8, region=boundaries['skipAoH'])
+                if returnBattleResults(type='HoE'):
+                    printGreen('    Battle #' + str(counter + 1) + ' Victory!')
+                else:
+                    printError('    Battle #' + str(counter + 1) + ' Defeat!')
+
+                # Lots of things/animations can happen after a battle so we keep clicking until we see the fight button again
+                while not isVisible('buttons/fight_hoe', seconds=3, click=True, region=(400, 200, 400, 1500)):
+                    if errorcounter < 6:
+                        clickXY(420, 50)  # Neutral location
+                        clickXY(550, 1420)  # Rank up confirm button
+                        errorcounter += 1
+                    else:
+                        printError('Something went wrong post-battle, recovering')
+                        recover()
+                        return
+                errorcounter = 0
+                counter += 1
+        else:
+            printError('Heroes of Esperia Fight button not found! Recovering')
+            recover()
+            return
+        click('buttons/exitmenu', region=boundaries['exitAoH'])
+        printGreen('    Collecting Quests')
+        clickXY(975, 300, seconds=2) # Bounties
+        clickXY(975, 220, seconds=2) # Quests
+        clickXY(850, 880, seconds=2) # Top daily quest
+        clickXY(550, 420, seconds=2) # Click to clear loot
+        clickXY(870, 1650, seconds=2) # Season quests tab
+        clickXY(850, 880, seconds=2) # Top season quest
+        clickXY(550, 420, seconds=2) # Click to clear loot
+        click('buttons/exitmenu', region=boundaries['exitAoH'], seconds=2)
+        if pixelCheck(550, 1850, 2) > 150:
+            printGreen('    Collecting Heroes of Esperia Pass loot')
+            clickXY(550, 1800, seconds=2) # Collect all at the pass screen
+            clickXY(420, 50) # Click to clear loot
+        click('buttons/back', retry=3, region=boundaries['backMenu'])
+        click('buttons/back', retry=3, region=boundaries['backMenu'])
+        click('buttons/back', retry=3, region=boundaries['backMenu'])
+        printGreen('    Heroes of Esperia battles complete')
+    else:
+        printError('Heroes of Esperia not found, attempting to recover')
+        recover()

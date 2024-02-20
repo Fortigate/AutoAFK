@@ -300,6 +300,7 @@ def isVisible(image, confidence=0.9, seconds=1, retry=1, click=False, region=(0,
                     device.input_tap(x_center, y_center)
                 wait(seconds)
                 return True
+            wait()
             counter = counter + 1
     elif res != None:
         if click is True:
@@ -407,24 +408,45 @@ def clickSecure(image, secureimage, retry=5, seconds=1, confidence=0.9, region=(
         printError('printsecure failed')
         wait()
 
+def clickWhileVisible(image, confidence=0.9, seconds=1, retry=5, region=(0, 0, 1080, 1920)):
+    counter = 0
+
+    while counter < retry:
+        while isVisible(image=image, confidence=confidence, seconds=seconds, region=region):
+            click(image=image, confidence=confidence, seconds=seconds, region=region, suppress=True)
+            counter += 1
+        break
+
+    if counter > retry:
+        printError('clickWhileVisible failed')
 
 # Checks the 5 locations we find arena battle buttons in and selects the based on choice parameter
 # If the choice is outside the found buttons we return the last button found
-def selectArenaOpponent(choice, seconds=1):
+# if HoE is true we just check the blue pixel value for the 5 buttons
+def selectOpponent(choice, seconds=1, hoe=False):
     screenshot = getFrame()
     search = Image.open(os.path.join(cwd, 'img', 'buttons', 'arenafight.png'))
-    locations = {(715, 650, 230, 130), (715, 830, 230, 130), (715, 1000, 230, 130), (715, 1180, 230, 130), (715, 1360, 230, 130)} # 5 regions for the buttons
+
+    if hoe is False: # Arena
+        locations = {(715, 650, 230, 130), (715, 830, 230, 130), (715, 1000, 230, 130), (715, 1180, 230, 130), (715, 1360, 230, 130)} # 5 regions for the buttons
+    else: # HoE
+        locations = {(850, 680), (850, 840), (850, 1000), (850, 1160), (850, 1320)}  # 5 regions for the buttons
     battleButtons = []
 
     # Check each location and add Y coordinate to array (as X doesnt change we don't need it)
     for loc in locations:
-        res = locate(search, screenshot, grayscale=False, confidence=0.9, region=loc)
-        if res != None:
-            battleButtons.append(loc[1] + (loc[3]/2)) # Half the height so we have the middle of the button
+        if hoe is False:
+            res = locate(search, screenshot, grayscale=False, confidence=0.9, region=loc)
+            if res != None:
+                battleButtons.append(loc[1] + (loc[3]/2)) # Half the height so we have the middle of the button
+        else:
+            res = pixelCheck(loc[0], loc[1], 2, seconds=0) # Check blue pixel value
+            if res > 150: # If the blue value is more than 150 we have a button
+                battleButtons.append(loc[1]) # Append Y coord as X is static (also I can't work out how to sort with both)
     battleButtons.sort() # sort results from top to bottom
 
     if len(battleButtons) == 0:
-        printError('No Arena opponents found!')
+        printError('No opponents found!')
         return
 
     if choice > len(battleButtons): # If the choice is higher than the amount of results we take the last result in the list
@@ -525,6 +547,7 @@ def recover():
         if recoverCounter > 8:
             break
     if confirmLocation('campaign', bool=True):
+        clickXY(550, 1900) # Click in case we found Campaign in the background (basically if a campaign attempt fails)
         printGreen('Recovered succesfully')
         return True
     else:

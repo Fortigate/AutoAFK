@@ -43,7 +43,7 @@ else:
     latest_release = 'Cannot retrieve!'
 
 
-version = "0.15.3"
+version = "0.15.5"
 
 #Main Window
 class App(customtkinter.CTk):
@@ -80,7 +80,7 @@ class App(customtkinter.CTk):
         self.arenaButton = customtkinter.CTkButton(master=self.arenaFrame, text="Run Activity", command=lambda: threading.Thread(target=activityManager).start())
         self.arenaButton.place(x=20, y=15)
         # Activities Dropdown
-        self.activityFormationDropdown = customtkinter.CTkComboBox(master=self.arenaFrame, values=["Arena of Heroes", "Arcane Labyrinth", "Fight of Fates", "Battle of Blood"], width=160)
+        self.activityFormationDropdown = customtkinter.CTkComboBox(master=self.arenaFrame, values=["Arena of Heroes", "Arcane Labyrinth", "Fight of Fates", "Battle of Blood", "Heroes of Esperia"], width=160)
         self.activityFormationDropdown.place(x=10, y=55)
         # Activities Entry
         self.pvpLabel = customtkinter.CTkLabel(master=self.arenaFrame, text='How many battles', fg_color=("gray86", "gray17"))
@@ -340,6 +340,11 @@ class activityWindow(customtkinter.CTkToplevel):
         self.circusTourLabel.place(x=10, y=100)
         self.circusTourCheckbox = customtkinter.CTkCheckBox(master=self.eventsFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
         self.circusTourCheckbox.place(x=200, y=100)
+        # Heroes of Esperia
+        self.heroesOfEsperiaLabel = customtkinter.CTkLabel(master=self.eventsFrame, text='Heoes of Esperia', fg_color=("gray86", "gray17"))
+        self.heroesOfEsperiaLabel.place(x=10, y=130)
+        self.heroesOfEsperiaCheckbox = customtkinter.CTkCheckBox(master=self.eventsFrame, text=None, onvalue=True, offvalue=False, command=self.activityUpdate)
+        self.heroesOfEsperiaCheckbox.place(x=200, y=130)
 
         # Bounties Frame
         self.BountiesFrame = customtkinter.CTkFrame(master=self, width=235, height=280)
@@ -405,7 +410,8 @@ class activityWindow(customtkinter.CTkToplevel):
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'gladiatorCollect',
                          'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
                          'collectQuests', 'collectMerchants', 'fightOfFates', 'battleOfBlood', 'circusTour', 'dispatchDust',
-                         'dispatchDiamonds', 'dispatchShards', 'dispatchJuice', 'runLab', 'battleArena', 'tsCollect', 'useBagConsumables']
+                         'dispatchDiamonds', 'dispatchShards', 'dispatchJuice', 'runLab', 'battleArena', 'tsCollect',
+                         'useBagConsumables', 'heroesOfEsperia']
         for activity in activityBoxes:
             if activity[0:8] == 'dispatch':
                 if config.getboolean('BOUNTIES', activity):
@@ -413,7 +419,7 @@ class activityWindow(customtkinter.CTkToplevel):
             elif activity == 'battleArena' or activity == 'tsCollect' or activity == 'gladiatorCollect':
                 if config.getboolean('ARENA', activity):
                     self.__getattribute__(activity+'Checkbox').select()
-            elif activity == 'fightOfFates' or activity == 'battleOfBlood' or activity == 'circusTour':
+            elif activity == 'fightOfFates' or activity == 'battleOfBlood' or activity == 'circusTour' or activity == 'heroesOfEsperia':
                 if config.getboolean('EVENTS', activity):
                     self.__getattribute__(activity + 'Checkbox').select()
             else:
@@ -424,7 +430,8 @@ class activityWindow(customtkinter.CTkToplevel):
         activityBoxes = ['collectRewards', 'collectMail', 'companionPoints', 'lendMercs', 'attemptCampaign', 'gladiatorCollect',
                          'fountainOfTime', 'kingsTower', 'collectInn', 'guildHunt', 'storePurchases', 'twistedRealm',
                          'collectQuests', 'collectMerchants', 'fightOfFates', 'battleOfBlood', 'circusTour', 'dispatchDust',
-                         'dispatchDiamonds', 'dispatchShards', 'dispatchJuice', 'runLab', 'battleArena', 'tsCollect', 'useBagConsumables']
+                         'dispatchDiamonds', 'dispatchShards', 'dispatchJuice', 'runLab', 'battleArena', 'tsCollect',
+                         'useBagConsumables', 'heroesOfEsperia']
         for activity in activityBoxes:
             if activity[0:8] == 'dispatch':
                 if self.__getattribute__(activity + 'Checkbox').get() == 1:
@@ -436,7 +443,7 @@ class activityWindow(customtkinter.CTkToplevel):
                     config.set('ARENA', activity, 'True')
                 else:
                     config.set('ARENA', activity, 'False')
-            elif activity == 'fightOfFates' or activity == 'battleOfBlood' or activity == 'circusTour':
+            elif activity == 'fightOfFates' or activity == 'battleOfBlood' or activity == 'circusTour' or activity == 'heroesOfEsperia':
                 if self.__getattribute__(activity + 'Checkbox').get() == 1:
                     config.set('EVENTS', activity, 'True')
                 else:
@@ -740,16 +747,16 @@ def headlessArgs():
         sys.exit(0)
     if args['autotower']:
         connect_device()
-        towerdays = {1:'Lightbringer Tower', 2:'Mauler Tower', 3:'Wilder Tower', 4:'Graveborn Tower', 5:'Celestial Tower',
-                     6:'Hypogean Tower', 7:'King\'s Tower'}
+        formation = int(str(config.get('PUSH', 'formation'))[0:1])
+        duration = int(config.get('PUSH', 'victoryCheck'))
+        towerdays = {1: 'Lightbringer Tower', 2: 'Mauler Tower', 3: 'Wilder Tower', 4: 'Graveborn Tower', 5: 'Celestial Tower',
+                     6: 'Hypogean Tower', 7: 'King\'s Tower'}
         for day, tower in towerdays.items():
             if currenttimeutc.isoweekday() == day:
                 printBlue('Auto-Pushing ' + str(tower) + ' using using the ' + str(config.get('PUSH', 'formation') + ' formation'))
-                openTower(tower)
-                config.read(settings)  # to load any new values (ie formation downdown changed and saved) into memory
                 wait(3)
                 while 1:
-                    pushTower(formation=int(str(config.get('PUSH', 'formation'))[0:1]), duration=int(config.get('PUSH', 'victoryCheck')))
+                    towerPusher.pushTower(tower, formation, duration)
     if args['tower']:
         print('ok')
 
@@ -796,6 +803,14 @@ def activityManager():
         buttonState('disabled')
         connect_device()
         handleLab()
+        buttonState('normal')
+        print('')
+        return
+
+    if app.activityFormationDropdown.get() == "Heroes of Esperia":
+        buttonState('disabled')
+        connect_device()
+        handleHeroesofEsperia(config.getint('ACTIVITY', 'activitybattles'), config.getint('ARENA', 'arenaopponent'))
         buttonState('normal')
         print('')
         return
@@ -875,6 +890,8 @@ def dailies():
         handleCircusTour()
     if config.getboolean('DAILIES', 'runLab') is True:
         handleLab()
+    if config.getboolean('EVENTS', 'heroesofesperia') is True:
+        handleHeroesofEsperia(3, 4)
     if config.getboolean('DAILIES', 'collectquests') is True:
         collectQuests()
     if config.getboolean('DAILIES', 'collectmerchants') is True:
