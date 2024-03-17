@@ -1,4 +1,9 @@
 # AutoAFK
+
+
+> [!CAUTION]
+> I have stopped playing AFK Arena so this project likely won't see any more updates, @Hamman is running a fork with bugfixes and new features etc here: https://github.com/Hammanek/AutoAFK
+
 AutoAFK is a tool to automate AFK Arena tasks via ADB using Python, OpenCV and scrcpy. The bot uses image recognition with fuzzy matching, as well as single pixel recognition to automate actions. All actions are done through ADB which means the window does not need to be in focus (you don't even need a monitor attached) and you can continue to use your computer as normal while it runs.
 
 While the bot is designed for AFK Arena the core logic will work for any Android program on an ABD enabled device.
